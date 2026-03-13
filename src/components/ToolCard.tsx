@@ -33,11 +33,11 @@ interface ToolCardProps {
 }
 
 const ShimmerCard = () => (
-  <div className="rounded-lg overflow-hidden bg-card border border-border/50">
-    <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
+  <div className="rounded-xl overflow-hidden bg-card border border-border/50">
+    <div className="relative aspect-[3/2] overflow-hidden bg-secondary">
       <div className="absolute inset-0 shimmer-effect" />
     </div>
-    <div className="p-3 space-y-2">
+    <div className="p-3.5 space-y-2">
       <div className="h-4 w-3/4 rounded bg-secondary relative overflow-hidden">
         <div className="absolute inset-0 shimmer-effect" />
       </div>
@@ -60,11 +60,11 @@ const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
     >
       {!loaded && <ShimmerCard />}
       <div
-        className={`group cursor-pointer rounded-lg overflow-hidden bg-card hover:bg-card-hover transition-all duration-300 border border-border/50 hover:border-primary/30 ${
+        className={`group cursor-pointer rounded-xl overflow-hidden bg-card hover:bg-card-hover transition-all duration-300 border border-border/50 hover:border-primary/30 hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)] ${
           !loaded ? "hidden" : ""
         }`}
       >
-        <div className="relative aspect-[4/3] overflow-hidden">
+        <div className="relative aspect-[3/2] overflow-hidden">
           <img
             src={imageMap[tool.image]}
             alt={tool.title}
@@ -73,14 +73,19 @@ const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
             onLoad={() => setLoaded(true)}
           />
           {tool.isPro && (
-            <Badge className="absolute top-2 right-2 bg-pro-badge border-0 text-xs font-semibold px-2 py-0.5">
+            <Badge className="absolute top-2 right-2 bg-pro-badge border-0 text-xs font-semibold px-2.5 py-0.5">
               PRO
             </Badge>
           )}
         </div>
-        <div className="p-3">
-          <h3 className="text-sm font-semibold text-foreground truncate">{tool.title}</h3>
-          <p className="text-xs text-muted-foreground mt-0.5 truncate">{tool.description}</p>
+        <div className="p-3.5">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-sm font-bold text-foreground">{tool.title}</h3>
+            <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+              {tool.subtitle}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">{tool.description}</p>
         </div>
       </div>
     </motion.div>
