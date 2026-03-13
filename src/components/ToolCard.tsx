@@ -20,12 +20,12 @@ const imageMap: Record<string, string> = {
   "skin-enhance": skinEnhance,
   "video-gen": videoGen,
   "sketch-edit": sketchEdit,
-  "upscale": upscale,
+  upscale,
   "remove-bg": removeBg,
   "ai-influencer": aiInfluencer,
-  "angles": angles,
+  angles,
   "image-merge": imageMerge,
-  "inpaint": inpaint,
+  inpaint,
 };
 
 interface ToolCardProps {
@@ -35,7 +35,7 @@ interface ToolCardProps {
 
 const ShimmerCard = () => (
   <div className="rounded-xl overflow-hidden bg-card border border-border/50">
-    <div className="relative aspect-[16/9] overflow-hidden bg-secondary">
+    <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
       <div className="absolute inset-0 shimmer-effect" />
     </div>
     <div className="p-3 space-y-2">
@@ -67,26 +67,28 @@ const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
           !loaded ? "hidden" : ""
         }`}
       >
-        <div className="relative aspect-[16/9] overflow-hidden">
+        <div className="relative aspect-[3/4] overflow-hidden">
           <img
             src={imageMap[tool.image]}
             alt={tool.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 blur-[1px]"
             loading="lazy"
             onLoad={() => setLoaded(true)}
           />
+          {/* Shimmer overlay */}
+          <div className="absolute inset-0 shimmer-effect opacity-30 pointer-events-none" />
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
+          {/* Title overlay at bottom */}
+          <div className="absolute bottom-0 right-0 left-0 p-3">
+            <h3 className="text-sm font-bold text-foreground truncate">{tool.title}</h3>
+            <span className="text-[10px] text-muted-foreground">{tool.provider}</span>
+          </div>
           {tool.isPro && (
             <Badge className="absolute top-2 right-2 bg-pro-badge border-0 text-[10px] font-bold px-2 py-0.5">
               PRO
             </Badge>
           )}
-        </div>
-        <div className="p-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-bold text-foreground truncate">{tool.title}</h3>
-            <span className="text-[10px] text-muted-foreground shrink-0">• {tool.provider}</span>
-          </div>
-          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{tool.description}</p>
         </div>
       </div>
     </motion.div>
