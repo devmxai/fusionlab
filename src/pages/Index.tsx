@@ -57,8 +57,12 @@ const Index = () => {
                 likes: 156,
               },
             ].map((item, i) => (
-              <div
+              <motion.div
                 key={i}
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-30px" }}
+                transition={{ duration: 0.35, delay: i * 0.08 }}
                 className="bg-card rounded-lg p-3 border border-border/50 hover:border-primary/30 transition-colors cursor-pointer"
               >
                 <p className="text-sm text-foreground leading-relaxed" dir="ltr">
