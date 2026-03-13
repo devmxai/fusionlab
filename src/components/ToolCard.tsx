@@ -38,14 +38,6 @@ const ShimmerCard = () => (
     <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
       <div className="absolute inset-0 shimmer-effect" />
     </div>
-    <div className="p-3 space-y-2">
-      <div className="h-4 w-3/4 rounded bg-secondary relative overflow-hidden">
-        <div className="absolute inset-0 shimmer-effect" />
-      </div>
-      <div className="h-3 w-1/2 rounded bg-secondary relative overflow-hidden">
-        <div className="absolute inset-0 shimmer-effect" />
-      </div>
-    </div>
   </div>
 );
 
@@ -71,15 +63,11 @@ const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
           <img
             src={imageMap[tool.image]}
             alt={tool.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 blur-[1px]"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
             onLoad={() => setLoaded(true)}
           />
-          {/* Shimmer overlay */}
-          <div className="absolute inset-0 shimmer-effect opacity-30 pointer-events-none" />
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
-          {/* Title overlay at bottom */}
+          <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
           <div className="absolute bottom-0 right-0 left-0 p-3">
             <h3 className="text-sm font-bold text-foreground truncate">{tool.title}</h3>
             <span className="text-[10px] text-muted-foreground">{tool.provider}</span>
