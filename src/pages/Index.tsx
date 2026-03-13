@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import HomeHeader from "@/components/HomeHeader";
 import CategoryFilter from "@/components/CategoryFilter";
 import BannerCarousel from "@/components/BannerCarousel";
