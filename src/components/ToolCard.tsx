@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import type { AITool } from "@/data/tools";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import imageGen from "@/assets/tools/image-gen.jpg";
 import skinEnhance from "@/assets/tools/skin-enhance.jpg";
