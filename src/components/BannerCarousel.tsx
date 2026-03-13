@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Video, Mic, UserRound } from "lucide-react";
+import { Video, Mic, UserRound, Sparkles } from "lucide-react";
 import bannerVoice from "@/assets/banners/banner-voice.jpg";
 import bannerMotion from "@/assets/banners/banner-motion.jpg";
 import bannerAvatar from "@/assets/banners/banner-avatar.jpg";
+import bannerDance from "@/assets/banners/banner-dance.jpg";
 
 const banners = [
   {
@@ -11,8 +12,9 @@ const banners = [
     subtitle: "بالذكاء الاصطناعي",
     icon: Mic,
     iconSize: "w-5 h-5",
-    overlay: "bg-gradient-to-b from-background/70 via-transparent to-background/60",
-    textPos: "items-center text-center",
+    // Image centered, text on left side (RTL = right visually)
+    overlay: "bg-gradient-to-r from-background/90 via-background/50 to-transparent",
+    textPos: "items-start text-right pr-5",
   },
   {
     image: bannerMotion,
@@ -20,8 +22,8 @@ const banners = [
     subtitle: "Motion Control",
     icon: Video,
     iconSize: "w-7 h-7",
-    overlay: "bg-gradient-to-b from-background/80 via-background/20 to-transparent",
-    textPos: "items-center text-center pt-1",
+    overlay: "bg-gradient-to-l from-background/90 via-background/50 to-transparent",
+    textPos: "items-end text-left pl-5",
   },
   {
     image: bannerAvatar,
@@ -29,8 +31,17 @@ const banners = [
     subtitle: "أنشئ شخصية تسوّق منتجاتك",
     icon: UserRound,
     iconSize: "w-5 h-5",
-    overlay: "bg-gradient-to-l from-background/85 via-background/40 to-transparent",
+    overlay: "bg-gradient-to-l from-background/90 via-background/40 to-transparent",
     textPos: "items-end text-right pr-5",
+  },
+  {
+    image: bannerDance,
+    title: "SeeDance 2",
+    subtitle: "Coming Soon",
+    icon: Sparkles,
+    iconSize: "w-5 h-5",
+    overlay: "bg-gradient-to-r from-background/90 via-background/50 to-transparent",
+    textPos: "items-start text-right pr-5",
   },
 ];
 
@@ -68,13 +79,13 @@ const BannerCarousel = () => {
               />
               <div className={`absolute inset-0 ${banner.overlay}`} />
               <div
-                className={`absolute inset-0 flex flex-col justify-center px-5 ${banner.textPos}`}
+                className={`absolute inset-0 flex flex-col justify-center px-4 ${banner.textPos}`}
               >
                 <Icon className={`${banner.iconSize} text-primary mb-1 drop-shadow-lg`} />
                 <h3 className="text-lg font-extrabold text-foreground leading-tight drop-shadow-lg">
                   {banner.title}
                 </h3>
-                <p className="text-xs text-primary font-semibold mt-0.5 drop-shadow-md">
+                <p className="text-xs text-muted-foreground font-medium mt-0.5 drop-shadow-md">
                   {banner.subtitle}
                 </p>
               </div>
