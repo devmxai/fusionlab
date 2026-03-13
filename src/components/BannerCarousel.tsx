@@ -7,24 +7,27 @@ import bannerAvatar from "@/assets/banners/banner-avatar.jpg";
 const banners = [
   {
     image: bannerVoice,
-    title: "توليد أصوات AI",
+    title: "توليد الصوت بالذكاء الاصطناعي",
     subtitle: "باللهجة العراقية العامية",
     icon: Mic,
-    textAlign: "right" as const,
+    overlay: "bg-gradient-to-b from-background/70 via-transparent to-background/60",
+    textPos: "items-center text-center",
   },
   {
     image: bannerMotion,
     title: "Kling 3.0",
     subtitle: "Motion Control",
     icon: Video,
-    textAlign: "left" as const,
+    overlay: "bg-gradient-to-b from-background/80 via-background/30 to-transparent",
+    textPos: "items-center text-center pt-2",
   },
   {
     image: bannerAvatar,
     title: "AI Avatar",
     subtitle: "أنشئ شخصية تسوّق منتجاتك",
     icon: UserRound,
-    textAlign: "right" as const,
+    overlay: "bg-gradient-to-l from-background/80 via-background/40 to-transparent",
+    textPos: "items-end text-right pr-5",
   },
 ];
 
@@ -43,7 +46,7 @@ const BannerCarousel = () => {
 
   return (
     <div className="px-4 py-3">
-      <div className="relative overflow-hidden rounded-xl aspect-[2/1] max-h-44">
+      <div className="relative overflow-hidden rounded-xl aspect-[2.2/1] max-h-40">
         {banners.map((banner, i) => {
           const Icon = banner.icon;
           return (
@@ -52,7 +55,7 @@ const BannerCarousel = () => {
               className="absolute inset-0 transition-all duration-700 ease-in-out"
               style={{
                 opacity: current === i ? 1 : 0,
-                transform: current === i ? "scale(1)" : "scale(1.05)",
+                transform: current === i ? "scale(1)" : "scale(1.03)",
               }}
             >
               <img
@@ -60,41 +63,26 @@ const BannerCarousel = () => {
                 alt={banner.title}
                 className="w-full h-full object-cover"
               />
-              {/* Overlay */}
+              <div className={`absolute inset-0 ${banner.overlay}`} />
               <div
-                className={`absolute inset-0 ${
-                  banner.textAlign === "right"
-                    ? "bg-gradient-to-l from-transparent to-background/85"
-                    : "bg-gradient-to-r from-transparent to-background/85"
-                }`}
-              />
-              {/* Text */}
-              <div
-                className={`absolute inset-0 flex flex-col justify-center px-5 ${
-                  banner.textAlign === "right" ? "items-start" : "items-end"
-                }`}
+                className={`absolute inset-0 flex flex-col justify-center px-5 ${banner.textPos}`}
               >
-                <div className="flex items-center gap-2 mb-1">
-                  <Icon className="w-5 h-5 text-primary" />
-                  <span className="text-xs font-semibold text-primary tracking-wide">
-                    {banner.textAlign === "left" ? banner.subtitle : ""}
-                  </span>
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Icon className="w-4 h-4 text-primary" />
                 </div>
-                <h3 className="text-xl font-extrabold text-foreground leading-tight">
+                <h3 className="text-lg font-extrabold text-foreground leading-tight drop-shadow-lg">
                   {banner.title}
                 </h3>
-                {banner.textAlign === "right" && (
-                  <p className="text-sm text-muted-foreground mt-1 font-medium">
-                    {banner.subtitle}
-                  </p>
-                )}
+                <p className="text-xs text-primary font-semibold mt-0.5 drop-shadow-md">
+                  {banner.subtitle}
+                </p>
               </div>
             </div>
           );
         })}
 
         {/* Dots */}
-        <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5">
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
           {banners.map((_, i) => (
             <button
               key={i}
