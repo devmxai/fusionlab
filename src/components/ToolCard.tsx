@@ -51,6 +51,7 @@ const ShimmerCard = () => (
 
 const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
   const [loaded, setLoaded] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <motion.div
