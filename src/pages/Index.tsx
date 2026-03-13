@@ -1,6 +1,7 @@
 import { useState } from "react";
 import HomeHeader from "@/components/HomeHeader";
 import CategoryFilter from "@/components/CategoryFilter";
+import BannerCarousel from "@/components/BannerCarousel";
 import ToolCard from "@/components/ToolCard";
 import BottomNav from "@/components/BottomNav";
 import { tools } from "@/data/tools";
@@ -18,20 +19,26 @@ const Index = () => {
       <HomeHeader />
       <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
 
-      {/* Tools Grid */}
-      <main className="px-3 pb-24 max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {filteredTools.map((tool) => (
-            <ToolCard key={tool.id} tool={tool} />
-          ))}
-        </div>
+      {/* Banner Carousel */}
+      <BannerCarousel />
+
+      {/* Section: Popular Tools */}
+      <main className="px-4 pb-24 max-w-7xl mx-auto space-y-6">
+        <section>
+          <h2 className="text-base font-bold text-foreground mb-3">🛠️ الأدوات</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {filteredTools.map((tool) => (
+              <ToolCard key={tool.id} tool={tool} />
+            ))}
+          </div>
+        </section>
 
         {/* Trending Prompts Section */}
-        <section className="mt-8">
-          <h2 className="text-lg font-bold text-foreground mb-4 px-1">
+        <section>
+          <h2 className="text-base font-bold text-foreground mb-3">
             🔥 برومبتات رائجة
           </h2>
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {[
               {
                 prompt: "A futuristic city floating in the clouds with neon lights",
@@ -63,6 +70,16 @@ const Index = () => {
                   <span className="text-xs text-muted-foreground">❤️ {item.likes}</span>
                 </div>
               </div>
+            ))}
+          </div>
+        </section>
+
+        {/* New Models Section */}
+        <section>
+          <h2 className="text-base font-bold text-foreground mb-3">✨ جديد</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {tools.slice(0, 4).map((tool) => (
+              <ToolCard key={`new-${tool.id}`} tool={tool} />
             ))}
           </div>
         </section>
