@@ -1,1 +1,4 @@
 project_id = "ghukfpduzviybgewsisk"
+
+[functions.kie-ai]
+verify_jwt = false
