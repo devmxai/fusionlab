@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const KIE_BASE = "https://api.kie.ai/api/v1";
+const KIE_UPLOAD_BASE = "https://kieai.redpandaai.co";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -21,47 +22,58 @@ serve(async (req) => {
     );
   }
 
+  const authHeaders = {
+    Authorization: `Bearer ${KIE_API_KEY}`,
+    "Content-Type": "application/json",
+  };
+
   try {
-    const { action, model, input, taskId } = await req.json();
+    const body = await req.json();
+    const { action } = body;
+
+    // Upload file (base64) and return URL
+    if (action === "upload") {
+      const { base64Data, fileName } = body;
+      const response = await fetch(`${KIE_UPLOAD_BASE}/api/upload/base64`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          base64: base64Data,
+          uploadPath: "references",
+          fileName,
+        }),
+      });
+
+      const data = await response.json();
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Create a new generation task
     if (action === "create") {
+      const { model, input } = body;
       const response = await fetch(`${KIE_BASE}/jobs/createTask`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${KIE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
+        headers: authHeaders,
         body: JSON.stringify({ model, input }),
       });
 
       const data = await response.json();
-      if (!response.ok) {
-        return new Response(
-          JSON.stringify({ error: `KIE API error [${response.status}]`, details: data }),
-          { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
       return new Response(JSON.stringify(data), {
+        status: response.ok ? 200 : response.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // Poll task status
     if (action === "status") {
+      const { taskId } = body;
       const response = await fetch(`${KIE_BASE}/jobs/recordInfo?taskId=${taskId}`, {
         headers: { Authorization: `Bearer ${KIE_API_KEY}` },
       });
 
       const data = await response.json();
-      if (!response.ok) {
-        return new Response(
-          JSON.stringify({ error: `KIE API error [${response.status}]`, details: data }),
-          { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -79,26 +91,8 @@ serve(async (req) => {
       });
     }
 
-    // Get download URL
-    if (action === "download") {
-      const { url } = await req.json();
-      const response = await fetch(`${KIE_BASE}/common/download-url`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${KIE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url }),
-      });
-
-      const data = await response.json();
-      return new Response(JSON.stringify(data), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     return new Response(
-      JSON.stringify({ error: "Invalid action. Use: create, status, credits, download" }),
+      JSON.stringify({ error: "Invalid action. Use: create, status, credits, upload" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {

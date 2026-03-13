@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { tools } from "@/data/tools";
+import { tools, buildModelInput } from "@/data/tools";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Image as ImageIcon, Send, X, Settings2, Sparkles } from "lucide-react";
-import { createTask, pollTask } from "@/lib/kie-ai";
+import { createTask, pollTask, uploadFileBase64 } from "@/lib/kie-ai";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import CircularProgress from "@/components/CircularProgress";
@@ -116,7 +116,12 @@ const ToolPage = () => {
   const fileToBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove the data:image/...;base64, prefix
+        const base64 = result.split(",")[1];
+        resolve(base64);
+      };
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
@@ -128,31 +133,51 @@ const ToolPage = () => {
     }
     setLoading(true);
     setStatus("جاري الإرسال...");
-    setProgress(0);
+    setProgress(5);
     setResultUrls([]);
 
     try {
-      const input: Record<string, unknown> = { prompt };
-      if (!isVideoTool) {
-        input.image_size = aspectRatio;
-        input.output_format = "png";
-      }
-      if (tool.model.includes("kling")) {
-        Object.assign(input, { duration: "5", aspect_ratio: aspectRatio, mode: "std", multi_shots: false });
-      }
+      // Upload reference images first if any
+      let imageUrls: string[] | undefined;
       if (refImages.length > 0) {
-        const b64 = await Promise.all(refImages.map((img) => fileToBase64(img.file)));
-        if (refImages.length === 1) input.image = b64[0];
-        else input.images = b64;
+        setStatus("جاري رفع الصور...");
+        setProgress(10);
+        imageUrls = [];
+        for (let i = 0; i < refImages.length; i++) {
+          const b64 = await fileToBase64(refImages[i].file);
+          const url = await uploadFileBase64(b64, `ref_${Date.now()}_${i}.png`);
+          imageUrls.push(url);
+          setProgress(10 + ((i + 1) / refImages.length) * 15);
+        }
       }
+
+      // Build correct input for this model
+      const input = buildModelInput(tool.model, prompt, aspectRatio, resolution, imageUrls);
+
+      setStatus("جاري إنشاء المهمة...");
+      setProgress(30);
 
       const { taskId } = await createTask({ model: tool.model, input });
-      setStatus("في الانتظار...");
 
       const result = await pollTask(taskId, (state, prog) => {
-        const m: Record<string, string> = { waiting: "في الانتظار...", queuing: "في قائمة الانتظار...", generating: "جاري التوليد...", success: "تم!", fail: "فشل" };
+        const m: Record<string, string> = {
+          waiting: "في الانتظار...",
+          queuing: "في قائمة الانتظار...",
+          generating: "جاري التوليد...",
+          success: "تم!",
+          fail: "فشل",
+        };
         setStatus(m[state] || state);
-        setProgress(prog || (state === "waiting" ? 10 : state === "queuing" ? 25 : state === "generating" ? 60 : 100));
+        if (prog) {
+          setProgress(30 + (prog / 100) * 70);
+        } else {
+          setProgress(
+            state === "waiting" ? 35 :
+            state === "queuing" ? 45 :
+            state === "generating" ? 65 :
+            state === "success" ? 100 : progress
+          );
+        }
       });
 
       if (result.resultJson) {
@@ -172,6 +197,55 @@ const ToolPage = () => {
 
   const currentRatio = ratioConfig[aspectRatio];
 
+  // Content inside the placeholder card
+  const renderCardContent = () => {
+    if (loading) {
+      return (
+        <motion.div
+          key="loading"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center justify-center gap-2"
+        >
+          <CircularProgress progress={progress} size={100} status={status} />
+        </motion.div>
+      );
+    }
+
+    if (resultUrls.length > 0) {
+      return (
+        <motion.div
+          key="result"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="w-full h-full"
+        >
+          {isVideoTool ? (
+            <video src={resultUrls[0]} controls className="w-full h-full object-contain" />
+          ) : (
+            <img src={resultUrls[0]} alt="Result" className="w-full h-full object-contain" />
+          )}
+        </motion.div>
+      );
+    }
+
+    return (
+      <motion.div
+        key="placeholder"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex flex-col items-center justify-center gap-2 text-center px-4"
+      >
+        <Sparkles className="w-8 h-8 text-primary opacity-60" />
+        <h2 className="text-lg font-bold text-foreground">{tool.title}</h2>
+        <p className="text-xs text-muted-foreground">{tool.description}</p>
+        <span className="text-[10px] text-muted-foreground mt-1 bg-secondary/60 px-3 py-1 rounded-full">
+          {currentRatio.label} • {resolution.toUpperCase()}
+        </span>
+      </motion.div>
+    );
+  };
+
   return (
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden" dir="rtl">
       {/* Header */}
@@ -188,49 +262,70 @@ const ToolPage = () => {
         </div>
       </header>
 
-      {/* Center area - placeholder / loading / results */}
+      {/* Center area - always shows the placeholder card */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 min-h-0">
-        {loading ? (
-          <CircularProgress progress={progress} status={status} />
-        ) : resultUrls.length > 0 ? (
-          <div className="w-full max-w-3xl overflow-y-auto max-h-full py-4 space-y-3">
-            <h3 className="text-sm font-bold text-foreground text-center">النتائج</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {resultUrls.map((url, i) => (
-                <div key={i} className="rounded-xl overflow-hidden border border-border/50 banner-glow">
-                  {isVideoTool ? <video src={url} controls className="w-full" /> : <img src={url} alt="" className="w-full" />}
-                  <div className="p-2 text-center">
-                    <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">تحميل</a>
-                  </div>
-                </div>
-              ))}
-            </div>
+        {/* Additional results below (if more than 1) */}
+        {resultUrls.length > 1 && !loading && (
+          <div className="w-full max-w-3xl overflow-x-auto flex gap-2 mb-4 scrollbar-hide">
+            {resultUrls.slice(1).map((url, i) => (
+              <div key={i} className="shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-border/50">
+                <img src={url} alt="" className="w-full h-full object-cover" />
+              </div>
+            ))}
           </div>
-        ) : (
-          <motion.div
-            layout
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="relative rounded-2xl overflow-hidden banner-glow"
-            style={{ width: "100%", maxWidth: currentRatio.placeholderMaxW, aspectRatio: currentRatio.cssAspect }}
-          >
-            <img src={imageMap[tool.image]} alt={tool.title} className="w-full h-full object-cover blur-[3px] scale-110" />
-            <div className="absolute inset-0 shimmer-effect opacity-25 pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-background/10" />
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-4">
-              <Sparkles className="w-8 h-8 text-primary opacity-60" />
-              <h2 className="text-lg font-bold text-foreground">{tool.title}</h2>
-              <p className="text-xs text-muted-foreground">{tool.description}</p>
-              <span className="text-[10px] text-muted-foreground mt-1 bg-secondary/60 px-3 py-1 rounded-full">
-                {currentRatio.label} • {resolution.toUpperCase()}
-              </span>
-            </div>
-          </motion.div>
+        )}
+
+        {/* Main placeholder card - always visible, content changes */}
+        <motion.div
+          layout
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          className="relative rounded-2xl overflow-hidden banner-glow flex items-center justify-center"
+          style={{
+            width: "100%",
+            maxWidth: currentRatio.placeholderMaxW,
+            aspectRatio: currentRatio.cssAspect,
+          }}
+        >
+          {/* Background image with blur */}
+          <img
+            src={imageMap[tool.image]}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover blur-[3px] scale-110"
+          />
+          {/* Shimmer overlay */}
+          <div className="absolute inset-0 shimmer-effect opacity-25 pointer-events-none" />
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-background/20" />
+
+          {/* Dynamic content */}
+          <div className="relative z-10 w-full h-full flex items-center justify-center p-4">
+            <AnimatePresence mode="wait">
+              {renderCardContent()}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
+        {/* Download link for result */}
+        {resultUrls.length > 0 && !loading && (
+          <div className="mt-3 flex gap-2">
+            {resultUrls.map((url, i) => (
+              <a
+                key={i}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline bg-primary/10 px-3 py-1 rounded-full"
+              >
+                تحميل {resultUrls.length > 1 ? `${i + 1}` : ""}
+              </a>
+            ))}
+          </div>
         )}
       </div>
 
       {/* Bottom bar */}
       <div className="shrink-0 bg-nav-bg/90 backdrop-blur-xl border-t border-border/50 px-4 py-3 z-50 relative">
-        {/* Settings popover - appears above */}
+        {/* Settings popover */}
         <AnimatePresence>
           {settingsOpen && (
             <motion.div
@@ -241,7 +336,6 @@ const ToolPage = () => {
               transition={{ duration: 0.2 }}
               className="absolute bottom-full right-4 mb-2 w-64 bg-card border border-border/50 rounded-xl shadow-xl p-4 space-y-4"
             >
-              {/* Size */}
               {!isVideoTool && (
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold text-muted-foreground">Size</label>
@@ -270,7 +364,6 @@ const ToolPage = () => {
                 </div>
               )}
 
-              {/* Resolution */}
               {!isVideoTool && (
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold text-muted-foreground">Resolution</label>
@@ -317,7 +410,6 @@ const ToolPage = () => {
           <div className="flex items-center gap-2">
             <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
 
-            {/* Upload button */}
             {refImages.length < 3 && (
               <button
                 onClick={() => fileInputRef.current?.click()}
@@ -327,7 +419,6 @@ const ToolPage = () => {
               </button>
             )}
 
-            {/* Settings button */}
             <button
               onClick={() => setSettingsOpen((v) => !v)}
               className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
@@ -339,7 +430,6 @@ const ToolPage = () => {
               <Settings2 className="w-4 h-4" />
             </button>
 
-            {/* Prompt */}
             <input
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -349,8 +439,12 @@ const ToolPage = () => {
               onKeyDown={(e) => e.key === "Enter" && !loading && handleGenerate()}
             />
 
-            {/* Send */}
-            <Button onClick={handleGenerate} disabled={loading} size="icon" className="shrink-0 w-9 h-9 rounded-lg bg-primary text-primary-foreground">
+            <Button
+              onClick={handleGenerate}
+              disabled={loading}
+              size="icon"
+              className="shrink-0 w-9 h-9 rounded-lg bg-primary text-primary-foreground"
+            >
               <Send className="w-4 h-4" />
             </Button>
           </div>

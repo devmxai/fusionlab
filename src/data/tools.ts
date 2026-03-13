@@ -7,6 +7,8 @@ export interface AITool {
   isPro: boolean;
   category: string;
   model: string;
+  /** Input params builder per model */
+  inputParams?: Record<string, unknown>;
 }
 
 export const categories = [
@@ -62,12 +64,12 @@ export const tools: AITool[] = [
   {
     id: "seedream-4-5",
     title: "Seedream 4.5",
-    provider: "Seedream",
+    provider: "Bytedance",
     description: "صور واقعية بدقة مذهلة",
     image: "sketch-edit",
     isPro: false,
     category: "توليد صور",
-    model: "seedream-4.5",
+    model: "seedream/4.5-text-to-image",
   },
   {
     id: "topaz-upscale",
@@ -120,3 +122,77 @@ export const tools: AITool[] = [
     model: "bytedance/seedance-1.5-pro",
   },
 ];
+
+// Build correct input params based on model
+export function buildModelInput(
+  model: string,
+  prompt: string,
+  aspectRatio: string,
+  resolution: string,
+  imageUrls?: string[]
+): Record<string, unknown> {
+  // Google Nano Banana models
+  if (model.includes("nano-banana")) {
+    const input: Record<string, unknown> = {
+      prompt,
+      output_format: "png",
+      image_size: aspectRatio,
+    };
+    if (imageUrls?.length) {
+      input.image_url = imageUrls[0];
+    }
+    return input;
+  }
+
+  // Seedream
+  if (model.includes("seedream") && !model.includes("seedance")) {
+    return {
+      prompt,
+      aspect_ratio: aspectRatio,
+      quality: "basic",
+    };
+  }
+
+  // Flux-2
+  if (model.includes("flux-2")) {
+    return {
+      prompt,
+      aspect_ratio: aspectRatio,
+      resolution: resolution.toUpperCase(),
+    };
+  }
+
+  // Grok Imagine
+  if (model.includes("grok-imagine")) {
+    return {
+      prompt,
+      aspect_ratio: aspectRatio,
+    };
+  }
+
+  // Kling 3.0
+  if (model.includes("kling")) {
+    const input: Record<string, unknown> = {
+      prompt,
+      duration: "5",
+      aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio,
+      mode: "std",
+      multi_shots: false,
+    };
+    if (imageUrls?.length) {
+      input.image_urls = imageUrls;
+    }
+    return input;
+  }
+
+  // Seedance
+  if (model.includes("seedance")) {
+    return {
+      prompt,
+      aspect_ratio: aspectRatio,
+    };
+  }
+
+  // Default (Topaz, Recraft, etc.)
+  return { prompt };
+}
