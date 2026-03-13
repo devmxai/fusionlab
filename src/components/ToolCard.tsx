@@ -62,6 +62,7 @@ const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
     >
       {!loaded && <ShimmerCard />}
       <div
+        onClick={() => navigate(`/tool/${tool.id}`)}
         className={`group cursor-pointer rounded-xl overflow-hidden bg-card hover:bg-card-hover transition-all duration-300 border border-border/50 hover:border-primary/30 hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)] ${
           !loaded ? "hidden" : ""
         }`}
