@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import HomeHeader from "@/components/HomeHeader";
 import CategoryFilter from "@/components/CategoryFilter";
 import BannerCarousel from "@/components/BannerCarousel";
@@ -27,8 +28,8 @@ const Index = () => {
         <section>
           <h2 className="text-base font-bold text-foreground mb-3">🛠️ الأدوات</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {filteredTools.map((tool) => (
-              <ToolCard key={tool.id} tool={tool} />
+            {filteredTools.map((tool, i) => (
+              <ToolCard key={tool.id} tool={tool} index={i} />
             ))}
           </div>
         </section>
@@ -56,8 +57,12 @@ const Index = () => {
                 likes: 156,
               },
             ].map((item, i) => (
-              <div
+              <motion.div
                 key={i}
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-30px" }}
+                transition={{ duration: 0.35, delay: i * 0.08 }}
                 className="bg-card rounded-lg p-3 border border-border/50 hover:border-primary/30 transition-colors cursor-pointer"
               >
                 <p className="text-sm text-foreground leading-relaxed" dir="ltr">
@@ -69,7 +74,7 @@ const Index = () => {
                   </span>
                   <span className="text-xs text-muted-foreground">❤️ {item.likes}</span>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </section>
