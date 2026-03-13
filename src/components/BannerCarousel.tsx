@@ -7,9 +7,10 @@ import bannerAvatar from "@/assets/banners/banner-avatar.jpg";
 const banners = [
   {
     image: bannerVoice,
-    title: "توليد الصوت بالذكاء الاصطناعي",
-    subtitle: "باللهجة العراقية العامية",
+    title: "توليد أصوات باللهجة العراقية العامية",
+    subtitle: "بالذكاء الاصطناعي",
     icon: Mic,
+    iconSize: "w-5 h-5",
     overlay: "bg-gradient-to-b from-background/70 via-transparent to-background/60",
     textPos: "items-center text-center",
   },
@@ -18,15 +19,17 @@ const banners = [
     title: "Kling 3.0",
     subtitle: "Motion Control",
     icon: Video,
-    overlay: "bg-gradient-to-b from-background/80 via-background/30 to-transparent",
-    textPos: "items-center text-center pt-2",
+    iconSize: "w-7 h-7",
+    overlay: "bg-gradient-to-b from-background/80 via-background/20 to-transparent",
+    textPos: "items-center text-center pt-1",
   },
   {
     image: bannerAvatar,
     title: "AI Avatar",
     subtitle: "أنشئ شخصية تسوّق منتجاتك",
     icon: UserRound,
-    overlay: "bg-gradient-to-l from-background/80 via-background/40 to-transparent",
+    iconSize: "w-5 h-5",
+    overlay: "bg-gradient-to-l from-background/85 via-background/40 to-transparent",
     textPos: "items-end text-right pr-5",
   },
 ];
@@ -46,7 +49,7 @@ const BannerCarousel = () => {
 
   return (
     <div className="px-4 py-3">
-      <div className="relative overflow-hidden rounded-xl aspect-[2.2/1] max-h-40">
+      <div className="relative overflow-hidden rounded-xl aspect-[2.2/1] max-h-40 banner-glow">
         {banners.map((banner, i) => {
           const Icon = banner.icon;
           return (
@@ -67,9 +70,7 @@ const BannerCarousel = () => {
               <div
                 className={`absolute inset-0 flex flex-col justify-center px-5 ${banner.textPos}`}
               >
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <Icon className="w-4 h-4 text-primary" />
-                </div>
+                <Icon className={`${banner.iconSize} text-primary mb-1 drop-shadow-lg`} />
                 <h3 className="text-lg font-extrabold text-foreground leading-tight drop-shadow-lg">
                   {banner.title}
                 </h3>
