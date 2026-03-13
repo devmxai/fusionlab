@@ -1,12 +1,12 @@
 export interface AITool {
   id: string;
   title: string;
-  subtitle: string;
+  provider: string;
   description: string;
   image: string;
   isPro: boolean;
   category: string;
-  model: string; // KIE.AI model identifier
+  model: string;
 }
 
 export const categories = [
@@ -22,7 +22,7 @@ export const tools: AITool[] = [
   {
     id: "nano-banana",
     title: "Nano Banana",
-    subtitle: "Google AI",
+    provider: "Google",
     description: "توليد صور إبداعية بجودة عالية",
     image: "image-gen",
     isPro: false,
@@ -32,8 +32,8 @@ export const tools: AITool[] = [
   {
     id: "nano-banana-pro",
     title: "Nano Banana Pro",
-    subtitle: "Google AI",
-    description: "نسخة احترافية مع تفاصيل فائقة الدقة",
+    provider: "Google",
+    description: "نسخة احترافية بتفاصيل فائقة",
     image: "skin-enhance",
     isPro: true,
     category: "توليد صور",
@@ -42,7 +42,7 @@ export const tools: AITool[] = [
   {
     id: "nano-banana-2",
     title: "Nano Banana 2",
-    subtitle: "Google AI",
+    provider: "Google",
     description: "أحدث إصدار مع تحسينات جذرية",
     image: "ai-influencer",
     isPro: false,
@@ -52,8 +52,8 @@ export const tools: AITool[] = [
   {
     id: "kling-3",
     title: "Kling 3.0",
-    subtitle: "فيديو سينمائي",
-    description: "توليد فيديوهات احترافية بجودة عالية",
+    provider: "Kling",
+    description: "فيديوهات سينمائية احترافية",
     image: "video-gen",
     isPro: false,
     category: "فيديو",
@@ -62,8 +62,8 @@ export const tools: AITool[] = [
   {
     id: "seedream-4-5",
     title: "Seedream 4.5",
-    subtitle: "Text to Image",
-    description: "توليد صور واقعية بدقة مذهلة",
+    provider: "Seedream",
+    description: "صور واقعية بدقة مذهلة",
     image: "sketch-edit",
     isPro: false,
     category: "توليد صور",
@@ -72,8 +72,8 @@ export const tools: AITool[] = [
   {
     id: "topaz-upscale",
     title: "Topaz Upscale",
-    subtitle: "تحسين الدقة",
-    description: "تكبير الصور حتى 4K بذكاء اصطناعي",
+    provider: "Topaz",
+    description: "تكبير الصور حتى 4K",
     image: "upscale",
     isPro: true,
     category: "تحسين",
@@ -81,9 +81,9 @@ export const tools: AITool[] = [
   },
   {
     id: "recraft-bg",
-    title: "Recraft",
-    subtitle: "إزالة الخلفية",
-    description: "أزل خلفية أي صورة بنقرة واحدة",
+    title: "Remove Background",
+    provider: "Recraft",
+    description: "إزالة الخلفية بنقرة واحدة",
     image: "remove-bg",
     isPro: false,
     category: "أدوات",
@@ -92,8 +92,8 @@ export const tools: AITool[] = [
   {
     id: "flux-2-pro",
     title: "Flux 2 Pro",
-    subtitle: "Text to Image",
-    description: "توليد صور متقدم بدقة استثنائية",
+    provider: "Flux",
+    description: "توليد صور بدقة استثنائية",
     image: "angles",
     isPro: true,
     category: "توليد صور",
@@ -102,8 +102,8 @@ export const tools: AITool[] = [
   {
     id: "grok-imagine",
     title: "Grok Imagine",
-    subtitle: "xAI",
-    description: "صور واقعية وإبداعية بذكاء متقدم",
+    provider: "xAI",
+    description: "صور واقعية وإبداعية",
     image: "image-merge",
     isPro: false,
     category: "توليد صور",
@@ -111,9 +111,9 @@ export const tools: AITool[] = [
   },
   {
     id: "seedance",
-    title: "SeeDance 1.5",
-    subtitle: "Bytedance",
-    description: "رقص وحركة طبيعية في الفيديو",
+    title: "SeeDance 1.5 Pro",
+    provider: "Bytedance",
+    description: "رقص وحركة طبيعية بالفيديو",
     image: "inpaint",
     isPro: true,
     category: "فيديو",
