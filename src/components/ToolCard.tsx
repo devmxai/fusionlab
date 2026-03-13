@@ -34,10 +34,10 @@ interface ToolCardProps {
 
 const ShimmerCard = () => (
   <div className="rounded-xl overflow-hidden bg-card border border-border/50">
-    <div className="relative aspect-[3/2] overflow-hidden bg-secondary">
+    <div className="relative aspect-[16/9] overflow-hidden bg-secondary">
       <div className="absolute inset-0 shimmer-effect" />
     </div>
-    <div className="p-3.5 space-y-2">
+    <div className="p-3 space-y-2">
       <div className="h-4 w-3/4 rounded bg-secondary relative overflow-hidden">
         <div className="absolute inset-0 shimmer-effect" />
       </div>
@@ -64,7 +64,7 @@ const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
           !loaded ? "hidden" : ""
         }`}
       >
-        <div className="relative aspect-[3/2] overflow-hidden">
+        <div className="relative aspect-[16/9] overflow-hidden">
           <img
             src={imageMap[tool.image]}
             alt={tool.title}
@@ -73,19 +73,17 @@ const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
             onLoad={() => setLoaded(true)}
           />
           {tool.isPro && (
-            <Badge className="absolute top-2 right-2 bg-pro-badge border-0 text-xs font-semibold px-2.5 py-0.5">
+            <Badge className="absolute top-2 right-2 bg-pro-badge border-0 text-[10px] font-bold px-2 py-0.5">
               PRO
             </Badge>
           )}
         </div>
-        <div className="p-3.5">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-sm font-bold text-foreground">{tool.title}</h3>
-            <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-              {tool.subtitle}
-            </span>
+        <div className="p-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-bold text-foreground truncate">{tool.title}</h3>
+            <span className="text-[10px] text-muted-foreground shrink-0">• {tool.provider}</span>
           </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">{tool.description}</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{tool.description}</p>
         </div>
       </div>
     </motion.div>
