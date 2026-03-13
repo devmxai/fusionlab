@@ -1,7 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import type { AITool } from "@/data/tools";
+import { motion } from "framer-motion";
+import { useState } from "react";
 
-// Static imports for tool images
 import imageGen from "@/assets/tools/image-gen.jpg";
 import skinEnhance from "@/assets/tools/skin-enhance.jpg";
 import videoGen from "@/assets/tools/video-gen.jpg";
@@ -28,30 +29,63 @@ const imageMap: Record<string, string> = {
 
 interface ToolCardProps {
   tool: AITool;
+  index?: number;
 }
 
-const ToolCard = ({ tool }: ToolCardProps) => {
-  return (
-    <div className="group cursor-pointer rounded-lg overflow-hidden bg-card hover:bg-card-hover transition-all duration-300 border border-border/50 hover:border-primary/30">
-      <div className="relative aspect-[4/3] overflow-hidden">
-        <img
-          src={imageMap[tool.image]}
-          alt={tool.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          loading="lazy"
-        />
-        {tool.isPro && (
-          <Badge className="absolute top-2 right-2 bg-pro-badge border-0 text-xs font-semibold px-2 py-0.5">
-            PRO
-          </Badge>
-        )}
+const ShimmerCard = () => (
+  <div className="rounded-lg overflow-hidden bg-card border border-border/50">
+    <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
+      <div className="absolute inset-0 shimmer-effect" />
+    </div>
+    <div className="p-3 space-y-2">
+      <div className="h-4 w-3/4 rounded bg-secondary relative overflow-hidden">
+        <div className="absolute inset-0 shimmer-effect" />
       </div>
-      <div className="p-3">
-        <h3 className="text-sm font-semibold text-foreground truncate">{tool.title}</h3>
-        <p className="text-xs text-muted-foreground mt-0.5 truncate">{tool.description}</p>
+      <div className="h-3 w-1/2 rounded bg-secondary relative overflow-hidden">
+        <div className="absolute inset-0 shimmer-effect" />
       </div>
     </div>
+  </div>
+);
+
+const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.4, delay: index * 0.06, ease: "easeOut" }}
+    >
+      {!loaded && <ShimmerCard />}
+      <div
+        className={`group cursor-pointer rounded-lg overflow-hidden bg-card hover:bg-card-hover transition-all duration-300 border border-border/50 hover:border-primary/30 ${
+          !loaded ? "hidden" : ""
+        }`}
+      >
+        <div className="relative aspect-[4/3] overflow-hidden">
+          <img
+            src={imageMap[tool.image]}
+            alt={tool.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+            onLoad={() => setLoaded(true)}
+          />
+          {tool.isPro && (
+            <Badge className="absolute top-2 right-2 bg-pro-badge border-0 text-xs font-semibold px-2 py-0.5">
+              PRO
+            </Badge>
+          )}
+        </div>
+        <div className="p-3">
+          <h3 className="text-sm font-semibold text-foreground truncate">{tool.title}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">{tool.description}</p>
+        </div>
+      </div>
+    </motion.div>
   );
 };
 
+export { ShimmerCard };
 export default ToolCard;
