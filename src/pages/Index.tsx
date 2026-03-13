@@ -27,8 +27,8 @@ const Index = () => {
         <section>
           <h2 className="text-base font-bold text-foreground mb-3">🛠️ الأدوات</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {filteredTools.map((tool) => (
-              <ToolCard key={tool.id} tool={tool} />
+            {filteredTools.map((tool, i) => (
+              <ToolCard key={tool.id} tool={tool} index={i} />
             ))}
           </div>
         </section>
