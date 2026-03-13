@@ -14,6 +14,15 @@ export interface TaskResult {
   progress?: number;
 }
 
+export async function uploadFileBase64(base64Data: string, fileName: string): Promise<string> {
+  const { data, error } = await supabase.functions.invoke("kie-ai", {
+    body: { action: "upload", base64Data, fileName },
+  });
+  if (error) throw new Error(error.message);
+  if (!data?.data?.fileUrl) throw new Error("Upload failed");
+  return data.data.fileUrl;
+}
+
 export async function createTask(params: CreateTaskParams) {
   const { data, error } = await supabase.functions.invoke("kie-ai", {
     body: { action: "create", ...params },
@@ -40,7 +49,6 @@ export async function getCredits(): Promise<number> {
   return data?.data ?? 0;
 }
 
-// Poll until task completes
 export async function pollTask(
   taskId: string,
   onProgress?: (state: string, progress?: number) => void,
