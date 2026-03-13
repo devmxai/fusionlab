@@ -19,7 +19,7 @@ export async function uploadFileBase64(base64Data: string, fileName: string): Pr
     body: { action: "upload", base64Data, fileName },
   });
   if (error) throw new Error(error.message);
-  if (!data?.data?.fileUrl) throw new Error("Upload failed");
+  if (!data?.data?.fileUrl) throw new Error("Upload failed: " + JSON.stringify(data));
   return data.data.fileUrl;
 }
 
@@ -28,7 +28,7 @@ export async function createTask(params: CreateTaskParams) {
     body: { action: "create", ...params },
   });
   if (error) throw new Error(error.message);
-  if (data?.code !== 200) throw new Error(data?.msg || "Failed to create task");
+  if (data?.code !== 200) throw new Error(data?.msg || "Failed to create task: " + JSON.stringify(data));
   return data.data as { taskId: string };
 }
 
