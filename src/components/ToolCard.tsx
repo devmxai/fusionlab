@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import type { AITool } from "@/data/tools";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import imageGen from "@/assets/tools/image-gen.jpg";
 import skinEnhance from "@/assets/tools/skin-enhance.jpg";
@@ -50,6 +51,7 @@ const ShimmerCard = () => (
 
 const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
   const [loaded, setLoaded] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <motion.div
@@ -60,6 +62,7 @@ const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
     >
       {!loaded && <ShimmerCard />}
       <div
+        onClick={() => navigate(`/tool/${tool.id}`)}
         className={`group cursor-pointer rounded-xl overflow-hidden bg-card hover:bg-card-hover transition-all duration-300 border border-border/50 hover:border-primary/30 hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)] ${
           !loaded ? "hidden" : ""
         }`}
