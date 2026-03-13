@@ -74,7 +74,7 @@ const Index = () => {
                   </span>
                   <span className="text-xs text-muted-foreground">❤️ {item.likes}</span>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </section>
