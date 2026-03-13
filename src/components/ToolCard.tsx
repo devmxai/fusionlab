@@ -64,7 +64,7 @@ const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
             src={imageMap[tool.image]}
             alt={tool.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
+            loading={index < 6 ? "eager" : "lazy"}
             onLoad={() => setLoaded(true)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
