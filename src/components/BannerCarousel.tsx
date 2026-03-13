@@ -11,8 +11,8 @@ const banners = [
   },
   {
     image: bannerMotion,
-    title: "Kling Motion Control",
-    subtitle: "تحكم دقيق بحركة الشخصيات والمشاهد",
+    title: "Kling 3.0 Motion Control",
+    subtitle: "انقل الحركة من فيديو إلى صورة ثابتة",
   },
   {
     image: bannerAvatar,
