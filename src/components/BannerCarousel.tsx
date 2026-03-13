@@ -1,23 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import banner1 from "@/assets/banners/banner1.jpg";
-import banner2 from "@/assets/banners/banner2.jpg";
-import banner3 from "@/assets/banners/banner3.jpg";
+import bannerVoice from "@/assets/banners/banner-voice.jpg";
+import bannerMotion from "@/assets/banners/banner-motion.jpg";
+import bannerAvatar from "@/assets/banners/banner-avatar.jpg";
 
 const banners = [
   {
-    image: banner1,
-    title: "توليد صور بالذكاء الاصطناعي",
-    subtitle: "أنشئ صوراً احترافية بنقرة واحدة",
+    image: bannerVoice,
+    title: "توليد أصوات بالذكاء الاصطناعي",
+    subtitle: "باللهجة العراقية العامية",
   },
   {
-    image: banner2,
-    title: "توليد فيديو AI",
-    subtitle: "فيديوهات سينمائية عالية الجودة",
+    image: bannerMotion,
+    title: "Kling Motion Control",
+    subtitle: "تحكم دقيق بحركة الشخصيات والمشاهد",
   },
   {
-    image: banner3,
-    title: "اشترك في PRO",
-    subtitle: "افتح جميع الأدوات والمزايا المتقدمة",
+    image: bannerAvatar,
+    title: "AI Avatar",
+    subtitle: "أنشئ شخصية تعرض منتجاتك باحترافية",
   },
 ];
 
@@ -51,7 +51,7 @@ const BannerCarousel = () => {
               alt={banner.title}
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-background/40 to-background/80" />
+            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-background/30 to-background/80" />
             <div className="absolute inset-0 flex flex-col justify-center px-5">
               <h3 className="text-base font-bold text-foreground mb-1">
                 {banner.title}
@@ -67,10 +67,10 @@ const BannerCarousel = () => {
             <button
               key={i}
               onClick={() => setCurrent(i)}
-              className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+              className={`h-1.5 rounded-full transition-all duration-300 ${
                 current === i
                   ? "w-4 bg-primary"
-                  : "bg-muted-foreground/40"
+                  : "w-1.5 bg-muted-foreground/40"
               }`}
             />
           ))}
