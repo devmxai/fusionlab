@@ -34,25 +34,41 @@ serve(async (req) => {
     // Upload file (base64) and return URL
     if (action === "upload") {
       const { base64Data, fileName } = body;
-      const response = await fetch(`${KIE_UPLOAD_BASE}/api/upload/base64`, {
+      const response = await fetch(`${KIE_UPLOAD_BASE}/api/file-base64-upload`, {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({
-          base64: base64Data,
+          base64Data,
           uploadPath: "references",
           fileName,
         }),
       });
 
       const data = await response.json();
-      return new Response(JSON.stringify(data), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.log("Upload response:", JSON.stringify(data));
+
+      if (!response.ok || !data?.success) {
+        return new Response(
+          JSON.stringify({ error: data?.msg || "Upload failed", details: data }),
+          { status: response.status || 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Return normalized response with downloadUrl
+      return new Response(
+        JSON.stringify({
+          code: 200,
+          data: { fileUrl: data.data?.downloadUrl },
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Create a new generation task
     if (action === "create") {
       const { model, input } = body;
+      console.log("Creating task:", JSON.stringify({ model, input }));
+
       const response = await fetch(`${KIE_BASE}/jobs/createTask`, {
         method: "POST",
         headers: authHeaders,
@@ -60,6 +76,8 @@ serve(async (req) => {
       });
 
       const data = await response.json();
+      console.log("Create task response:", JSON.stringify(data));
+
       return new Response(JSON.stringify(data), {
         status: response.ok ? 200 : response.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
