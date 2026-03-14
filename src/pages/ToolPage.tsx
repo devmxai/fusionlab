@@ -7,30 +7,7 @@ import { createTask, pollTask, uploadFileBase64 } from "@/lib/kie-ai";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import CircularProgress from "@/components/CircularProgress";
-
-import imageGen from "@/assets/tools/image-gen.jpg";
-import skinEnhance from "@/assets/tools/skin-enhance.jpg";
-import videoGen from "@/assets/tools/video-gen.jpg";
-import sketchEdit from "@/assets/tools/sketch-edit.jpg";
-import upscale from "@/assets/tools/upscale.jpg";
-import removeBg from "@/assets/tools/remove-bg.jpg";
-import aiInfluencer from "@/assets/tools/ai-influencer.jpg";
-import angles from "@/assets/tools/angles.jpg";
-import imageMerge from "@/assets/tools/image-merge.jpg";
-import inpaint from "@/assets/tools/inpaint.jpg";
-
-const imageMap: Record<string, string> = {
-  "image-gen": imageGen,
-  "skin-enhance": skinEnhance,
-  "video-gen": videoGen,
-  "sketch-edit": sketchEdit,
-  upscale,
-  "remove-bg": removeBg,
-  "ai-influencer": aiInfluencer,
-  angles,
-  "image-merge": imageMerge,
-  inpaint,
-};
+import ImageViewer from "@/components/ImageViewer";
 
 type AspectRatio = "1:1" | "3:4" | "9:16";
 type Resolution = "1k" | "2k" | "4k";
@@ -65,6 +42,8 @@ const ToolPage = () => {
   const [resolution, setResolution] = useState<Resolution>("2k");
   const [refImages, setRefImages] = useState<{ file: File; preview: string }[]>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerUrl, setViewerUrl] = useState("");
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -118,7 +97,6 @@ const ToolPage = () => {
       const reader = new FileReader();
       reader.onload = () => {
         const result = reader.result as string;
-        // Remove the data:image/...;base64, prefix
         const base64 = result.split(",")[1];
         resolve(base64);
       };
@@ -137,7 +115,6 @@ const ToolPage = () => {
     setResultUrls([]);
 
     try {
-      // Upload reference images first if any
       let imageUrls: string[] | undefined;
       if (refImages.length > 0) {
         setStatus("جاري رفع الصور...");
@@ -151,7 +128,6 @@ const ToolPage = () => {
         }
       }
 
-      // Build correct input for this model
       const input = buildModelInput(tool.model, prompt, aspectRatio, resolution, imageUrls);
 
       setStatus("جاري إنشاء المهمة...");
@@ -197,17 +173,22 @@ const ToolPage = () => {
 
   const currentRatio = ratioConfig[aspectRatio];
 
-  // Content inside the placeholder card
+  const openViewer = (url: string) => {
+    setViewerUrl(url);
+    setViewerOpen(true);
+  };
+
   const renderCardContent = () => {
     if (loading) {
       return (
         <motion.div
           key="loading"
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
           className="flex flex-col items-center justify-center gap-2"
         >
-          <CircularProgress progress={progress} size={100} status={status} />
+          <CircularProgress progress={progress} size={90} status={status} />
         </motion.div>
       );
     }
@@ -216,14 +197,16 @@ const ToolPage = () => {
       return (
         <motion.div
           key="result"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="w-full h-full"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          className="w-full h-full cursor-pointer"
+          onClick={() => !isVideoTool && openViewer(resultUrls[0])}
         >
           {isVideoTool ? (
-            <video src={resultUrls[0]} controls className="w-full h-full object-contain" />
+            <video src={resultUrls[0]} controls className="w-full h-full object-cover rounded-2xl" />
           ) : (
-            <img src={resultUrls[0]} alt="Result" className="w-full h-full object-contain" />
+            <img src={resultUrls[0]} alt="Result" className="w-full h-full object-cover rounded-2xl" />
           )}
         </motion.div>
       );
@@ -234,12 +217,13 @@ const ToolPage = () => {
         key="placeholder"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         className="flex flex-col items-center justify-center gap-2 text-center px-4"
       >
-        <Sparkles className="w-8 h-8 text-primary opacity-60" />
-        <h2 className="text-lg font-bold text-foreground">{tool.title}</h2>
-        <p className="text-xs text-muted-foreground">{tool.description}</p>
-        <span className="text-[10px] text-muted-foreground mt-1 bg-secondary/60 px-3 py-1 rounded-full">
+        <Sparkles className="w-7 h-7 text-primary opacity-40" />
+        <h2 className="text-sm font-bold text-foreground/70">{tool.title}</h2>
+        <p className="text-[10px] text-muted-foreground/60">{tool.description}</p>
+        <span className="text-[9px] text-muted-foreground/50 mt-1 bg-secondary/30 px-3 py-0.5 rounded-full">
           {currentRatio.label} • {resolution.toUpperCase()}
         </span>
       </motion.div>
@@ -262,40 +246,58 @@ const ToolPage = () => {
         </div>
       </header>
 
-      {/* Center area - always shows the placeholder card */}
+      {/* Center area */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 min-h-0">
-        {/* Additional results below (if more than 1) */}
+        {/* Additional results */}
         {resultUrls.length > 1 && !loading && (
           <div className="w-full max-w-3xl overflow-x-auto flex gap-2 mb-4 scrollbar-hide">
             {resultUrls.slice(1).map((url, i) => (
-              <div key={i} className="shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-border/50">
+              <div
+                key={i}
+                className="shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-border/50 cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => openViewer(url)}
+              >
                 <img src={url} alt="" className="w-full h-full object-cover" />
               </div>
             ))}
           </div>
         )}
 
-        {/* Main placeholder card - always visible, content changes */}
+        {/* Main card - empty border with subtle shimmer, no background image */}
         <motion.div
           layout
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="relative rounded-2xl overflow-hidden banner-glow flex items-center justify-center"
+          className={`relative rounded-2xl overflow-hidden flex items-center justify-center border ${
+            resultUrls.length > 0 && !loading
+              ? "border-transparent"
+              : loading
+              ? "border-primary/30"
+              : "border-border/30"
+          }`}
           style={{
             width: "100%",
             maxWidth: currentRatio.placeholderMaxW,
             aspectRatio: currentRatio.cssAspect,
+            background: resultUrls.length > 0 && !loading ? "transparent" : undefined,
           }}
         >
-          {/* Background image with blur */}
-          <img
-            src={imageMap[tool.image]}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover blur-[3px] scale-110"
-          />
-          {/* Shimmer overlay */}
-          <div className="absolute inset-0 shimmer-effect opacity-25 pointer-events-none" />
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-background/20" />
+          {/* Subtle shimmer - idle state (very faint) */}
+          {resultUrls.length === 0 && !loading && (
+            <div className="absolute inset-0 shimmer-effect opacity-[0.06] pointer-events-none" />
+          )}
+
+          {/* Loading state - stronger shimmer + blur overlay */}
+          {loading && (
+            <>
+              <div className="absolute inset-0 shimmer-effect opacity-[0.15] pointer-events-none" />
+              <div className="absolute inset-0 bg-background/60 backdrop-blur-sm pointer-events-none" />
+            </>
+          )}
+
+          {/* Faint background for empty/loading states */}
+          {(resultUrls.length === 0 || loading) && (
+            <div className="absolute inset-0 bg-secondary/20 pointer-events-none" />
+          )}
 
           {/* Dynamic content */}
           <div className="relative z-10 w-full h-full flex items-center justify-center p-4">
@@ -450,6 +452,9 @@ const ToolPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Image Viewer Popup */}
+      <ImageViewer src={viewerUrl} open={viewerOpen} onClose={() => setViewerOpen(false)} />
     </div>
   );
 };
