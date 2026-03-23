@@ -69,7 +69,7 @@ export const tools: AITool[] = [
     description: "صور واقعية بدقة مذهلة",
     image: "sketch-edit",
     isPro: false,
-    category: "توليد صور",
+    category: "صور",
     model: "seedream/4.5-text-to-image",
   },
   {
