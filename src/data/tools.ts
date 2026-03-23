@@ -79,7 +79,7 @@ export const tools: AITool[] = [
     description: "تكبير الصور حتى 4K",
     image: "upscale",
     isPro: true,
-    category: "تحسين",
+    category: "رفع الجودة",
     model: "topaz/image-upscale",
   },
   {
