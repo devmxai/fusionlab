@@ -49,7 +49,7 @@ export const tools: AITool[] = [
     description: "تعديل الصور بالذكاء الاصطناعي",
     image: "ai-influencer",
     isPro: false,
-    category: "تحرير صور",
+    category: "صور",
     model: "google/nano-banana-edit",
   },
   {
