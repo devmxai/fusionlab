@@ -99,7 +99,7 @@ export const tools: AITool[] = [
     description: "توليد صور بدقة استثنائية",
     image: "angles",
     isPro: true,
-    category: "توليد صور",
+    category: "صور",
     model: "flux-2/pro-text-to-image",
   },
   {
