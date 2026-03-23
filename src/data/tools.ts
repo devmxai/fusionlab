@@ -89,7 +89,7 @@ export const tools: AITool[] = [
     description: "إزالة الخلفية بنقرة واحدة",
     image: "remove-bg",
     isPro: false,
-    category: "أدوات",
+    category: "حذف الخلفية",
     model: "recraft/remove-background",
   },
   {
