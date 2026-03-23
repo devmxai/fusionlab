@@ -39,7 +39,7 @@ export const tools: AITool[] = [
     description: "نسخة احترافية بتفاصيل فائقة",
     image: "skin-enhance",
     isPro: true,
-    category: "توليد صور",
+    category: "صور",
     model: "nano-banana-pro",
   },
   {
