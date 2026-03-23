@@ -29,7 +29,7 @@ export const tools: AITool[] = [
     description: "توليد صور إبداعية بجودة عالية",
     image: "image-gen",
     isPro: false,
-    category: "توليد صور",
+    category: "صور",
     model: "nano-banana-2",
   },
   {
