@@ -13,11 +13,12 @@ export interface AITool {
 
 export const categories = [
   "الكل",
-  "توليد صور",
-  "تحرير صور",
   "فيديو",
-  "تحسين",
-  "أدوات",
+  "صور",
+  "صوت",
+  "افتار",
+  "حذف الخلفية",
+  "رفع الجودة",
 ] as const;
 
 export const tools: AITool[] = [
