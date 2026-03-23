@@ -109,7 +109,7 @@ export const tools: AITool[] = [
     description: "صور واقعية وإبداعية",
     image: "image-merge",
     isPro: false,
-    category: "توليد صور",
+    category: "صور",
     model: "grok-imagine/text-to-image",
   },
   {
