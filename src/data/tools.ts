@@ -13,11 +13,12 @@ export interface AITool {
 
 export const categories = [
   "الكل",
-  "توليد صور",
-  "تحرير صور",
   "فيديو",
-  "تحسين",
-  "أدوات",
+  "صور",
+  "صوت",
+  "افتار",
+  "حذف الخلفية",
+  "رفع الجودة",
 ] as const;
 
 export const tools: AITool[] = [
@@ -28,7 +29,7 @@ export const tools: AITool[] = [
     description: "توليد صور إبداعية بجودة عالية",
     image: "image-gen",
     isPro: false,
-    category: "توليد صور",
+    category: "صور",
     model: "nano-banana-2",
   },
   {
@@ -38,7 +39,7 @@ export const tools: AITool[] = [
     description: "نسخة احترافية بتفاصيل فائقة",
     image: "skin-enhance",
     isPro: true,
-    category: "توليد صور",
+    category: "صور",
     model: "nano-banana-pro",
   },
   {
@@ -48,7 +49,7 @@ export const tools: AITool[] = [
     description: "تعديل الصور بالذكاء الاصطناعي",
     image: "ai-influencer",
     isPro: false,
-    category: "تحرير صور",
+    category: "صور",
     model: "google/nano-banana-edit",
   },
   {
@@ -68,7 +69,7 @@ export const tools: AITool[] = [
     description: "صور واقعية بدقة مذهلة",
     image: "sketch-edit",
     isPro: false,
-    category: "توليد صور",
+    category: "صور",
     model: "seedream/4.5-text-to-image",
   },
   {
@@ -78,7 +79,7 @@ export const tools: AITool[] = [
     description: "تكبير الصور حتى 4K",
     image: "upscale",
     isPro: true,
-    category: "تحسين",
+    category: "رفع الجودة",
     model: "topaz/image-upscale",
   },
   {
@@ -88,7 +89,7 @@ export const tools: AITool[] = [
     description: "إزالة الخلفية بنقرة واحدة",
     image: "remove-bg",
     isPro: false,
-    category: "أدوات",
+    category: "حذف الخلفية",
     model: "recraft/remove-background",
   },
   {
@@ -98,7 +99,7 @@ export const tools: AITool[] = [
     description: "توليد صور بدقة استثنائية",
     image: "angles",
     isPro: true,
-    category: "توليد صور",
+    category: "صور",
     model: "flux-2/pro-text-to-image",
   },
   {
@@ -108,7 +109,7 @@ export const tools: AITool[] = [
     description: "صور واقعية وإبداعية",
     image: "image-merge",
     isPro: false,
-    category: "توليد صور",
+    category: "صور",
     model: "grok-imagine/text-to-image",
   },
   {
