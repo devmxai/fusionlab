@@ -488,9 +488,9 @@ const StudioPage = () => {
           {/* Back button - left side visually */}
           <button
             onClick={() => navigate("/")}
-            className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all border border-primary/25"
+            className="shrink-0 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all"
           >
-            <ArrowRight className="w-4 h-4" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
 
           <div className="flex-1" />
