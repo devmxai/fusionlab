@@ -661,12 +661,15 @@ const StudioPage = () => {
       {/* ── Bottom bar ── */}
       <div className="shrink-0 bg-card/90 backdrop-blur-xl border-t border-border/30 px-4 py-3 z-50">
         <div className="max-w-3xl mx-auto space-y-2">
-          {/* Frame upload boxes for first/last frame models */}
+          {/* Hidden file inputs */}
+          <input ref={fileInputRef} type="file" accept="image/*" multiple={!isImageOnlyTool} className="hidden" onChange={handleImageUpload} />
+          <input ref={remixSlotInputRef} type="file" accept="image/*" className="hidden" onChange={handleRemixSlotUpload} />
+          <input ref={firstFrameInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFrameUpload("first", e)} />
+          <input ref={lastFrameInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFrameUpload("last", e)} />
+
+          {/* Frame upload boxes for first/last frame video models */}
           {hasFrameMode && selectedTool && (
             <div className="flex gap-2">
-              {/* First Frame */}
-              <input ref={firstFrameInputRef} type="file" accept="image/*" className="hidden"
-                onChange={(e) => handleFrameUpload("first", e)} />
               <button
                 onClick={() => firstFrameInputRef.current?.click()}
                 className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
@@ -683,9 +686,7 @@ const StudioPage = () => {
                     >
                       <X className="w-2.5 h-2.5 text-destructive-foreground" />
                     </button>
-                    <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">
-                      First Frame
-                    </span>
+                    <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">First Frame</span>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center gap-1 py-2">
@@ -694,46 +695,111 @@ const StudioPage = () => {
                   </div>
                 )}
               </button>
-
-              {/* Last Frame (only for first-last mode) */}
               {frameMode === "first-last" && (
-                <>
-                  <input ref={lastFrameInputRef} type="file" accept="image/*" className="hidden"
-                    onChange={(e) => handleFrameUpload("last", e)} />
-                  <button
-                    onClick={() => lastFrameInputRef.current?.click()}
-                    className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
-                      lastFrame ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
-                    }`}
-                    style={{ minHeight: "56px" }}
-                  >
-                    {lastFrame ? (
-                      <div className="relative w-full h-14">
-                        <img src={lastFrame.preview} alt="Last frame" className="w-full h-full object-cover rounded-lg" />
-                        <button
-                          onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }}
-                          className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
-                        >
-                          <X className="w-2.5 h-2.5 text-destructive-foreground" />
-                        </button>
-                        <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">
-                          Last Frame
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center gap-1 py-2">
-                        <Upload className="w-4 h-4 text-muted-foreground/60" />
-                        <span className="text-[9px] font-semibold text-muted-foreground/70">Last Frame</span>
-                      </div>
-                    )}
-                  </button>
-                </>
+                <button
+                  onClick={() => lastFrameInputRef.current?.click()}
+                  className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
+                    lastFrame ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
+                  }`}
+                  style={{ minHeight: "56px" }}
+                >
+                  {lastFrame ? (
+                    <div className="relative w-full h-14">
+                      <img src={lastFrame.preview} alt="Last frame" className="w-full h-full object-cover rounded-lg" />
+                      <button
+                        onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }}
+                        className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                      >
+                        <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                      </button>
+                      <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">Last Frame</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-1 py-2">
+                      <Upload className="w-4 h-4 text-muted-foreground/60" />
+                      <span className="text-[9px] font-semibold text-muted-foreground/70">Last Frame</span>
+                    </div>
+                  )}
+                </button>
               )}
             </div>
           )}
 
-          {/* Regular image uploads strip */}
-          {!hasFrameMode && refImages.length > 0 && (
+          {/* ── Remix image strip (like frame boxes) ── */}
+          {isRemixTool && selectedTool && !hasFrameMode && (
+            <div className="flex gap-2">
+              {/* Slot 1: الصورة الأساسية - always visible */}
+              <button
+                onClick={() => { setRemixUploadSlot(0); remixSlotInputRef.current?.click(); }}
+                className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
+                  refImages[0] ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
+                }`}
+                style={{ minHeight: "56px" }}
+              >
+                {refImages[0] ? (
+                  <div className="relative w-full h-14">
+                    <img src={refImages[0].preview} alt="صورة 1" className="w-full h-full object-cover rounded-lg" />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); removeImage(0); }}
+                      className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                    >
+                      <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                    </button>
+                    <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">صورة 1</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-1 py-2">
+                    <Upload className="w-4 h-4 text-muted-foreground/60" />
+                    <span className="text-[9px] font-semibold text-muted-foreground/70">صورة 1</span>
+                  </div>
+                )}
+              </button>
+
+              {/* Slot 2: visible if maxImages >= 2 */}
+              {remixMaxImages >= 2 && (
+                <button
+                  onClick={() => { setRemixUploadSlot(1); remixSlotInputRef.current?.click(); }}
+                  className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
+                    refImages[1] ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
+                  }`}
+                  style={{ minHeight: "56px" }}
+                >
+                  {refImages[1] ? (
+                    <div className="relative w-full h-14">
+                      <img src={refImages[1].preview} alt="صورة 2" className="w-full h-full object-cover rounded-lg" />
+                      <button
+                        onClick={(e) => { e.stopPropagation(); removeImage(1); }}
+                        className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                      >
+                        <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                      </button>
+                      <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">صورة 2</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-1 py-2">
+                      <Upload className="w-4 h-4 text-muted-foreground/60" />
+                      <span className="text-[9px] font-semibold text-muted-foreground/70">صورة 2</span>
+                    </div>
+                  )}
+                </button>
+              )}
+
+              {/* + button for more images if model supports > 2 */}
+              {remixMaxImages > 2 && refImages.length >= 2 && refImages.length < remixMaxImages && (
+                <button
+                  onClick={() => { setRemixUploadSlot(refImages.length); remixSlotInputRef.current?.click(); }}
+                  className="w-14 shrink-0 rounded-xl border-2 border-dashed border-border/40 bg-secondary/30 hover:border-primary/30 transition-all flex flex-col items-center justify-center gap-1"
+                  style={{ minHeight: "56px" }}
+                >
+                  <Plus className="w-4 h-4 text-muted-foreground/60" />
+                  <span className="text-[8px] text-muted-foreground/60">{refImages.length}/{remixMaxImages}</span>
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Regular image uploads strip (non-remix, non-frame) */}
+          {!hasFrameMode && !isRemixTool && refImages.length > 0 && (
             <div className="flex gap-2">
               {refImages.map((img, i) => (
                 <div key={i} className="relative w-11 h-11 rounded-lg overflow-hidden border border-border/50">
