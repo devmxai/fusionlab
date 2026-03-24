@@ -128,19 +128,23 @@ const AudioStudioPage = () => {
 
     setLoading(true);
     try {
+      // Parse style instruction to extract dialect/emotion/tone hints
+      const hasIraqi = styleInstruction.includes("عراقي") || styleInstruction.includes("بغداد");
+      const dialectHint = hasIraqi ? "لهجة عراقية عامية واضحة" : "";
+
       const { data, error } = await supabase.functions.invoke("gemini-tts", {
         body: {
           action: "synthesize",
           prebuiltModel: GEMINI_FLASH_TTS_MODEL,
           text,
           voiceName: selectedVoice.name,
-          styleInstruction,
+          styleInstruction: styleInstruction.trim(),
           speakingRate,
           pitch,
           stability,
-          dialectHint: styleInstruction.includes("عراقي") ? "لهجة عراقية عامية واضحة" : "",
-          emotionHint: "",
-          toneHint: "",
+          dialectHint,
+          emotionHint: styleInstruction.trim() ? "طبيعي وبشري" : "",
+          toneHint: styleInstruction.trim() ? "واضح وقريب من المستمع" : "",
         },
       });
 

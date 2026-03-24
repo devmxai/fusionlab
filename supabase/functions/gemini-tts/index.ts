@@ -139,27 +139,46 @@ serve(async (req) => {
         );
       }
 
-      // Build style direction as a separate "turn" before the spoken text
-      const stylePromptParts: string[] = [];
+      // ─── Build professional style prompt per documentation ───
+      // The style prompt is the PRIMARY control surface for voice performance
+      const directionParts: string[] = [];
 
-      // Always add language direction for Arabic
-      stylePromptParts.push(`Language: Arabic (${languageCode}). Speak entirely in Arabic with natural Arabic pronunciation.`);
+      // Core voice acting instructions
+      directionParts.push("Speak naturally with human-like emotional expression and realistic pauses.");
+      directionParts.push("Never pronounce control tags literally — they are performance directions only.");
+      directionParts.push("Apply each inline tag (like [laughing], [whispering], [sarcasm], etc.) to the nearest following phrase, then return to the base style.");
+      directionParts.push("For Arabic text, keep pronunciation clear and avoid flattening emotional variation.");
 
-      if (dialectHint) stylePromptParts.push(`Dialect: ${dialectHint}`);
-      if (emotionHint) stylePromptParts.push(`Emotion: ${emotionHint}`);
-      if (toneHint) stylePromptParts.push(`Tone: ${toneHint}`);
-      if (styleInstruction) stylePromptParts.push(styleInstruction);
-      if (stability < 0.5) stylePromptParts.push("Allow more vocal variation and expressiveness.");
-      if (stability > 0.8) stylePromptParts.push("Maintain consistent vocal tone with minimal variation.");
+      // Language direction
+      directionParts.push(`Language: Arabic (${languageCode}). Speak entirely in Arabic with natural Arabic pronunciation.`);
 
-      // Use multi-turn: first turn is style direction, second is text to speak
-      const contents = [];
-      if (stylePromptParts.length > 0) {
-        const styleText = `Say the following text using this style:\n${stylePromptParts.join("\n")}\n\nText to speak:`;
-        contents.push({ parts: [{ text: styleText + "\n\n" + text }] });
-      } else {
-        contents.push({ parts: [{ text }] });
+      // Dialect
+      if (dialectHint) {
+        directionParts.push(`Dialect target: ${dialectHint}.`);
       }
+
+      // Emotion
+      if (emotionHint) {
+        directionParts.push(`Emotion profile: ${emotionHint}.`);
+      }
+
+      // Tone
+      if (toneHint) {
+        directionParts.push(`Tone profile: ${toneHint}.`);
+      }
+
+      // User style instruction — the main steering layer
+      if (styleInstruction) {
+        directionParts.push(`Style prompt: ${styleInstruction}`);
+      }
+
+      // Stability modifiers
+      if (stability < 0.5) directionParts.push("Allow more vocal variation and expressiveness.");
+      if (stability > 0.8) directionParts.push("Maintain consistent vocal tone with minimal variation.");
+
+      // Construct the final prompt: style direction + text in a single turn
+      const fullPrompt = directionParts.join("\n") + "\n\n---\n\n" + text;
+      const contents = [{ parts: [{ text: fullPrompt }] }];
 
       const requestBody = {
         contents,
