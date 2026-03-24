@@ -44,7 +44,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
 
   const menuItems = [
     { icon: User, label: "الحساب", action: () => { navigate("/profile"); onClose(); } },
-    { icon: FolderOpen, label: "المكتبة", action: () => { onClose(); } },
+    { icon: FolderOpen, label: "المكتبة", action: () => { navigate("/library"); onClose(); } },
     { icon: Activity, label: "النشاط", action: () => { navigate("/profile"); onClose(); } },
     { icon: CreditCard, label: "طرق الدفع", action: () => { navigate("/pricing"); onClose(); } },
   ];
