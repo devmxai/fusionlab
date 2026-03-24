@@ -84,6 +84,82 @@ function validateOfficialVoice(voiceName: string): string | null {
   return null;
 }
 
+const INLINE_TAG_REGEX = /\[(short pause|medium pause|long pause|whispering|shouting|sarcasm|laughing|sigh|fast|extremely fast|robotic|uhm|gasp|groan|scared|curious|bored)\]/gi;
+
+const TAG_EFFECTS: Record<string, string> = {
+  "short pause": "نفّذ وقفة قصيرة واضحة",
+  "medium pause": "نفّذ وقفة متوسطة ومسموعة",
+  "long pause": "نفّذ وقفة طويلة مع سكون واضح",
+  "whispering": "حوّل الأداء إلى همس واضح وناعم",
+  "shouting": "ارفع شدة الصوت إلى صراخ مضبوط بدون تشويه",
+  "sarcasm": "أدِّ الجملة بسخرية خفيفة ومسموعة",
+  "laughing": "أضف ضحكة طبيعية قصيرة ومسموعة",
+  "sigh": "أضف تنهيدة قصيرة طبيعية",
+  "fast": "زد سرعة الإلقاء بشكل ملحوظ",
+  "extremely fast": "اجعل الإلقاء سريعًا جدًا مع بقاء النطق مفهومًا",
+  "robotic": "اجعل الأداء آليًا بشكل مقصود",
+  "uhm": "أضف ترددًا صوتيًا خفيفًا مثل uhm",
+  "gasp": "أضف شهقة قصيرة قبل العبارة",
+  "groan": "أضف أنينًا خفيفًا قبل العبارة",
+  "scared": "حوّل الأداء إلى نبرة خوف واضحة",
+  "curious": "حوّل الأداء إلى نبرة فضول واضحة",
+  "bored": "حوّل الأداء إلى نبرة ملل خفيفة",
+};
+
+function normalizeText(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function extractTagDirectives(inputText: string): { spokenText: string; directives: string[] } {
+  const matcher = new RegExp(INLINE_TAG_REGEX.source, "gi");
+  const cleanReplacer = new RegExp(INLINE_TAG_REGEX.source, "gi");
+
+  const matches: Array<{ raw: string; tag: string; start: number; end: number }> = [];
+  let match: RegExpExecArray | null = null;
+
+  while ((match = matcher.exec(inputText)) !== null) {
+    matches.push({
+      raw: match[0],
+      tag: (match[1] || "").toLowerCase(),
+      start: match.index,
+      end: match.index + match[0].length,
+    });
+  }
+
+  const spokenText = normalizeText(inputText.replace(cleanReplacer, " "));
+
+  if (!matches.length) {
+    return { spokenText, directives: [] };
+  }
+
+  const directives: string[] = [];
+
+  for (let i = 0; i < matches.length; i++) {
+    const current = matches[i];
+    const previous = matches[i - 1];
+    const next = matches[i + 1];
+
+    const betweenTagsText = normalizeText(
+      inputText
+        .slice(current.end, next ? next.start : inputText.length)
+        .replace(new RegExp(INLINE_TAG_REGEX.source, "gi"), " ")
+    );
+
+    const beforeTagText = normalizeText(
+      inputText
+        .slice(previous ? previous.end : 0, current.start)
+        .replace(new RegExp(INLINE_TAG_REGEX.source, "gi"), " ")
+    );
+
+    const targetPhrase = betweenTagsText || beforeTagText || "أقرب عبارة في النص";
+    const effect = TAG_EFFECTS[current.tag] || "طبّق تأثير الأداء المحلي بدقة";
+
+    directives.push(`- ${current.raw}: ${effect} على العبارة "${targetPhrase}" ثم ارجع للنبرة الأساسية.`);
+  }
+
+  return { spokenText, directives };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -139,19 +215,28 @@ serve(async (req) => {
         );
       }
 
+      const { spokenText, directives: tagDirectives } = extractTagDirectives(text);
+
+      if (!spokenText) {
+        return new Response(
+          JSON.stringify({ error: "Text contains tags only. Please add spoken text." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       // ─── Build style prompt ENTIRELY in Arabic to keep native pronunciation ───
       const directionParts: string[] = [];
 
       // Core instructions in Arabic
       directionParts.push("تحدث بشكل طبيعي تماماً كمتحدث عربي أصلي مع تعبيرات عاطفية واقعية ووقفات طبيعية.");
-      directionParts.push("لا تنطق أي علامات تحكم حرفياً مثل [laughing] أو [whispering] — هذه توجيهات أداء فقط، طبّقها على العبارة التالية ثم ارجع للأسلوب الأساسي.");
       directionParts.push("تحدث باللغة العربية فقط بنطق عربي أصيل وطبيعي.");
+      directionParts.push("لا تنطق علامات التحكم حرفياً؛ نفّذها كتعليمات أداء فقط.");
 
       // Dialect — always default to Iraqi
       if (dialectHint) {
         directionParts.push(`اللهجة المطلوبة: ${dialectHint}.`);
       } else {
-        directionParts.push("تحدث بلهجة عربية طبيعية.");
+        directionParts.push("تحدث بلهجة عراقية عامية طبيعية.");
       }
 
       // Emotion
@@ -173,8 +258,13 @@ serve(async (req) => {
       if (stability < 0.5) directionParts.push("اسمح بتنوع صوتي أكثر وتعبير أقوى.");
       if (stability > 0.8) directionParts.push("حافظ على نبرة صوت ثابتة ومتسقة.");
 
-      // Construct the final prompt: style direction + text in a single turn
-      const fullPrompt = directionParts.join("\n") + "\n\n---\n\n" + text;
+      if (tagDirectives.length) {
+        directionParts.push("التزم بتوجيهات الأداء المحلية التالية بدقة وبشكل مسموع دون نطق أسماء العلامات:");
+        directionParts.push(...tagDirectives);
+      }
+
+      // Construct the final prompt: style direction + interpreted tags + clean spoken text
+      const fullPrompt = directionParts.join("\n") + "\n\n---\n\n" + spokenText;
       const contents = [{ parts: [{ text: fullPrompt }] }];
 
       const requestBody = {
@@ -267,20 +357,27 @@ serve(async (req) => {
         );
       }
 
-      // Build preview prompt with same style logic as synthesize
-      const spokenText = previewText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟";
+      // Build preview prompt with same style + tag logic as synthesize
+      const previewRawText = previewText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟";
+      const { spokenText: previewSpokenText, directives: previewTagDirectives } = extractTagDirectives(previewRawText);
+
       const previewParts: string[] = [];
       previewParts.push("تحدث بشكل طبيعي تماماً كمتحدث عربي أصلي مع تعبيرات عاطفية واقعية.");
       previewParts.push("تحدث باللغة العربية فقط بنطق عربي أصيل وطبيعي.");
+      previewParts.push("لا تنطق علامات التحكم حرفياً؛ نفّذها كتعليمات أداء فقط.");
       if (prevDialect) previewParts.push(`اللهجة المطلوبة: ${prevDialect}.`);
-      else previewParts.push("تحدث بلهجة عربية طبيعية.");
+      else previewParts.push("تحدث بلهجة عراقية عامية طبيعية.");
       if (prevEmotion) previewParts.push(`المشاعر: ${prevEmotion}.`);
       if (prevTone) previewParts.push(`النبرة: ${prevTone}.`);
       if (prevStyle) previewParts.push(`أسلوب الأداء: ${prevStyle}`);
       if (prevStability < 0.5) previewParts.push("اسمح بتنوع صوتي أكثر.");
       if (prevStability > 0.8) previewParts.push("حافظ على نبرة صوت ثابتة.");
+      if (previewTagDirectives.length) {
+        previewParts.push("التزم بتوجيهات الأداء المحلية التالية بدقة وبشكل مسموع دون نطق أسماء العلامات:");
+        previewParts.push(...previewTagDirectives);
+      }
 
-      const previewPrompt = previewParts.join("\n") + "\n\n---\n\n" + spokenText;
+      const previewPrompt = previewParts.join("\n") + "\n\n---\n\n" + (previewSpokenText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟");
 
       const requestBody = {
         contents: [{ parts: [{ text: previewPrompt }] }],
