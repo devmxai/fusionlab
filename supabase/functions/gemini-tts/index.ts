@@ -215,19 +215,28 @@ serve(async (req) => {
         );
       }
 
+      const { spokenText, directives: tagDirectives } = extractTagDirectives(text);
+
+      if (!spokenText) {
+        return new Response(
+          JSON.stringify({ error: "Text contains tags only. Please add spoken text." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       // ─── Build style prompt ENTIRELY in Arabic to keep native pronunciation ───
       const directionParts: string[] = [];
 
       // Core instructions in Arabic
       directionParts.push("تحدث بشكل طبيعي تماماً كمتحدث عربي أصلي مع تعبيرات عاطفية واقعية ووقفات طبيعية.");
-      directionParts.push("لا تنطق أي علامات تحكم حرفياً مثل [laughing] أو [whispering] — هذه توجيهات أداء فقط، طبّقها على العبارة التالية ثم ارجع للأسلوب الأساسي.");
       directionParts.push("تحدث باللغة العربية فقط بنطق عربي أصيل وطبيعي.");
+      directionParts.push("لا تنطق علامات التحكم حرفياً؛ نفّذها كتعليمات أداء فقط.");
 
       // Dialect — always default to Iraqi
       if (dialectHint) {
         directionParts.push(`اللهجة المطلوبة: ${dialectHint}.`);
       } else {
-        directionParts.push("تحدث بلهجة عربية طبيعية.");
+        directionParts.push("تحدث بلهجة عراقية عامية طبيعية.");
       }
 
       // Emotion
@@ -249,8 +258,13 @@ serve(async (req) => {
       if (stability < 0.5) directionParts.push("اسمح بتنوع صوتي أكثر وتعبير أقوى.");
       if (stability > 0.8) directionParts.push("حافظ على نبرة صوت ثابتة ومتسقة.");
 
-      // Construct the final prompt: style direction + text in a single turn
-      const fullPrompt = directionParts.join("\n") + "\n\n---\n\n" + text;
+      if (tagDirectives.length) {
+        directionParts.push("التزم بتوجيهات الأداء المحلية التالية بدقة وبشكل مسموع دون نطق أسماء العلامات:");
+        directionParts.push(...tagDirectives);
+      }
+
+      // Construct the final prompt: style direction + interpreted tags + clean spoken text
+      const fullPrompt = directionParts.join("\n") + "\n\n---\n\n" + spokenText;
       const contents = [{ parts: [{ text: fullPrompt }] }];
 
       const requestBody = {
