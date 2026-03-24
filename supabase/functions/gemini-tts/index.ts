@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const GEMINI_API = "https://generativelanguage.googleapis.com/v1beta/models";
-const MODEL = "gemini-2.5-flash-tts";
+const MODEL = "gemini-2.5-flash-preview-tts";
 const OFFICIAL_GEMINI_FLASH_TTS_VOICES = new Set([
   "Puck",
   "Achird",
