@@ -246,7 +246,15 @@ const StudioPage = () => {
       toast.error("ارفع صورة واحدة على الأقل أو اكتب وصفاً");
       return;
     }
-    if (!isImageOnlyTool && !isRemixTool && !prompt.trim() && refImages.length === 0 && !firstFrame) {
+    if (isAvatarAudioModel && (!avatarImage || !avatarAudio)) {
+      toast.error("يجب رفع صورة ومقطع صوتي");
+      return;
+    }
+    if (isAvatarAnimateModel && (!avatarImage || !avatarVideo)) {
+      toast.error("يجب رفع صورة وفيديو مرجعي");
+      return;
+    }
+    if (!isImageOnlyTool && !isRemixTool && !isAvatarTool && !prompt.trim() && refImages.length === 0 && !firstFrame) {
       toast.error("اكتب وصفاً أو ارفع صورة");
       return;
     }
