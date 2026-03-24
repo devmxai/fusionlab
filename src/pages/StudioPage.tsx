@@ -304,11 +304,39 @@ const StudioPage = () => {
         }
       }
 
+      // Avatar file uploads
+      if (isAvatarTool && avatarImage) {
+        setStatus("جاري رفع الملفات...");
+        setProgress(10);
+        const imgB64 = await fileToBase64(avatarImage.file);
+        const imgUrl = await uploadFileBase64(imgB64, `avatar_img_${Date.now()}.png`);
+        imageUrls = [imgUrl];
+        setProgress(18);
+      }
+
+      let avatarAudioUrl = "";
+      let avatarVideoUrl = "";
+      if (isAvatarAudioModel && avatarAudio) {
+        const audioB64 = await fileToBase64(avatarAudio.file);
+        const ext = avatarAudio.file.name.split(".").pop() || "mp3";
+        avatarAudioUrl = await uploadFileBase64(audioB64, `avatar_audio_${Date.now()}.${ext}`);
+        setProgress(25);
+      }
+      if (isAvatarAnimateModel && avatarVideo) {
+        const videoB64 = await fileToBase64(avatarVideo.file);
+        const ext = avatarVideo.file.name.split(".").pop() || "mp4";
+        avatarVideoUrl = await uploadFileBase64(videoB64, `avatar_video_${Date.now()}.${ext}`);
+        setProgress(25);
+      }
+
       const extraParams: Record<string, unknown> = {
         upscale_factor: upscaleFactor,
         duration: videoDuration,
         resolution,
         quality,
+        ...(avatarAudioUrl && { audio_url: avatarAudioUrl }),
+        ...(avatarVideoUrl && { video_url: avatarVideoUrl }),
+        ...(imageUrls?.[0] && isAvatarTool && { image_url: imageUrls[0] }),
       };
       const input = buildModelInput(tool.model, prompt, aspectRatio, resolution, imageUrls, extraParams);
       const isVeo = tool.isVeoApi === true;
