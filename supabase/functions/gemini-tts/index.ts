@@ -233,11 +233,19 @@ serve(async (req) => {
         );
       }
 
+      const prevMime = audioPart.inlineData.mimeType as string;
+      const prevB64 = audioPart.inlineData.data as string;
+
+      if (prevMime.startsWith("audio/L16") || prevMime.startsWith("audio/pcm")) {
+        const wavResult = pcmToWav(prevB64, prevMime);
+        return new Response(
+          JSON.stringify(wavResult),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(
-        JSON.stringify({
-          audioBase64: audioPart.inlineData.data,
-          mimeType: audioPart.inlineData.mimeType,
-        }),
+        JSON.stringify({ audioBase64: prevB64, mimeType: prevMime }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
