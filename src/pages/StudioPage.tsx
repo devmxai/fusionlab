@@ -67,6 +67,11 @@ const StudioPage = () => {
   );
 
   const [selectedTool, setSelectedTool] = useState<AITool | null>(null);
+  const [hasChosenModel, setHasChosenModel] = useState(false);
+  const [hasChosenAspect, setHasChosenAspect] = useState(false);
+  const [hasChosenRes, setHasChosenRes] = useState(false);
+  const [hasChosenDuration, setHasChosenDuration] = useState(false);
+  const [hasChosenUpscale, setHasChosenUpscale] = useState(false);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [aspectMenuOpen, setAspectMenuOpen] = useState(false);
   const [resMenuOpen, setResMenuOpen] = useState(false);
