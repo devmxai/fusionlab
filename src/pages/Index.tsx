@@ -104,15 +104,10 @@ const Index = () => {
                     >
                       <img
                         src={img.image_url}
-                        alt={img.title || ""}
+                        alt=""
                         className="w-full block transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
                       />
-                      {img.title && (
-                        <div className="px-2.5 py-1.5 bg-card">
-                          <p className="text-[10px] text-muted-foreground truncate">{img.title}</p>
-                        </div>
-                      )}
                     </motion.div>
                   ))}
                 </div>
