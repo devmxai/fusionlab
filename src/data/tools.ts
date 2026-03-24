@@ -212,6 +212,8 @@ export const tools: AITool[] = [
     isVeoApi: true,
     frameMode: "first-only",
   },
+  {
+    id: "veo31-quality",
     title: "Veo 3.1 Quality",
     provider: "Google",
     description: "أعلى جودة فيديو من Google",
@@ -222,6 +224,8 @@ export const tools: AITool[] = [
     isVeoApi: true,
     frameMode: "first-only",
   },
+  {
+    id: "kling-3",
     title: "Kling 3.0",
     provider: "Kling",
     description: "فيديوهات سينمائية احترافية",
