@@ -146,6 +146,63 @@ export type Database = {
         }
         Relationships: []
       }
+      trending_images: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string
+          sort_order: number | null
+          title: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url: string
+          sort_order?: number | null
+          title?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          sort_order?: number | null
+          title?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
+      trending_videos: {
+        Row: {
+          created_at: string | null
+          id: string
+          sort_order: number | null
+          thumbnail_url: string | null
+          title: string | null
+          uploaded_by: string | null
+          video_url: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          sort_order?: number | null
+          thumbnail_url?: string | null
+          title?: string | null
+          uploaded_by?: string | null
+          video_url: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          sort_order?: number | null
+          thumbnail_url?: string | null
+          title?: string | null
+          uploaded_by?: string | null
+          video_url?: string
+        }
+        Relationships: []
+      }
       trial_requests: {
         Row: {
           created_at: string
