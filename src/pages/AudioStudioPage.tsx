@@ -393,7 +393,6 @@ const AudioStudioPage = () => {
               تحميل
             </Button>
           </div>
-          </div>
         </div>
       </div>
 
