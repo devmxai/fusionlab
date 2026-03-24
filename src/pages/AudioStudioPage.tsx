@@ -202,7 +202,6 @@ const AudioStudioPage = () => {
   const handlePreviewVoice = async () => {
     setPreviewing(true);
     try {
-      const hasIraqiPreview = styleInstruction.includes("عراقي") || styleInstruction.includes("بغداد");
       const { data, error } = await supabase.functions.invoke("gemini-tts", {
         body: {
           action: "preview",
@@ -210,7 +209,7 @@ const AudioStudioPage = () => {
           voiceName: selectedVoice.name,
           previewText: "مرحباً، أنا صوتك الجديد. كيف أبدو؟",
           styleInstruction: styleInstruction.trim(),
-          dialectHint: hasIraqiPreview ? "لهجة عراقية عامية واضحة" : "",
+          dialectHint: "لهجة عراقية عامية طبيعية",
           emotionHint: styleInstruction.trim() ? "طبيعي وبشري" : "",
           toneHint: styleInstruction.trim() ? "واضح وقريب من المستمع" : "",
           stability,
