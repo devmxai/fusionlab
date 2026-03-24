@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { tools, buildModelInput, AITool } from "@/data/tools";
 import { getModelCapabilities } from "@/data/model-capabilities";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Image as ImageIcon, Send, X, Sparkles, ChevronDown, Upload, Plus } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, Send, X, Sparkles, ChevronDown, Upload, Plus, Music, Video } from "lucide-react";
 import { createTask, createVeoTask, createFluxKontextTask, pollTask } from "@/lib/kie-ai";
 import { uploadFileBase64 } from "@/lib/kie-ai";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,6 +61,9 @@ const StudioPage = () => {
   const remixSlotInputRef = useRef<HTMLInputElement>(null);
   const firstFrameInputRef = useRef<HTMLInputElement>(null);
   const lastFrameInputRef = useRef<HTMLInputElement>(null);
+  const avatarImageInputRef = useRef<HTMLInputElement>(null);
+  const avatarAudioInputRef = useRef<HTMLInputElement>(null);
+  const avatarVideoInputRef = useRef<HTMLInputElement>(null);
   const [remixUploadSlot, setRemixUploadSlot] = useState<number>(-1);
 
   const categoryName = category ? categorySlugMap[category] : undefined;
@@ -87,6 +90,10 @@ const StudioPage = () => {
   const [lastFrame, setLastFrame] = useState<{ file: File; preview: string } | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState("");
+  // Avatar-specific state
+  const [avatarImage, setAvatarImage] = useState<{ file: File; preview: string } | null>(null);
+  const [avatarAudio, setAvatarAudio] = useState<{ file: File; name: string } | null>(null);
+  const [avatarVideo, setAvatarVideo] = useState<{ file: File; name: string } | null>(null);
 
   // Dropdown open states
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -117,6 +124,10 @@ const StudioPage = () => {
     // Reset frames
     if (firstFrame) { URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }
     if (lastFrame) { URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }
+    // Reset avatar
+    if (avatarImage) { URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }
+    setAvatarAudio(null);
+    setAvatarVideo(null);
     // Baseline defaults
     setAspectRatio("1:1");
     setVideoDuration("5");
@@ -149,6 +160,9 @@ const StudioPage = () => {
   const isImageOnlyTool = category === "remove-bg" || category === "upscale";
   const isUpscaleTool = category === "upscale";
   const isRemixTool = category === "remix";
+  const isAvatarTool = category === "avatar";
+  const isAvatarAudioModel = isAvatarTool && (tool.inputType === "avatar"); // image + audio + prompt
+  const isAvatarAnimateModel = isAvatarTool && (tool.inputType === "animate"); // image + video
   const isFluxKontext = tool.isFluxKontextApi === true;
   const hasFrameMode = !!(caps?.frameMode || tool.frameMode);
   const frameMode = caps?.frameMode || tool.frameMode;
@@ -232,7 +246,15 @@ const StudioPage = () => {
       toast.error("ارفع صورة واحدة على الأقل أو اكتب وصفاً");
       return;
     }
-    if (!isImageOnlyTool && !isRemixTool && !prompt.trim() && refImages.length === 0 && !firstFrame) {
+    if (isAvatarAudioModel && (!avatarImage || !avatarAudio)) {
+      toast.error("يجب رفع صورة ومقطع صوتي");
+      return;
+    }
+    if (isAvatarAnimateModel && (!avatarImage || !avatarVideo)) {
+      toast.error("يجب رفع صورة وفيديو مرجعي");
+      return;
+    }
+    if (!isImageOnlyTool && !isRemixTool && !isAvatarTool && !prompt.trim() && refImages.length === 0 && !firstFrame) {
       toast.error("اكتب وصفاً أو ارفع صورة");
       return;
     }
@@ -282,11 +304,39 @@ const StudioPage = () => {
         }
       }
 
+      // Avatar file uploads
+      if (isAvatarTool && avatarImage) {
+        setStatus("جاري رفع الملفات...");
+        setProgress(10);
+        const imgB64 = await fileToBase64(avatarImage.file);
+        const imgUrl = await uploadFileBase64(imgB64, `avatar_img_${Date.now()}.png`);
+        imageUrls = [imgUrl];
+        setProgress(18);
+      }
+
+      let avatarAudioUrl = "";
+      let avatarVideoUrl = "";
+      if (isAvatarAudioModel && avatarAudio) {
+        const audioB64 = await fileToBase64(avatarAudio.file);
+        const ext = avatarAudio.file.name.split(".").pop() || "mp3";
+        avatarAudioUrl = await uploadFileBase64(audioB64, `avatar_audio_${Date.now()}.${ext}`);
+        setProgress(25);
+      }
+      if (isAvatarAnimateModel && avatarVideo) {
+        const videoB64 = await fileToBase64(avatarVideo.file);
+        const ext = avatarVideo.file.name.split(".").pop() || "mp4";
+        avatarVideoUrl = await uploadFileBase64(videoB64, `avatar_video_${Date.now()}.${ext}`);
+        setProgress(25);
+      }
+
       const extraParams: Record<string, unknown> = {
         upscale_factor: upscaleFactor,
         duration: videoDuration,
         resolution,
         quality,
+        ...(avatarAudioUrl && { audio_url: avatarAudioUrl }),
+        ...(avatarVideoUrl && { video_url: avatarVideoUrl }),
+        ...(imageUrls?.[0] && isAvatarTool && { image_url: imageUrls[0] }),
       };
       const input = buildModelInput(tool.model, prompt, aspectRatio, resolution, imageUrls, extraParams);
       const isVeo = tool.isVeoApi === true;
@@ -365,7 +415,7 @@ const StudioPage = () => {
             tool_name: tool.title,
             prompt,
             file_url: fileUrl,
-            file_type: isVideoTool ? "video" : "image",
+            file_type: (isVideoTool || isAvatarTool) ? "video" : "image",
             metadata: { aspectRatio, resolution, model: tool.model } as any,
           });
         }
@@ -666,6 +716,25 @@ const StudioPage = () => {
           <input ref={remixSlotInputRef} type="file" accept="image/*" className="hidden" onChange={handleRemixSlotUpload} />
           <input ref={firstFrameInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFrameUpload("first", e)} />
           <input ref={lastFrameInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFrameUpload("last", e)} />
+          <input ref={avatarImageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            if (avatarImage) URL.revokeObjectURL(avatarImage.preview);
+            setAvatarImage({ file, preview: URL.createObjectURL(file) });
+            if (avatarImageInputRef.current) avatarImageInputRef.current.value = "";
+          }} />
+          <input ref={avatarAudioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            setAvatarAudio({ file, name: file.name });
+            if (avatarAudioInputRef.current) avatarAudioInputRef.current.value = "";
+          }} />
+          <input ref={avatarVideoInputRef} type="file" accept="video/*" className="hidden" onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            setAvatarVideo({ file, name: file.name });
+            if (avatarVideoInputRef.current) avatarVideoInputRef.current.value = "";
+          }} />
 
           {/* Frame upload boxes for first/last frame video models */}
           {hasFrameMode && selectedTool && (
@@ -798,8 +867,98 @@ const StudioPage = () => {
             </div>
           )}
 
-          {/* Regular image uploads strip (non-remix, non-frame) */}
-          {!hasFrameMode && !isRemixTool && refImages.length > 0 && (
+          {/* ── Avatar upload strip ── */}
+          {isAvatarTool && selectedTool && (
+            <div className="flex gap-2">
+              {/* Image slot */}
+              <button
+                onClick={() => avatarImageInputRef.current?.click()}
+                className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
+                  avatarImage ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
+                }`}
+                style={{ minHeight: "56px" }}
+              >
+                {avatarImage ? (
+                  <div className="relative w-full h-14">
+                    <img src={avatarImage.preview} alt="Avatar" className="w-full h-full object-cover rounded-lg" />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }}
+                      className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                    >
+                      <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                    </button>
+                    <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">صورة</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-1 py-2">
+                    <Upload className="w-4 h-4 text-muted-foreground/60" />
+                    <span className="text-[9px] font-semibold text-muted-foreground/70">صورة</span>
+                  </div>
+                )}
+              </button>
+
+              {/* Audio slot (for avatar models) */}
+              {isAvatarAudioModel && (
+                <button
+                  onClick={() => avatarAudioInputRef.current?.click()}
+                  className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
+                    avatarAudio ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
+                  }`}
+                  style={{ minHeight: "56px" }}
+                >
+                  {avatarAudio ? (
+                    <div className="relative w-full h-14 flex flex-col items-center justify-center gap-1">
+                      <Music className="w-4 h-4 text-primary" />
+                      <span className="text-[8px] font-bold text-foreground truncate max-w-[80%] px-1">{avatarAudio.name}</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setAvatarAudio(null); }}
+                        className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                      >
+                        <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-1 py-2">
+                      <Music className="w-4 h-4 text-muted-foreground/60" />
+                      <span className="text-[9px] font-semibold text-muted-foreground/70">مقطع صوتي</span>
+                    </div>
+                  )}
+                </button>
+              )}
+
+              {/* Video slot (for animate models like Wan Animate) */}
+              {isAvatarAnimateModel && (
+                <button
+                  onClick={() => avatarVideoInputRef.current?.click()}
+                  className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
+                    avatarVideo ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
+                  }`}
+                  style={{ minHeight: "56px" }}
+                >
+                  {avatarVideo ? (
+                    <div className="relative w-full h-14 flex flex-col items-center justify-center gap-1">
+                      <Video className="w-4 h-4 text-primary" />
+                      <span className="text-[8px] font-bold text-foreground truncate max-w-[80%] px-1">{avatarVideo.name}</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setAvatarVideo(null); }}
+                        className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                      >
+                        <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-1 py-2">
+                      <Video className="w-4 h-4 text-muted-foreground/60" />
+                      <span className="text-[9px] font-semibold text-muted-foreground/70">فيديو مرجعي</span>
+                    </div>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Regular image uploads strip (non-remix, non-frame, non-avatar) */}
+          {!hasFrameMode && !isRemixTool && !isAvatarTool && refImages.length > 0 && (
             <div className="flex gap-2">
               {refImages.map((img, i) => (
                 <div key={i} className="relative w-11 h-11 rounded-lg overflow-hidden border border-border/50">
@@ -815,8 +974,8 @@ const StudioPage = () => {
 
           {/* Input row */}
           <div className="flex items-center gap-2">
-            {/* Upload button (only for non-remix, non-frame, non-image-only categories) */}
-            {!hasFrameMode && !isRemixTool && !isImageOnlyTool && refImages.length < maxImages && (
+            {/* Upload button (only for non-remix, non-frame, non-avatar, non-image-only categories) */}
+            {!hasFrameMode && !isRemixTool && !isAvatarTool && !isImageOnlyTool && refImages.length < maxImages && (
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="shrink-0 w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors"
@@ -835,7 +994,7 @@ const StudioPage = () => {
               <input
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder={isRemixTool ? "صف التعديل المطلوب..." : "اكتب وصفاً لما تريد توليده..."}
+                placeholder={isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : "اكتب وصفاً لما تريد توليده..."}
                 className="flex-1 h-9 rounded-lg bg-secondary/40 border border-border/30 px-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/40"
                 dir="ltr"
                 onKeyDown={(e) => e.key === "Enter" && !loading && handleGenerate()}
@@ -844,7 +1003,7 @@ const StudioPage = () => {
 
             <Button
               onClick={handleGenerate}
-              disabled={loading || !selectedTool || (isImageOnlyTool && refImages.length === 0)}
+              disabled={loading || !selectedTool || (isImageOnlyTool && refImages.length === 0) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
               size="icon"
               className="shrink-0 w-9 h-9 rounded-lg bg-primary text-primary-foreground"
             >

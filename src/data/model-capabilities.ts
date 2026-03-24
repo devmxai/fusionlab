@@ -118,6 +118,16 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
     resolutions: ["720p", "1080p"],
   },
 
+  // ─── Avatar Models ───
+  "kling/ai-avatar-standard": {},
+  "kling/ai-avatar-pro": {},
+  "infinitalk/from-audio": {
+    resolutions: ["480p"],
+  },
+  "wan/2-2-animate-move": {
+    resolutions: ["480p"],
+  },
+
   // ─── Utility Models ───
   "recraft/remove-background": {},
   "recraft/crisp-upscale": {},
