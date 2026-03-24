@@ -172,6 +172,25 @@ const StudioPage = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // Upload into a specific remix slot
+  const handleRemixSlotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const preview = URL.createObjectURL(file);
+    const newImg = { file, preview };
+    setRefImages((prev) => {
+      const updated = [...prev];
+      if (remixUploadSlot >= 0 && remixUploadSlot < updated.length) {
+        URL.revokeObjectURL(updated[remixUploadSlot].preview);
+        updated[remixUploadSlot] = newImg;
+      } else {
+        updated.push(newImg);
+      }
+      return updated;
+    });
+    if (remixSlotInputRef.current) remixSlotInputRef.current.value = "";
+  };
+
   const handleFrameUpload = (type: "first" | "last", e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
