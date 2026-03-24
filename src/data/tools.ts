@@ -517,8 +517,9 @@ export function buildModelInput(
     return {
       prompt,
       aspect_ratio: aspectRatio === "9:16" || aspectRatio === "3:4" ? "portrait" : "landscape",
-      n_frames: "10",
+      n_frames: (extraParams?.duration as string) || "10",
       remove_watermark: true,
+      upload_method: "s3",
     };
   }
 
