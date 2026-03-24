@@ -102,16 +102,15 @@ const tagToEmoji = new Map(inlineTags.map((t) => [t.tag, t.emoji]));
 function emojisToTags(input: string): string {
   let result = input;
   for (const [emoji, tag] of emojiToTag) {
-    result = result.replaceAll(emoji, tag);
+    result = result.split(emoji).join(tag);
   }
   return result;
 }
 
-// Convert [tags] to emojis for display (if pasting raw tags)
 function tagsToEmojis(input: string): string {
   let result = input;
   for (const [tag, emoji] of tagToEmoji) {
-    result = result.replaceAll(tag, emoji);
+    result = result.split(tag).join(emoji);
   }
   return result;
 }
