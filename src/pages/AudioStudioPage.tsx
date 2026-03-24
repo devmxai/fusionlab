@@ -94,6 +94,27 @@ const inlineTags: InlineTag[] = [
   { id: "gasp", emoji: "😲", label: "شهقة", tag: "[gasp]" },
 ];
 
+// Build emoji↔tag maps
+const emojiToTag = new Map(inlineTags.map((t) => [t.emoji, t.tag]));
+const tagToEmoji = new Map(inlineTags.map((t) => [t.tag, t.emoji]));
+
+// Convert emojis back to [tags] before sending to backend
+function emojisToTags(input: string): string {
+  let result = input;
+  for (const [emoji, tag] of emojiToTag) {
+    result = result.split(emoji).join(tag);
+  }
+  return result;
+}
+
+function tagsToEmojis(input: string): string {
+  let result = input;
+  for (const [tag, emoji] of tagToEmoji) {
+    result = result.split(tag).join(emoji);
+  }
+  return result;
+}
+
 const AudioStudioPage = () => {
   const navigate = useNavigate();
   const { user, credits, refreshCredits } = useAuth();
@@ -149,11 +170,14 @@ const AudioStudioPage = () => {
       // Always use Iraqi dialect as default
       const dialectHint = "لهجة عراقية عامية طبيعية";
 
+      // Convert emojis to tags before sending
+      const textForBackend = emojisToTags(text);
+
       const { data, error } = await supabase.functions.invoke("gemini-tts", {
         body: {
           action: "synthesize",
           prebuiltModel: GEMINI_FLASH_TTS_MODEL,
-          text,
+          text: textForBackend,
           voiceName: selectedVoice.name,
           styleInstruction: styleInstruction.trim(),
           speakingRate,
@@ -267,7 +291,7 @@ const AudioStudioPage = () => {
   };
 
   const insertTag = (tag: InlineTag) => {
-    setText((prev) => prev + ` ${tag.tag} `);
+    setText((prev) => prev + ` ${tag.emoji} `);
   };
 
   const applyPreset = (style: string) => {
@@ -349,7 +373,7 @@ const AudioStudioPage = () => {
             </label>
             <Textarea
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => setText(tagsToEmojis(e.target.value))}
               placeholder="اكتب النص الذي تريد تحويله إلى صوت..."
               className="min-h-[120px] bg-card border-border/50 text-sm resize-none focus:border-primary/50"
               dir="rtl"
