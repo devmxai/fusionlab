@@ -160,6 +160,9 @@ const StudioPage = () => {
   const isImageOnlyTool = category === "remove-bg" || category === "upscale";
   const isUpscaleTool = category === "upscale";
   const isRemixTool = category === "remix";
+  const isAvatarTool = category === "avatar";
+  const isAvatarAudioModel = isAvatarTool && (tool.inputType === "avatar"); // image + audio + prompt
+  const isAvatarAnimateModel = isAvatarTool && (tool.inputType === "animate"); // image + video
   const isFluxKontext = tool.isFluxKontextApi === true;
   const hasFrameMode = !!(caps?.frameMode || tool.frameMode);
   const frameMode = caps?.frameMode || tool.frameMode;
