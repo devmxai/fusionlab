@@ -428,10 +428,49 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
     );
   };
 
+  // Masonry layout pattern for collage effect
+  const getMasonryLayout = (items: any[]) => {
+    // Pattern: tall, wide, square variations
+    const patterns = [
+      { colSpan: 1, rowSpan: 2 }, // tall portrait
+      { colSpan: 1, rowSpan: 1 }, // square
+      { colSpan: 1, rowSpan: 1 }, // square
+      { colSpan: 2, rowSpan: 1 }, // wide landscape
+      { colSpan: 1, rowSpan: 1 }, // square
+      { colSpan: 1, rowSpan: 2 }, // tall portrait
+      { colSpan: 1, rowSpan: 1 }, // square
+      { colSpan: 2, rowSpan: 1 }, // wide landscape
+      { colSpan: 1, rowSpan: 1 }, // square
+      { colSpan: 1, rowSpan: 1 }, // square
+      { colSpan: 1, rowSpan: 1 }, // square
+      { colSpan: 1, rowSpan: 2 }, // tall
+    ];
+    return items.map((item, i) => ({
+      ...item,
+      layout: patterns[i % patterns.length],
+    }));
+  };
+
+  const handleDownload = async (url: string, filename?: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename || "download";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast.success("تم التحميل");
+    } catch {
+      toast.error("فشل التحميل");
+    }
+  };
+
   const renderLibraryView = () => {
     const images = generations.filter(g => g.file_type?.startsWith("image"));
     const videos = generations.filter(g => g.file_type?.startsWith("video"));
     const audio = generations.filter(g => g.file_type?.startsWith("audio"));
+    const layoutItems = getMasonryLayout(generations.slice(0, 12));
 
     return (
       <motion.div className="flex flex-col h-full" initial="hidden" animate="visible">
@@ -466,31 +505,56 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
             ))}
           </motion.div>
 
-          {/* Recent generations */}
+          {/* Masonry collage grid */}
           {generations.length === 0 ? (
             <motion.div custom={2} variants={bounceIn} className="text-center py-8">
               <Sparkles className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
               <p className="text-xs text-muted-foreground">لا توجد عناصر بعد</p>
             </motion.div>
           ) : (
-            <motion.div custom={2} variants={bounceIn} className="grid grid-cols-3 gap-1.5">
-              {generations.slice(0, 9).map((gen) => (
-                <div
+            <motion.div
+              custom={2}
+              variants={bounceIn}
+              className="grid grid-cols-3 auto-rows-[70px] gap-1.5"
+            >
+              {layoutItems.map((gen) => (
+                <motion.div
                   key={gen.id}
-                  className="aspect-square rounded-xl overflow-hidden bg-secondary/30 border border-border/20"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setViewerItem(gen)}
+                  className="rounded-xl overflow-hidden bg-secondary/30 border border-border/20 cursor-pointer relative group"
+                  style={{
+                    gridColumn: `span ${gen.layout.colSpan}`,
+                    gridRow: `span ${gen.layout.rowSpan}`,
+                  }}
                 >
                   {gen.file_type?.startsWith("image") ? (
-                    <img src={gen.thumbnail_url || gen.file_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    <img
+                      src={gen.thumbnail_url || gen.file_url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
                   ) : gen.file_type?.startsWith("video") ? (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Video className="w-5 h-5 text-muted-foreground" />
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-secondary/40">
+                      <Video className="w-5 h-5 text-primary mb-1" />
+                      <span className="text-[8px] text-muted-foreground">فيديو</span>
                     </div>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Music className="w-5 h-5 text-muted-foreground" />
+                    <div className="w-full h-full flex items-center gap-2 px-3 bg-secondary/40">
+                      <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                        <Play className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[9px] text-foreground truncate">{gen.tool_name || "صوت"}</p>
+                        <p className="text-[8px] text-muted-foreground truncate">{gen.prompt?.slice(0, 30) || ""}</p>
+                      </div>
                     </div>
                   )}
-                </div>
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                </motion.div>
               ))}
             </motion.div>
           )}
