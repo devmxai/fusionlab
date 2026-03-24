@@ -90,29 +90,27 @@ serve(async (req) => {
         );
       }
 
-      // Build the system/style prompt separately
-      const stylePromptParts: string[] = [
-        "Speak naturally with human-like emotional expression and realistic pauses.",
-        "Never pronounce control tags literally.",
-        "Apply each inline tag to the nearest following phrase.",
-        "For Arabic text, keep pronunciation clear and avoid flattening emotional variation.",
-      ];
+      // Build style direction as a separate "turn" before the spoken text
+      const stylePromptParts: string[] = [];
 
-      if (dialectHint) stylePromptParts.push(`Dialect target: ${dialectHint}.`);
-      if (emotionHint) stylePromptParts.push(`Emotion profile: ${emotionHint}.`);
-      if (toneHint) stylePromptParts.push(`Tone profile: ${toneHint}.`);
-      if (styleInstruction) stylePromptParts.push(`Style prompt: ${styleInstruction}`);
+      if (dialectHint) stylePromptParts.push(`Dialect: ${dialectHint}`);
+      if (emotionHint) stylePromptParts.push(`Emotion: ${emotionHint}`);
+      if (toneHint) stylePromptParts.push(`Tone: ${toneHint}`);
+      if (styleInstruction) stylePromptParts.push(styleInstruction);
       if (stability < 0.5) stylePromptParts.push("Allow more vocal variation and expressiveness.");
       if (stability > 0.8) stylePromptParts.push("Maintain consistent vocal tone with minimal variation.");
 
-      const systemPromptText = stylePromptParts.join("\n");
+      // Use multi-turn: first turn is style direction, second is text to speak
+      const contents = [];
+      if (stylePromptParts.length > 0) {
+        const styleText = `Say the following text using this style:\n${stylePromptParts.join("\n")}\n\nText to speak:`;
+        contents.push({ parts: [{ text: styleText + "\n\n" + text }] });
+      } else {
+        contents.push({ parts: [{ text }] });
+      }
 
-      const requestBody: Record<string, unknown> = {
-        contents: [
-          {
-            parts: [{ text }],
-          },
-        ],
+      const requestBody = {
+        contents,
         generationConfig: {
           responseModalities: ["AUDIO"],
           speechConfig: {
@@ -124,13 +122,6 @@ serve(async (req) => {
           },
         },
       };
-
-      // Add system instruction separately if style is provided
-      if (styleInstruction || dialectHint || emotionHint || toneHint) {
-        (requestBody as Record<string, unknown>).systemInstruction = {
-          parts: [{ text: systemPromptText }],
-        };
-      }
 
       console.log("TTS request:", JSON.stringify({ voiceName, languageCode, speakingRate, textLength: text.length }));
 
