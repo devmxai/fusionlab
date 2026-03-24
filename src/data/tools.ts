@@ -61,6 +61,16 @@ export const tools: AITool[] = [
     model: "nano-banana-pro",
   },
   {
+    id: "seedream-5-lite",
+    title: "Seedream 5 Lite",
+    provider: "Bytedance",
+    description: "أحدث نموذج لتوليد صور واقعية بدقة 4K",
+    image: "sketch-edit",
+    isPro: false,
+    category: "صور",
+    model: "seedream/5-lite-text-to-image",
+  },
+  {
     id: "seedream-4-5",
     title: "Seedream 4.5",
     provider: "Bytedance",
@@ -364,6 +374,14 @@ export function buildModelInput(
 
   if (model === "google/nano-banana-edit") {
     return { prompt, image_input: imageUrls || [] };
+  }
+
+  if (model === "seedream/5-lite-text-to-image") {
+    return {
+      prompt,
+      aspect_ratio: aspectRatio,
+      quality: (extraParams?.quality as string) || "basic",
+    };
   }
 
   if (model === "seedream/4.5-text-to-image") {
