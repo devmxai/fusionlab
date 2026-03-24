@@ -84,6 +84,82 @@ function validateOfficialVoice(voiceName: string): string | null {
   return null;
 }
 
+const INLINE_TAG_REGEX = /\[(short pause|medium pause|long pause|whispering|shouting|sarcasm|laughing|sigh|fast|extremely fast|robotic|uhm|gasp|groan|scared|curious|bored)\]/gi;
+
+const TAG_EFFECTS: Record<string, string> = {
+  "short pause": "نفّذ وقفة قصيرة واضحة",
+  "medium pause": "نفّذ وقفة متوسطة ومسموعة",
+  "long pause": "نفّذ وقفة طويلة مع سكون واضح",
+  "whispering": "حوّل الأداء إلى همس واضح وناعم",
+  "shouting": "ارفع شدة الصوت إلى صراخ مضبوط بدون تشويه",
+  "sarcasm": "أدِّ الجملة بسخرية خفيفة ومسموعة",
+  "laughing": "أضف ضحكة طبيعية قصيرة ومسموعة",
+  "sigh": "أضف تنهيدة قصيرة طبيعية",
+  "fast": "زد سرعة الإلقاء بشكل ملحوظ",
+  "extremely fast": "اجعل الإلقاء سريعًا جدًا مع بقاء النطق مفهومًا",
+  "robotic": "اجعل الأداء آليًا بشكل مقصود",
+  "uhm": "أضف ترددًا صوتيًا خفيفًا مثل uhm",
+  "gasp": "أضف شهقة قصيرة قبل العبارة",
+  "groan": "أضف أنينًا خفيفًا قبل العبارة",
+  "scared": "حوّل الأداء إلى نبرة خوف واضحة",
+  "curious": "حوّل الأداء إلى نبرة فضول واضحة",
+  "bored": "حوّل الأداء إلى نبرة ملل خفيفة",
+};
+
+function normalizeText(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function extractTagDirectives(inputText: string): { spokenText: string; directives: string[] } {
+  const matcher = new RegExp(INLINE_TAG_REGEX.source, "gi");
+  const cleanReplacer = new RegExp(INLINE_TAG_REGEX.source, "gi");
+
+  const matches: Array<{ raw: string; tag: string; start: number; end: number }> = [];
+  let match: RegExpExecArray | null = null;
+
+  while ((match = matcher.exec(inputText)) !== null) {
+    matches.push({
+      raw: match[0],
+      tag: (match[1] || "").toLowerCase(),
+      start: match.index,
+      end: match.index + match[0].length,
+    });
+  }
+
+  const spokenText = normalizeText(inputText.replace(cleanReplacer, " "));
+
+  if (!matches.length) {
+    return { spokenText, directives: [] };
+  }
+
+  const directives: string[] = [];
+
+  for (let i = 0; i < matches.length; i++) {
+    const current = matches[i];
+    const previous = matches[i - 1];
+    const next = matches[i + 1];
+
+    const betweenTagsText = normalizeText(
+      inputText
+        .slice(current.end, next ? next.start : inputText.length)
+        .replace(new RegExp(INLINE_TAG_REGEX.source, "gi"), " ")
+    );
+
+    const beforeTagText = normalizeText(
+      inputText
+        .slice(previous ? previous.end : 0, current.start)
+        .replace(new RegExp(INLINE_TAG_REGEX.source, "gi"), " ")
+    );
+
+    const targetPhrase = betweenTagsText || beforeTagText || "أقرب عبارة في النص";
+    const effect = TAG_EFFECTS[current.tag] || "طبّق تأثير الأداء المحلي بدقة";
+
+    directives.push(`- ${current.raw}: ${effect} على العبارة "${targetPhrase}" ثم ارجع للنبرة الأساسية.`);
+  }
+
+  return { spokenText, directives };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
