@@ -223,6 +223,20 @@ export function buildModelInput(
     };
   }
 
+  // Z Image — model: "z-image"
+  // Docs: input.prompt (required), input.aspect_ratio (required: "1:1","4:3","3:4","16:9","9:16")
+  if (model === "z-image") {
+    const arMap: Record<string, string> = {
+      "1:1": "1:1",
+      "3:4": "3:4",
+      "9:16": "9:16",
+    };
+    return {
+      prompt,
+      aspect_ratio: arMap[aspectRatio] || "1:1",
+    };
+  }
+
   // Default fallback (Topaz, Recraft, etc.)
   if (imageUrls?.length) {
     return { prompt, image_url: imageUrls[0] };
