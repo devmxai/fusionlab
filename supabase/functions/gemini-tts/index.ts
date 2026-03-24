@@ -90,7 +90,7 @@ serve(async (req) => {
         );
       }
 
-      // Build the system/style prompt
+      // Build the system/style prompt separately
       const stylePromptParts: string[] = [
         "Speak naturally with human-like emotional expression and realistic pauses.",
         "Never pronounce control tags literally.",
@@ -105,14 +105,12 @@ serve(async (req) => {
       if (stability < 0.5) stylePromptParts.push("Allow more vocal variation and expressiveness.");
       if (stability > 0.8) stylePromptParts.push("Maintain consistent vocal tone with minimal variation.");
 
-      const fullText = styleInstruction
-        ? `${stylePromptParts.join("\n")}\n\n---\n\n${text}`
-        : text;
+      const systemPromptText = stylePromptParts.join("\n");
 
-      const requestBody = {
+      const requestBody: Record<string, unknown> = {
         contents: [
           {
-            parts: [{ text: fullText }],
+            parts: [{ text }],
           },
         ],
         generationConfig: {
@@ -126,6 +124,13 @@ serve(async (req) => {
           },
         },
       };
+
+      // Add system instruction separately if style is provided
+      if (styleInstruction || dialectHint || emotionHint || toneHint) {
+        (requestBody as Record<string, unknown>).systemInstruction = {
+          parts: [{ text: systemPromptText }],
+        };
+      }
 
       console.log("TTS request:", JSON.stringify({ voiceName, languageCode, speakingRate, textLength: text.length }));
 
