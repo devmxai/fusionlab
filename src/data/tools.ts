@@ -13,6 +13,8 @@ export interface AITool {
   isFluxKontextApi?: boolean;
   /** Input type: what the model needs besides prompt */
   inputType?: "text-to-video" | "avatar" | "animate";
+  /** Whether this video model supports first frame / last frame image input */
+  frameMode?: "first-last" | "first-only";
 }
 
 export const categories = [
