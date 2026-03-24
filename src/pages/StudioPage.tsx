@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { tools, buildModelInput, AITool } from "@/data/tools";
+import { getModelCapabilities } from "@/data/model-capabilities";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Image as ImageIcon, Send, X, Sparkles, ChevronDown, Upload } from "lucide-react";
 import { createTask, createVeoTask, createFluxKontextTask, pollTask } from "@/lib/kie-ai";
@@ -12,9 +13,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import CircularProgress from "@/components/CircularProgress";
 import ImageViewer from "@/components/ImageViewer";
 
-type AspectRatio = "1:1" | "3:4" | "9:16";
-type Resolution = "1k" | "2k" | "4k";
-type UpscaleFactor = "1.5" | "2" | "4";
+type AspectRatio = "1:1" | "3:4" | "9:16" | "16:9";
+type Resolution = string;
+type UpscaleFactor = string;
 
 const categorySlugMap: Record<string, string> = {
   images: "صور",
@@ -36,15 +37,19 @@ const categoryTitleMap: Record<string, string> = {
   upscale: "رفع الجودة",
 };
 
-const ratioConfig: Record<AspectRatio, { label: string; w: number; h: number; cssAspect: string; placeholderMaxW: string }> = {
-  "1:1":  { label: "1:1",   w: 14, h: 14, cssAspect: "1/1",  placeholderMaxW: "260px" },
-  "3:4":  { label: "3:4",   w: 12, h: 16, cssAspect: "3/4",  placeholderMaxW: "220px" },
-  "9:16": { label: "9:16",  w: 10, h: 18, cssAspect: "9/16", placeholderMaxW: "180px" },
+const ratioConfig: Record<string, { label: string; cssAspect: string; placeholderMaxW: string }> = {
+  "1:1":  { label: "1:1",   cssAspect: "1/1",  placeholderMaxW: "260px" },
+  "3:4":  { label: "3:4",   cssAspect: "3/4",  placeholderMaxW: "220px" },
+  "9:16": { label: "9:16",  cssAspect: "9/16", placeholderMaxW: "180px" },
+  "16:9": { label: "16:9",  cssAspect: "16/9", placeholderMaxW: "340px" },
 };
 
-const resolutions: Resolution[] = ["1k", "2k", "4k"];
-const upscaleFactors: UpscaleFactor[] = ["1.5", "2", "4"];
-const videoDurations = ["5", "8", "10"];
+const dropdownAnim = {
+  initial: { opacity: 0, y: -8, scale: 0.96 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, y: -8, scale: 0.96 },
+  transition: { duration: 0.18, ease: "easeOut" as const },
+};
 
 const StudioPage = () => {
   const { category } = useParams();
@@ -52,32 +57,16 @@ const StudioPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const firstFrameInputRef = useRef<HTMLInputElement>(null);
   const lastFrameInputRef = useRef<HTMLInputElement>(null);
-  const modelMenuRef = useRef<HTMLDivElement>(null);
-  const aspectMenuRef = useRef<HTMLDivElement>(null);
-  const resMenuRef = useRef<HTMLDivElement>(null);
-  const durationMenuRef = useRef<HTMLDivElement>(null);
-  const upscaleMenuRef = useRef<HTMLDivElement>(null);
 
   const categoryName = category ? categorySlugMap[category] : undefined;
-  const studioTitle = category ? categoryTitleMap[category] : "استديو";
 
   const categoryTools = useMemo(
     () => tools.filter((t) => t.category === categoryName),
     [categoryName]
   );
 
+  // ── State ──
   const [selectedTool, setSelectedTool] = useState<AITool | null>(null);
-  const [hasChosenModel, setHasChosenModel] = useState(false);
-  const [hasChosenAspect, setHasChosenAspect] = useState(false);
-  const [hasChosenRes, setHasChosenRes] = useState(false);
-  const [hasChosenDuration, setHasChosenDuration] = useState(false);
-  const [hasChosenUpscale, setHasChosenUpscale] = useState(false);
-  const [modelMenuOpen, setModelMenuOpen] = useState(false);
-  const [aspectMenuOpen, setAspectMenuOpen] = useState(false);
-  const [resMenuOpen, setResMenuOpen] = useState(false);
-  const [durationMenuOpen, setDurationMenuOpen] = useState(false);
-  const [upscaleMenuOpen, setUpscaleMenuOpen] = useState(false);
-  const [videoDuration, setVideoDuration] = useState("5");
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
@@ -85,37 +74,50 @@ const StudioPage = () => {
   const [resultUrls, setResultUrls] = useState<string[]>([]);
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("1:1");
   const [resolution, setResolution] = useState<Resolution>("2k");
+  const [videoDuration, setVideoDuration] = useState("5");
+  const [upscaleFactor, setUpscaleFactor] = useState<UpscaleFactor>("2");
   const [refImages, setRefImages] = useState<{ file: File; preview: string }[]>([]);
   const [firstFrame, setFirstFrame] = useState<{ file: File; preview: string } | null>(null);
   const [lastFrame, setLastFrame] = useState<{ file: File; preview: string } | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState("");
-  const [upscaleFactor, setUpscaleFactor] = useState<UpscaleFactor>("2");
 
-  // Auto-select first tool
-  useEffect(() => {
-    if (categoryTools.length > 0 && !selectedTool) {
-      setSelectedTool(categoryTools[0]);
-    }
-  }, [categoryTools, selectedTool]);
+  // Dropdown open states
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
 
-  // Close model menu on outside click
+  // Close dropdown on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      const refs = [modelMenuRef, aspectMenuRef, resMenuRef, durationMenuRef, upscaleMenuRef];
-      refs.forEach((ref) => {
-        if (ref.current && !ref.current.contains(e.target as Node)) {
-          if (ref === modelMenuRef) setModelMenuOpen(false);
-          if (ref === aspectMenuRef) setAspectMenuOpen(false);
-          if (ref === resMenuRef) setResMenuOpen(false);
-          if (ref === durationMenuRef) setDurationMenuOpen(false);
-          if (ref === upscaleMenuRef) setUpscaleMenuOpen(false);
-        }
-      });
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
+        setOpenMenu(null);
+      }
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  // Get capabilities for selected model
+  const caps = useMemo(() => {
+    if (!selectedTool) return null;
+    return getModelCapabilities(selectedTool.model);
+  }, [selectedTool]);
+
+  // Reset settings when model changes
+  const handleSelectModel = (t: AITool) => {
+    setSelectedTool(t);
+    setOpenMenu(null);
+    setResultUrls([]);
+    // Reset frames
+    if (firstFrame) { URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }
+    if (lastFrame) { URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }
+    // Set defaults from capabilities
+    const c = getModelCapabilities(t.model);
+    if (c.aspectRatios?.length) setAspectRatio(c.aspectRatios[0] as AspectRatio);
+    if (c.durations?.length) setVideoDuration(c.durations[0]);
+    if (c.resolutions?.length) setResolution(c.resolutions[0]);
+    if (c.upscaleFactors?.length) setUpscaleFactor(c.upscaleFactors[0]);
+  };
 
   if (!categoryName || categoryTools.length === 0) {
     return (
@@ -124,9 +126,7 @@ const StudioPage = () => {
         <p className="text-muted-foreground text-sm">
           {categoryName ? "لا توجد نماذج متاحة لهذا التصنيف حالياً" : "التصنيف غير موجود"}
         </p>
-        <Button variant="outline" size="sm" onClick={() => navigate("/")}>
-          العودة
-        </Button>
+        <Button variant="outline" size="sm" onClick={() => navigate("/")}>العودة</Button>
       </div>
     );
   }
@@ -137,16 +137,12 @@ const StudioPage = () => {
   const isUpscaleTool = category === "upscale";
   const isRemixTool = category === "remix";
   const isFluxKontext = tool.isFluxKontextApi === true;
-  const hasFrameMode = tool.frameMode === "first-last" || tool.frameMode === "first-only";
+  const hasFrameMode = !!(caps?.frameMode || tool.frameMode);
+  const frameMode = caps?.frameMode || tool.frameMode;
 
   const maxImages = isRemixTool
     ? (tool.model === "gpt-image/1.5-image-to-image" ? 16 : tool.model === "seedream/4.5-edit" ? 14 : 3)
     : isImageOnlyTool ? 1 : 3;
-
-  // Show aspect ratio settings for image & remix tools (not image-only or upscale)
-  const showAspectSettings = !isImageOnlyTool;
-  const showResolutionSettings = !isVideoTool && !isImageOnlyTool;
-  const showUpscaleSettings = isUpscaleTool;
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -154,10 +150,7 @@ const StudioPage = () => {
       toast.error(`الحد الأقصى ${maxImages} صور`);
       return;
     }
-    const newImages = files.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
+    const newImages = files.map((file) => ({ file, preview: URL.createObjectURL(file) }));
     setRefImages((prev) => [...prev, ...newImages]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -182,19 +175,6 @@ const StudioPage = () => {
       URL.revokeObjectURL(prev[index].preview);
       return prev.filter((_, i) => i !== index);
     });
-  };
-
-  const getMode = () => {
-    if (isImageOnlyTool) return category === "remove-bg" ? "حذف الخلفية" : "رفع الجودة";
-    if (isRemixTool) {
-      if (refImages.length === 0) return "Text to Image";
-      if (refImages.length === 1) return "Image Edit";
-      return "Image Remix";
-    }
-    if (hasFrameMode && (firstFrame || lastFrame)) return "Image to Video";
-    if (refImages.length === 0) return "Text to Image";
-    if (refImages.length === 1) return "Image to Image";
-    return "Image Merge";
   };
 
   const fileToBase64 = (file: File): Promise<string> =>
@@ -239,7 +219,6 @@ const StudioPage = () => {
     try {
       let imageUrls: string[] | undefined;
 
-      // Handle frame uploads for video models
       if (hasFrameMode && (firstFrame || lastFrame)) {
         setStatus("جاري رفع الصور...");
         setProgress(10);
@@ -361,12 +340,50 @@ const StudioPage = () => {
     }
   };
 
-  const currentRatio = ratioConfig[aspectRatio];
+  const currentRatio = ratioConfig[aspectRatio] || ratioConfig["1:1"];
 
   const openViewer = (url: string) => {
     setViewerUrl(url);
     setViewerOpen(true);
   };
+
+  // ── Dropdown Button Component ──
+  const DropdownBtn = ({ id, label, value, hasValue }: { id: string; label: string; value: string; hasValue: boolean }) => (
+    <button
+      onClick={() => setOpenMenu(openMenu === id ? null : id)}
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-200 ${
+        hasValue
+          ? "bg-primary/10 border-primary/50"
+          : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"
+      }`}
+    >
+      <span className={`text-[11px] font-bold truncate max-w-[100px] ${hasValue ? "text-primary" : "text-foreground"}`}>
+        {hasValue ? value : label}
+      </span>
+      <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${openMenu === id ? "rotate-180" : ""}`} />
+    </button>
+  );
+
+  // ── Dropdown Menu Component ──
+  const DropdownMenu = ({ id, children, minW = "min-w-[100px]" }: { id: string; children: React.ReactNode; minW?: string }) => (
+    <AnimatePresence>
+      {openMenu === id && (
+        <motion.div {...dropdownAnim}
+          className={`absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] ${minW}`}
+        >
+          <div className="max-h-64 overflow-y-auto p-1">{children}</div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
+  const DropdownItem = ({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: React.ReactNode }) => (
+    <button onClick={onClick}
+      className={`w-full px-3 py-2 rounded-lg text-right text-xs font-semibold transition-colors ${
+        selected ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary/50"
+      }`}
+    >{children}</button>
+  );
 
   const renderCardContent = () => {
     if (loading) {
@@ -391,6 +408,17 @@ const StudioPage = () => {
       );
     }
 
+    if (!selectedTool) {
+      return (
+        <motion.div key="no-model" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="flex flex-col items-center justify-center gap-2 text-center px-4">
+          <Sparkles className="w-7 h-7 text-primary opacity-40" />
+          <h2 className="text-sm font-bold text-foreground/70">اختر النموذج</h2>
+          <p className="text-[10px] text-muted-foreground/60">اختر نموذج من الأعلى للبدء</p>
+        </motion.div>
+      );
+    }
+
     return (
       <motion.div key="placeholder" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         className="flex flex-col items-center justify-center gap-2 text-center px-4">
@@ -398,16 +426,22 @@ const StudioPage = () => {
         <h2 className="text-sm font-bold text-foreground/70">{tool.title}</h2>
         <p className="text-[10px] text-muted-foreground/60">{tool.description}</p>
         <span className="text-[9px] text-muted-foreground/50 mt-1 bg-secondary/30 px-3 py-0.5 rounded-full">
-          {currentRatio.label} • {resolution.toUpperCase()}
+          {currentRatio.label} {resolution ? `• ${resolution.toUpperCase()}` : ""}
         </span>
       </motion.div>
     );
   };
 
+  // Determine which settings to show based on model capabilities
+  const showAspect = !!(selectedTool && caps?.aspectRatios?.length);
+  const showDuration = !!(selectedTool && caps?.durations && caps.durations.length > 1);
+  const showRes = !!(selectedTool && caps?.resolutions?.length);
+  const showUpscale = !!(selectedTool && caps?.upscaleFactors?.length);
+
   return (
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden" dir="rtl">
       {/* ── Header / App Bar ── */}
-      <header className="relative shrink-0 bg-card/90 backdrop-blur-xl border-b border-border/30 z-[120] rounded-b-2xl shadow-lg">
+      <header ref={headerRef} className="relative shrink-0 bg-card/90 backdrop-blur-xl border-b border-border/30 z-[120] rounded-b-2xl shadow-lg">
         <div className="flex items-center gap-2 px-3 py-2.5 max-w-3xl mx-auto flex-row-reverse relative">
           {/* Back button - left side visually */}
           <button
@@ -419,172 +453,94 @@ const StudioPage = () => {
 
           <div className="flex-1" />
 
-          {/* Upscale Factor dropdown */}
-          {showUpscaleSettings && (
-            <div className="relative shrink-0" ref={upscaleMenuRef}>
-              <button
-                onClick={() => { setUpscaleMenuOpen((v) => !v); setModelMenuOpen(false); setAspectMenuOpen(false); setResMenuOpen(false); setDurationMenuOpen(false); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-200 ${hasChosenUpscale ? "bg-primary/10 border-primary/50" : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"}`}
+          {/* Settings dropdowns - only show after model is selected */}
+          <AnimatePresence>
+            {selectedTool && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.25 }}
+                className="flex items-center gap-2"
               >
-                <span className={`text-[11px] font-bold ${hasChosenUpscale ? "text-primary" : "text-foreground"}`}>{hasChosenUpscale ? `${upscaleFactor}x` : "التكبير"}</span>
-                <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${upscaleMenuOpen ? "rotate-180" : ""}`} />
-              </button>
-              <AnimatePresence>
-                {upscaleMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                    transition={{ duration: 0.18, ease: "easeOut" }}
-                    className="absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] min-w-[90px]"
-                  >
-                    <div className="p-1">
-                      {upscaleFactors.map((f) => (
-                        <button key={f} onClick={() => { setUpscaleFactor(f); setHasChosenUpscale(true); setUpscaleMenuOpen(false); }}
-                          className={`w-full px-3 py-2 rounded-lg text-right text-xs font-semibold transition-colors ${upscaleFactor === f && hasChosenUpscale ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary/50"}`}
-                        >{f}x</button>
+                {/* Upscale Factor */}
+                {showUpscale && (
+                  <div className="relative shrink-0">
+                    <DropdownBtn id="upscale" label="التكبير" value={`${upscaleFactor}x`} hasValue={!!selectedTool} />
+                    <DropdownMenu id="upscale">
+                      {caps!.upscaleFactors!.map((f) => (
+                        <DropdownItem key={f} selected={upscaleFactor === f} onClick={() => { setUpscaleFactor(f); setOpenMenu(null); }}>
+                          {f}x
+                        </DropdownItem>
                       ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-
-          {/* Duration dropdown (video only) */}
-          {isVideoTool && (
-            <div className="relative shrink-0" ref={durationMenuRef}>
-              <button
-                onClick={() => { setDurationMenuOpen((v) => !v); setModelMenuOpen(false); setAspectMenuOpen(false); setResMenuOpen(false); setUpscaleMenuOpen(false); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-200 ${hasChosenDuration ? "bg-primary/10 border-primary/50" : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"}`}
-              >
-                <span className={`text-[11px] font-bold ${hasChosenDuration ? "text-primary" : "text-foreground"}`}>{hasChosenDuration ? `${videoDuration} ثانية` : "المدة"}</span>
-                <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${durationMenuOpen ? "rotate-180" : ""}`} />
-              </button>
-              <AnimatePresence>
-                {durationMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                    transition={{ duration: 0.18, ease: "easeOut" }}
-                    className="absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] min-w-[100px]"
-                  >
-                    <div className="p-1">
-                      {videoDurations.map((d) => (
-                        <button key={d} onClick={() => { setVideoDuration(d); setHasChosenDuration(true); setDurationMenuOpen(false); }}
-                          className={`w-full px-3 py-2 rounded-lg text-right text-xs font-semibold transition-colors ${videoDuration === d && hasChosenDuration ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary/50"}`}
-                        >{d} ثانية</button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-
-          {/* Resolution dropdown (non-video) */}
-          {showResolutionSettings && (
-            <div className="relative shrink-0" ref={resMenuRef}>
-              <button
-                onClick={() => { setResMenuOpen((v) => !v); setModelMenuOpen(false); setAspectMenuOpen(false); setDurationMenuOpen(false); setUpscaleMenuOpen(false); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-200 ${hasChosenRes ? "bg-primary/10 border-primary/50" : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"}`}
-              >
-                <span className={`text-[11px] font-bold ${hasChosenRes ? "text-primary" : "text-foreground"}`}>{hasChosenRes ? resolution.toUpperCase() : "الدقة"}</span>
-                <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${resMenuOpen ? "rotate-180" : ""}`} />
-              </button>
-              <AnimatePresence>
-                {resMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                    transition={{ duration: 0.18, ease: "easeOut" }}
-                    className="absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] min-w-[90px]"
-                  >
-                    <div className="p-1">
-                      {resolutions.map((res) => (
-                        <button key={res} onClick={() => { setResolution(res); setHasChosenRes(true); setResMenuOpen(false); }}
-                          className={`w-full px-3 py-2 rounded-lg text-right text-xs font-semibold transition-colors ${resolution === res && hasChosenRes ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary/50"}`}
-                        >{res.toUpperCase()}</button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-
-          {/* Aspect Ratio dropdown */}
-          {showAspectSettings && (
-            <div className="relative shrink-0" ref={aspectMenuRef}>
-              <button
-                onClick={() => { setAspectMenuOpen((v) => !v); setModelMenuOpen(false); setResMenuOpen(false); setDurationMenuOpen(false); setUpscaleMenuOpen(false); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-200 ${hasChosenAspect ? "bg-primary/10 border-primary/50" : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"}`}
-              >
-                <span className={`text-[11px] font-bold ${hasChosenAspect ? "text-primary" : "text-foreground"}`}>{hasChosenAspect ? aspectRatio : "القياس"}</span>
-                <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${aspectMenuOpen ? "rotate-180" : ""}`} />
-              </button>
-              <AnimatePresence>
-                {aspectMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                    transition={{ duration: 0.18, ease: "easeOut" }}
-                    className="absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] min-w-[110px]"
-                  >
-                    <div className="p-1">
-                      {(Object.keys(ratioConfig) as AspectRatio[]).map((ratio) => (
-                        <button key={ratio} onClick={() => { setAspectRatio(ratio); setHasChosenAspect(true); setAspectMenuOpen(false); }}
-                          className={`w-full px-3 py-2 rounded-lg text-right text-xs font-semibold transition-colors ${aspectRatio === ratio && hasChosenAspect ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary/50"}`}
-                        >{ratio}</button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-
-          {/* Model dropdown */}
-          <div className="relative shrink-0" ref={modelMenuRef}>
-            <button
-              onClick={() => { setModelMenuOpen((v) => !v); setAspectMenuOpen(false); setResMenuOpen(false); setDurationMenuOpen(false); setUpscaleMenuOpen(false); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-200 ${hasChosenModel ? "bg-primary/10 border-primary/50" : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"}`}
-            >
-              <span className={`text-[11px] font-bold truncate max-w-[100px] ${hasChosenModel ? "text-primary" : "text-foreground"}`}>{hasChosenModel ? tool.title : "النموذج"}</span>
-              <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${modelMenuOpen ? "rotate-180" : ""}`} />
-            </button>
-            <AnimatePresence>
-              {modelMenuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                  transition={{ duration: 0.18, ease: "easeOut" }}
-                  className="absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] min-w-[200px]"
-                >
-                  <div className="max-h-64 overflow-y-auto p-1">
-                    {categoryTools.map((t) => (
-                      <button key={t.id}
-                        onClick={() => { setSelectedTool(t); setHasChosenModel(true); setModelMenuOpen(false); setResultUrls([]);
-                          if (firstFrame) { URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }
-                          if (lastFrame) { URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }
-                        }}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-right transition-colors ${tool.id === t.id ? "bg-primary/10" : "hover:bg-secondary/50"}`}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-semibold truncate ${tool.id === t.id ? "text-primary" : "text-foreground"}`}>{t.title}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">{t.provider}</p>
-                        </div>
-                        {t.isPro && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary shrink-0">PRO</span>}
-                      </button>
-                    ))}
+                    </DropdownMenu>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                )}
+
+                {/* Duration */}
+                {showDuration && (
+                  <div className="relative shrink-0">
+                    <DropdownBtn id="duration" label="المدة" value={`${videoDuration} ثانية`} hasValue={!!selectedTool} />
+                    <DropdownMenu id="duration">
+                      {caps!.durations!.map((d) => (
+                        <DropdownItem key={d} selected={videoDuration === d} onClick={() => { setVideoDuration(d); setOpenMenu(null); }}>
+                          {d} ثانية
+                        </DropdownItem>
+                      ))}
+                    </DropdownMenu>
+                  </div>
+                )}
+
+                {/* Resolution */}
+                {showRes && (
+                  <div className="relative shrink-0">
+                    <DropdownBtn id="resolution" label="الدقة" value={resolution.toUpperCase()} hasValue={!!selectedTool} />
+                    <DropdownMenu id="resolution">
+                      {caps!.resolutions!.map((r) => (
+                        <DropdownItem key={r} selected={resolution === r} onClick={() => { setResolution(r); setOpenMenu(null); }}>
+                          {r.toUpperCase()}
+                        </DropdownItem>
+                      ))}
+                    </DropdownMenu>
+                  </div>
+                )}
+
+                {/* Aspect Ratio */}
+                {showAspect && (
+                  <div className="relative shrink-0">
+                    <DropdownBtn id="aspect" label="القياس" value={aspectRatio} hasValue={!!selectedTool} />
+                    <DropdownMenu id="aspect" minW="min-w-[90px]">
+                      {caps!.aspectRatios!.map((r) => (
+                        <DropdownItem key={r} selected={aspectRatio === r} onClick={() => { setAspectRatio(r as AspectRatio); setOpenMenu(null); }}>
+                          {r}
+                        </DropdownItem>
+                      ))}
+                    </DropdownMenu>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Model dropdown - always visible */}
+          <div className="relative shrink-0">
+            <DropdownBtn id="model" label="النموذج" value={selectedTool?.title || ""} hasValue={!!selectedTool} />
+            <DropdownMenu id="model" minW="min-w-[200px]">
+              {categoryTools.map((t) => (
+                <button key={t.id}
+                  onClick={() => handleSelectModel(t)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-right transition-colors ${
+                    tool.id === t.id ? "bg-primary/10" : "hover:bg-secondary/50"
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-xs font-semibold truncate ${tool.id === t.id ? "text-primary" : "text-foreground"}`}>{t.title}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{t.provider}</p>
+                  </div>
+                  {t.isPro && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary shrink-0">PRO</span>}
+                </button>
+              ))}
+            </DropdownMenu>
           </div>
         </div>
       </header>
@@ -650,7 +606,7 @@ const StudioPage = () => {
       <div className="shrink-0 bg-card/90 backdrop-blur-xl border-t border-border/30 px-4 py-3 z-50">
         <div className="max-w-3xl mx-auto space-y-2">
           {/* Frame upload boxes for first/last frame models */}
-          {hasFrameMode && (
+          {hasFrameMode && selectedTool && (
             <div className="flex gap-2">
               {/* First Frame */}
               <input ref={firstFrameInputRef} type="file" accept="image/*" className="hidden"
@@ -684,7 +640,7 @@ const StudioPage = () => {
               </button>
 
               {/* Last Frame (only for first-last mode) */}
-              {tool.frameMode === "first-last" && (
+              {frameMode === "first-last" && (
                 <>
                   <input ref={lastFrameInputRef} type="file" accept="image/*" className="hidden"
                     onChange={(e) => handleFrameUpload("last", e)} />
@@ -768,7 +724,7 @@ const StudioPage = () => {
 
             <Button
               onClick={handleGenerate}
-              disabled={loading || (isImageOnlyTool && refImages.length === 0)}
+              disabled={loading || !selectedTool || (isImageOnlyTool && refImages.length === 0)}
               size="icon"
               className="shrink-0 w-9 h-9 rounded-lg bg-primary text-primary-foreground"
             >

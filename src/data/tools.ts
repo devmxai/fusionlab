@@ -210,6 +210,7 @@ export const tools: AITool[] = [
     category: "فيديو",
     model: "veo3_fast",
     isVeoApi: true,
+    frameMode: "first-only",
   },
   {
     id: "veo31-quality",
@@ -221,6 +222,7 @@ export const tools: AITool[] = [
     category: "فيديو",
     model: "veo3",
     isVeoApi: true,
+    frameMode: "first-only",
   },
   {
     id: "kling-3",
@@ -263,6 +265,7 @@ export const tools: AITool[] = [
     isPro: true,
     category: "فيديو",
     model: "bytedance/seedance-1.5-pro",
+    frameMode: "first-only",
   },
   {
     id: "seedance-v1-pro",
@@ -473,12 +476,14 @@ export function buildModelInput(
   }
 
   if (model === "bytedance/seedance-1.5-pro") {
-    return {
+    const input: Record<string, unknown> = {
       prompt,
       aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio,
       resolution: "720p",
       duration: 8,
     };
+    if (imageUrls?.length) input.image_url = imageUrls[0];
+    return input;
   }
 
   if (model === "bytedance/v1-pro-text-to-video") {
@@ -536,12 +541,14 @@ export function buildModelInput(
 
   // ─── VEO 3.1 ───
   if (model === "veo3" || model === "veo3_fast") {
-    return {
+    const input: Record<string, unknown> = {
       prompt,
       model,
       aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "16:9" : aspectRatio === "9:16" ? "9:16" : "16:9",
-      generationType: "TEXT_2_VIDEO",
+      generationType: imageUrls?.length ? "IMAGE_2_VIDEO" : "TEXT_2_VIDEO",
     };
+    if (imageUrls?.length) input.image = imageUrls[0];
+    return input;
   }
 
   // ─── UTILITY MODELS ───
