@@ -68,6 +68,11 @@ const StudioPage = () => {
 
   const [selectedTool, setSelectedTool] = useState<AITool | null>(null);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [aspectMenuOpen, setAspectMenuOpen] = useState(false);
+  const [resMenuOpen, setResMenuOpen] = useState(false);
+  const [durationMenuOpen, setDurationMenuOpen] = useState(false);
+  const [upscaleMenuOpen, setUpscaleMenuOpen] = useState(false);
+  const [videoDuration, setVideoDuration] = useState("5");
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
