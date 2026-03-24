@@ -134,6 +134,7 @@ const StudioPage = () => {
   };
 
   const getMode = () => {
+    if (isImageOnlyTool) return category === "remove-bg" ? "حذف الخلفية" : "رفع الجودة";
     if (refImages.length === 0) return "Text to Image";
     if (refImages.length === 1) return "Image to Image";
     return "Image Merge";
