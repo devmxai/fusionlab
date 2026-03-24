@@ -76,6 +76,16 @@ export const tools: AITool[] = [
     model: "seedream/4.5-text-to-image",
   },
   {
+    id: "recraft-crisp-upscale",
+    title: "Recraft Crisp Upscale",
+    provider: "Recraft",
+    description: "رفع جودة الصور حتى 4x بدون تشويش",
+    image: "upscale",
+    isPro: false,
+    category: "رفع الجودة",
+    model: "recraft/crisp-upscale",
+  },
+  {
     id: "topaz-upscale",
     title: "Topaz Upscale",
     provider: "Topaz",
