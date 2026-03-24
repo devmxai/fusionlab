@@ -92,7 +92,7 @@ const Index = () => {
             {trendingImages.length > 0 && (
               <section>
                 <SectionHeader icon={<TrendingUp className="w-4 h-4 text-pink-500" />} title="ترند الصور" />
-                <div className="columns-2 sm:columns-3 gap-2 space-y-2">
+                <div className="columns-2 sm:columns-3 gap-[6px]">
                   {trendingImages.map((img, i) => (
                     <motion.div
                       key={img.id}
@@ -100,16 +100,16 @@ const Index = () => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, margin: "-30px" }}
                       transition={{ duration: 0.3, delay: i * 0.04 }}
-                      className="break-inside-avoid rounded-xl overflow-hidden border border-border/30 group cursor-pointer"
+                      className="break-inside-avoid mb-[6px] rounded-xl overflow-hidden border border-border/30 group cursor-pointer"
                     >
                       <img
                         src={img.image_url}
                         alt={img.title || ""}
-                        className="w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="w-full block transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
                       />
                       {img.title && (
-                        <div className="px-2.5 py-2 bg-card">
+                        <div className="px-2.5 py-1.5 bg-card">
                           <p className="text-[10px] text-muted-foreground truncate">{img.title}</p>
                         </div>
                       )}
