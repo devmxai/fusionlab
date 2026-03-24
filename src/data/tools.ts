@@ -263,6 +263,7 @@ export const tools: AITool[] = [
     isPro: true,
     category: "فيديو",
     model: "bytedance/seedance-1.5-pro",
+    frameMode: "first-only",
   },
   {
     id: "seedance-v1-pro",
