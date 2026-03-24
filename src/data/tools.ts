@@ -509,7 +509,7 @@ export function buildModelInput(
       prompt,
       aspect_ratio: aspectRatio,
       resolution: (extraParams?.resolution as string) || "720p",
-      duration: Number((extraParams?.duration as string) || "8"),
+      duration: (extraParams?.duration as string) || "8",
     };
     if (imageUrls?.length) input.input_urls = imageUrls.slice(0, 2);
     return input;
