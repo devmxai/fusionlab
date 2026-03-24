@@ -53,6 +53,10 @@ const StudioPage = () => {
   const firstFrameInputRef = useRef<HTMLInputElement>(null);
   const lastFrameInputRef = useRef<HTMLInputElement>(null);
   const modelMenuRef = useRef<HTMLDivElement>(null);
+  const aspectMenuRef = useRef<HTMLDivElement>(null);
+  const resMenuRef = useRef<HTMLDivElement>(null);
+  const durationMenuRef = useRef<HTMLDivElement>(null);
+  const upscaleMenuRef = useRef<HTMLDivElement>(null);
 
   const categoryName = category ? categorySlugMap[category] : undefined;
   const studioTitle = category ? categoryTitleMap[category] : "استديو";
