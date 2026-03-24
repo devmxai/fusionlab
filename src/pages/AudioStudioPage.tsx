@@ -373,7 +373,7 @@ const AudioStudioPage = () => {
             </label>
             <Textarea
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => setText(tagsToEmojis(e.target.value))}
               placeholder="اكتب النص الذي تريد تحويله إلى صوت..."
               className="min-h-[120px] bg-card border-border/50 text-sm resize-none focus:border-primary/50"
               dir="rtl"
