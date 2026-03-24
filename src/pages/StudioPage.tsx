@@ -407,12 +407,12 @@ const StudioPage = () => {
   return (
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden" dir="rtl">
       {/* ── Header / App Bar ── */}
-      <header className="shrink-0 bg-card/90 backdrop-blur-xl border-b border-border/30 z-50 rounded-b-2xl shadow-lg">
-        <div className="flex items-center gap-2 px-3 py-2.5 max-w-3xl mx-auto overflow-x-auto scrollbar-hide flex-row-reverse">
-          {/* Back button - left side visually (last in RTL reversed row) */}
+      <header className="relative shrink-0 bg-card/90 backdrop-blur-xl border-b border-border/30 z-[120] rounded-b-2xl shadow-lg">
+        <div className="flex items-center gap-2 px-3 py-2.5 max-w-3xl mx-auto flex-row-reverse relative">
+          {/* Back button - left side visually */}
           <button
             onClick={() => navigate("/")}
-            className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all border border-border/20"
+            className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all border border-primary/25"
           >
             <ArrowRight className="w-4 h-4" />
           </button>
@@ -424,16 +424,19 @@ const StudioPage = () => {
             <div className="relative shrink-0" ref={upscaleMenuRef}>
               <button
                 onClick={() => { setUpscaleMenuOpen((v) => !v); setModelMenuOpen(false); setAspectMenuOpen(false); setResMenuOpen(false); setDurationMenuOpen(false); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-colors ${hasChosenUpscale ? "bg-primary/10 border-primary/30" : "bg-secondary/40 border-border/30 hover:bg-secondary/60"}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-200 ${hasChosenUpscale ? "bg-primary/10 border-primary/50" : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"}`}
               >
-                <span className={`text-[11px] font-bold ${hasChosenUpscale ? "text-primary" : "text-muted-foreground"}`}>{hasChosenUpscale ? `${upscaleFactor}x` : "التكبير"}</span>
+                <span className={`text-[11px] font-bold ${hasChosenUpscale ? "text-primary" : "text-foreground"}`}>{hasChosenUpscale ? `${upscaleFactor}x` : "التكبير"}</span>
                 <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${upscaleMenuOpen ? "rotate-180" : ""}`} />
               </button>
               <AnimatePresence>
                 {upscaleMenuOpen && (
-                  <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute top-full right-0 mt-1.5 bg-card/95 backdrop-blur-xl border border-border/40 rounded-xl shadow-2xl overflow-hidden z-[100] min-w-[90px]"
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    className="absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] min-w-[90px]"
                   >
                     <div className="p-1">
                       {upscaleFactors.map((f) => (
@@ -453,16 +456,19 @@ const StudioPage = () => {
             <div className="relative shrink-0" ref={durationMenuRef}>
               <button
                 onClick={() => { setDurationMenuOpen((v) => !v); setModelMenuOpen(false); setAspectMenuOpen(false); setResMenuOpen(false); setUpscaleMenuOpen(false); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-colors ${hasChosenDuration ? "bg-primary/10 border-primary/30" : "bg-secondary/40 border-border/30 hover:bg-secondary/60"}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-200 ${hasChosenDuration ? "bg-primary/10 border-primary/50" : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"}`}
               >
-                <span className={`text-[11px] font-bold ${hasChosenDuration ? "text-primary" : "text-muted-foreground"}`}>{hasChosenDuration ? `${videoDuration} ثانية` : "المدة"}</span>
+                <span className={`text-[11px] font-bold ${hasChosenDuration ? "text-primary" : "text-foreground"}`}>{hasChosenDuration ? `${videoDuration} ثانية` : "المدة"}</span>
                 <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${durationMenuOpen ? "rotate-180" : ""}`} />
               </button>
               <AnimatePresence>
                 {durationMenuOpen && (
-                  <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute top-full right-0 mt-1.5 bg-card/95 backdrop-blur-xl border border-border/40 rounded-xl shadow-2xl overflow-hidden z-[100] min-w-[100px]"
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    className="absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] min-w-[100px]"
                   >
                     <div className="p-1">
                       {videoDurations.map((d) => (
@@ -482,16 +488,19 @@ const StudioPage = () => {
             <div className="relative shrink-0" ref={resMenuRef}>
               <button
                 onClick={() => { setResMenuOpen((v) => !v); setModelMenuOpen(false); setAspectMenuOpen(false); setDurationMenuOpen(false); setUpscaleMenuOpen(false); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-colors ${hasChosenRes ? "bg-primary/10 border-primary/30" : "bg-secondary/40 border-border/30 hover:bg-secondary/60"}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-200 ${hasChosenRes ? "bg-primary/10 border-primary/50" : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"}`}
               >
-                <span className={`text-[11px] font-bold ${hasChosenRes ? "text-primary" : "text-muted-foreground"}`}>{hasChosenRes ? resolution.toUpperCase() : "الدقة"}</span>
+                <span className={`text-[11px] font-bold ${hasChosenRes ? "text-primary" : "text-foreground"}`}>{hasChosenRes ? resolution.toUpperCase() : "الدقة"}</span>
                 <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${resMenuOpen ? "rotate-180" : ""}`} />
               </button>
               <AnimatePresence>
                 {resMenuOpen && (
-                  <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute top-full right-0 mt-1.5 bg-card/95 backdrop-blur-xl border border-border/40 rounded-xl shadow-2xl overflow-hidden z-[100] min-w-[90px]"
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    className="absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] min-w-[90px]"
                   >
                     <div className="p-1">
                       {resolutions.map((res) => (
@@ -511,16 +520,19 @@ const StudioPage = () => {
             <div className="relative shrink-0" ref={aspectMenuRef}>
               <button
                 onClick={() => { setAspectMenuOpen((v) => !v); setModelMenuOpen(false); setResMenuOpen(false); setDurationMenuOpen(false); setUpscaleMenuOpen(false); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-colors ${hasChosenAspect ? "bg-primary/10 border-primary/30" : "bg-secondary/40 border-border/30 hover:bg-secondary/60"}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-200 ${hasChosenAspect ? "bg-primary/10 border-primary/50" : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"}`}
               >
-                <span className={`text-[11px] font-bold ${hasChosenAspect ? "text-primary" : "text-muted-foreground"}`}>{hasChosenAspect ? aspectRatio : "القياس"}</span>
+                <span className={`text-[11px] font-bold ${hasChosenAspect ? "text-primary" : "text-foreground"}`}>{hasChosenAspect ? aspectRatio : "القياس"}</span>
                 <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${aspectMenuOpen ? "rotate-180" : ""}`} />
               </button>
               <AnimatePresence>
                 {aspectMenuOpen && (
-                  <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute top-full right-0 mt-1.5 bg-card/95 backdrop-blur-xl border border-border/40 rounded-xl shadow-2xl overflow-hidden z-[100] min-w-[110px]"
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    className="absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] min-w-[110px]"
                   >
                     <div className="p-1">
                       {(Object.keys(ratioConfig) as AspectRatio[]).map((ratio) => (
@@ -539,17 +551,19 @@ const StudioPage = () => {
           <div className="relative shrink-0" ref={modelMenuRef}>
             <button
               onClick={() => { setModelMenuOpen((v) => !v); setAspectMenuOpen(false); setResMenuOpen(false); setDurationMenuOpen(false); setUpscaleMenuOpen(false); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-colors ${hasChosenModel ? "bg-primary/10 border-primary/30" : "bg-secondary/40 border-border/30 hover:bg-secondary/60"}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-200 ${hasChosenModel ? "bg-primary/10 border-primary/50" : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"}`}
             >
-              <span className={`text-[11px] font-bold truncate max-w-[100px] ${hasChosenModel ? "text-primary" : "text-muted-foreground"}`}>{hasChosenModel ? tool.title : "النموذج"}</span>
+              <span className={`text-[11px] font-bold truncate max-w-[100px] ${hasChosenModel ? "text-primary" : "text-foreground"}`}>{hasChosenModel ? tool.title : "النموذج"}</span>
               <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${modelMenuOpen ? "rotate-180" : ""}`} />
             </button>
             <AnimatePresence>
               {modelMenuOpen && (
                 <motion.div
-                  initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute top-full right-0 mt-1.5 bg-card/95 backdrop-blur-xl border border-border/40 rounded-xl shadow-2xl overflow-hidden z-[100] min-w-[200px]"
+                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] min-w-[200px]"
                 >
                   <div className="max-h-64 overflow-y-auto p-1">
                     {categoryTools.map((t) => (
