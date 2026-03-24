@@ -1003,7 +1003,7 @@ const StudioPage = () => {
 
             <Button
               onClick={handleGenerate}
-              disabled={loading || !selectedTool || (isImageOnlyTool && refImages.length === 0)}
+              disabled={loading || !selectedTool || (isImageOnlyTool && refImages.length === 0) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
               size="icon"
               className="shrink-0 w-9 h-9 rounded-lg bg-primary text-primary-foreground"
             >
