@@ -13,6 +13,8 @@ export interface AITool {
   isFluxKontextApi?: boolean;
   /** Input type: what the model needs besides prompt */
   inputType?: "text-to-video" | "avatar" | "animate";
+  /** Whether this video model supports first frame / last frame image input */
+  frameMode?: "first-last" | "first-only";
 }
 
 export const categories = [
@@ -229,6 +231,7 @@ export const tools: AITool[] = [
     isPro: false,
     category: "فيديو",
     model: "kling-3.0",
+    frameMode: "first-last",
   },
   {
     id: "kling-2-6",
@@ -249,6 +252,7 @@ export const tools: AITool[] = [
     isPro: true,
     category: "فيديو",
     model: "kling/v2-1-master-text-to-video",
+    frameMode: "first-only",
   },
   {
     id: "seedance",

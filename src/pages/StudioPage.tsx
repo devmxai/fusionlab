@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { tools, buildModelInput, AITool } from "@/data/tools";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Image as ImageIcon, Send, X, Settings2, Sparkles, ChevronDown } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, Send, X, Sparkles, ChevronDown, Upload } from "lucide-react";
 import { createTask, createVeoTask, createFluxKontextTask, pollTask } from "@/lib/kie-ai";
 import { uploadFileBase64 } from "@/lib/kie-ai";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,9 +37,9 @@ const categoryTitleMap: Record<string, string> = {
 };
 
 const ratioConfig: Record<AspectRatio, { label: string; w: number; h: number; cssAspect: string; placeholderMaxW: string }> = {
-  "1:1":  { label: "Square",   w: 14, h: 14, cssAspect: "1/1",  placeholderMaxW: "260px" },
-  "3:4":  { label: "Portrait", w: 12, h: 16, cssAspect: "3/4",  placeholderMaxW: "220px" },
-  "9:16": { label: "Story",    w: 10, h: 18, cssAspect: "9/16", placeholderMaxW: "180px" },
+  "1:1":  { label: "1:1",   w: 14, h: 14, cssAspect: "1/1",  placeholderMaxW: "260px" },
+  "3:4":  { label: "3:4",   w: 12, h: 16, cssAspect: "3/4",  placeholderMaxW: "220px" },
+  "9:16": { label: "9:16",  w: 10, h: 18, cssAspect: "9/16", placeholderMaxW: "180px" },
 };
 
 const resolutions: Resolution[] = ["1k", "2k", "4k"];
@@ -49,7 +49,8 @@ const StudioPage = () => {
   const { category } = useParams();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
+  const firstFrameInputRef = useRef<HTMLInputElement>(null);
+  const lastFrameInputRef = useRef<HTMLInputElement>(null);
   const modelMenuRef = useRef<HTMLDivElement>(null);
 
   const categoryName = category ? categorySlugMap[category] : undefined;
@@ -70,7 +71,8 @@ const StudioPage = () => {
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("1:1");
   const [resolution, setResolution] = useState<Resolution>("2k");
   const [refImages, setRefImages] = useState<{ file: File; preview: string }[]>([]);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [firstFrame, setFirstFrame] = useState<{ file: File; preview: string } | null>(null);
+  const [lastFrame, setLastFrame] = useState<{ file: File; preview: string } | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState("");
   const [upscaleFactor, setUpscaleFactor] = useState<UpscaleFactor>("2");
@@ -82,19 +84,16 @@ const StudioPage = () => {
     }
   }, [categoryTools, selectedTool]);
 
-  // Close popover on outside click
+  // Close model menu on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setSettingsOpen(false);
-      }
       if (modelMenuRef.current && !modelMenuRef.current.contains(e.target as Node)) {
         setModelMenuOpen(false);
       }
     };
-    if (settingsOpen || modelMenuOpen) document.addEventListener("mousedown", handleClick);
+    if (modelMenuOpen) document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [settingsOpen, modelMenuOpen]);
+  }, [modelMenuOpen]);
 
   if (!categoryName || categoryTools.length === 0) {
     return (
@@ -104,7 +103,7 @@ const StudioPage = () => {
           {categoryName ? "لا توجد نماذج متاحة لهذا التصنيف حالياً" : "التصنيف غير موجود"}
         </p>
         <Button variant="outline" size="sm" onClick={() => navigate("/")}>
-          <ArrowRight className="w-4 h-4 ml-1" /> العودة
+          العودة
         </Button>
       </div>
     );
@@ -116,10 +115,16 @@ const StudioPage = () => {
   const isUpscaleTool = category === "upscale";
   const isRemixTool = category === "remix";
   const isFluxKontext = tool.isFluxKontextApi === true;
+  const hasFrameMode = tool.frameMode === "first-last" || tool.frameMode === "first-only";
 
   const maxImages = isRemixTool
     ? (tool.model === "gpt-image/1.5-image-to-image" ? 16 : tool.model === "seedream/4.5-edit" ? 14 : 3)
     : isImageOnlyTool ? 1 : 3;
+
+  // Show aspect ratio settings for image & remix tools (not image-only or upscale)
+  const showAspectSettings = !isImageOnlyTool;
+  const showResolutionSettings = !isVideoTool && !isImageOnlyTool;
+  const showUpscaleSettings = isUpscaleTool;
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -133,6 +138,21 @@ const StudioPage = () => {
     }));
     setRefImages((prev) => [...prev, ...newImages]);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleFrameUpload = (type: "first" | "last", e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const preview = URL.createObjectURL(file);
+    if (type === "first") {
+      if (firstFrame) URL.revokeObjectURL(firstFrame.preview);
+      setFirstFrame({ file, preview });
+    } else {
+      if (lastFrame) URL.revokeObjectURL(lastFrame.preview);
+      setLastFrame({ file, preview });
+    }
+    if (type === "first" && firstFrameInputRef.current) firstFrameInputRef.current.value = "";
+    if (type === "last" && lastFrameInputRef.current) lastFrameInputRef.current.value = "";
   };
 
   const removeImage = (index: number) => {
@@ -149,6 +169,7 @@ const StudioPage = () => {
       if (refImages.length === 1) return "Image Edit";
       return "Image Remix";
     }
+    if (hasFrameMode && (firstFrame || lastFrame)) return "Image to Video";
     if (refImages.length === 0) return "Text to Image";
     if (refImages.length === 1) return "Image to Image";
     return "Image Merge";
@@ -157,10 +178,7 @@ const StudioPage = () => {
   const fileToBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        resolve(result.split(",")[1]);
-      };
+      reader.onload = () => resolve((reader.result as string).split(",")[1]);
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
@@ -176,7 +194,7 @@ const StudioPage = () => {
       toast.error("ارفع صورة واحدة على الأقل أو اكتب وصفاً");
       return;
     }
-    if (!isImageOnlyTool && !isRemixTool && !prompt.trim() && refImages.length === 0) {
+    if (!isImageOnlyTool && !isRemixTool && !prompt.trim() && refImages.length === 0 && !firstFrame) {
       toast.error("اكتب وصفاً أو ارفع صورة");
       return;
     }
@@ -198,7 +216,24 @@ const StudioPage = () => {
 
     try {
       let imageUrls: string[] | undefined;
-      if (refImages.length > 0) {
+
+      // Handle frame uploads for video models
+      if (hasFrameMode && (firstFrame || lastFrame)) {
+        setStatus("جاري رفع الصور...");
+        setProgress(10);
+        imageUrls = [];
+        if (firstFrame) {
+          const b64 = await fileToBase64(firstFrame.file);
+          const url = await uploadFileBase64(b64, `first_frame_${Date.now()}.png`);
+          imageUrls.push(url);
+        }
+        if (lastFrame) {
+          const b64 = await fileToBase64(lastFrame.file);
+          const url = await uploadFileBase64(b64, `last_frame_${Date.now()}.png`);
+          imageUrls.push(url);
+        }
+        setProgress(25);
+      } else if (refImages.length > 0) {
         setStatus("جاري رفع الصور...");
         setProgress(10);
         imageUrls = [];
@@ -259,7 +294,6 @@ const StudioPage = () => {
         toast.success("تم التوليد بنجاح!");
         setProgress(100);
 
-        // Deduct 1 credit
         const { data: currentCredits } = await supabase
           .from("user_credits")
           .select("balance, total_spent")
@@ -281,7 +315,6 @@ const StudioPage = () => {
           });
         }
 
-        // Save to generations
         const fileUrl = parsed.resultUrls?.[0];
         if (fileUrl) {
           await supabase.from("generations").insert({
@@ -316,13 +349,8 @@ const StudioPage = () => {
   const renderCardContent = () => {
     if (loading) {
       return (
-        <motion.div
-          key="loading"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          className="flex flex-col items-center justify-center gap-2"
-        >
+        <motion.div key="loading" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
+          className="flex flex-col items-center justify-center gap-2">
           <CircularProgress progress={progress} size={90} status={status} />
         </motion.div>
       );
@@ -330,14 +358,8 @@ const StudioPage = () => {
 
     if (resultUrls.length > 0) {
       return (
-        <motion.div
-          key="result"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0 }}
-          className="w-full h-full cursor-pointer"
-          onClick={() => !isVideoTool && openViewer(resultUrls[0])}
-        >
+        <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+          className="w-full h-full cursor-pointer" onClick={() => !isVideoTool && openViewer(resultUrls[0])}>
           {isVideoTool ? (
             <video src={resultUrls[0]} controls className="w-full h-full object-cover rounded-2xl" />
           ) : (
@@ -348,13 +370,8 @@ const StudioPage = () => {
     }
 
     return (
-      <motion.div
-        key="placeholder"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="flex flex-col items-center justify-center gap-2 text-center px-4"
-      >
+      <motion.div key="placeholder" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="flex flex-col items-center justify-center gap-2 text-center px-4">
         <Sparkles className="w-7 h-7 text-primary opacity-40" />
         <h2 className="text-sm font-bold text-foreground/70">{tool.title}</h2>
         <p className="text-[10px] text-muted-foreground/60">{tool.description}</p>
@@ -367,79 +384,166 @@ const StudioPage = () => {
 
   return (
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden" dir="rtl">
-      {/* Header */}
-      <header className="shrink-0 bg-nav-bg/80 backdrop-blur-xl border-b border-border/50 px-4 py-3 z-50">
-        <div className="flex items-center gap-3 max-w-3xl mx-auto">
-          <button onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowRight className="w-5 h-5" />
+      {/* ── Header / App Bar ── */}
+      <header className="shrink-0 bg-card/90 backdrop-blur-xl border-b border-border/30 z-50 rounded-b-2xl shadow-lg">
+        {/* Row 1: Back + Model selector + Mode badge */}
+        <div className="flex items-center gap-2 px-3 py-2.5 max-w-3xl mx-auto">
+          <button
+            onClick={() => navigate("/")}
+            className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
+          >
+            <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-base font-bold text-foreground">{studioTitle}</h1>
 
-          {/* Model selector */}
-          <div className="relative mr-auto" ref={modelMenuRef}>
+          {/* Subtle divider */}
+          <div className="w-px h-6 bg-border/40 shrink-0" />
+
+          {/* Model dropdown */}
+          <div className="relative flex-1 min-w-0" ref={modelMenuRef}>
             <button
               onClick={() => setModelMenuOpen((v) => !v)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary border border-border/50 hover:bg-secondary/80 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/60 border border-border/30 hover:bg-secondary/80 transition-colors w-full"
             >
-              <span className="text-[11px] font-semibold text-foreground truncate max-w-[120px]">
+              <span className="text-[11px] font-bold text-foreground truncate">
                 {tool.title}
               </span>
-              <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${modelMenuOpen ? "rotate-180" : ""}`} />
+              <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform mr-auto ${modelMenuOpen ? "rotate-180" : ""}`} />
             </button>
 
             <AnimatePresence>
               {modelMenuOpen && (
                 <motion.div
-                  initial={{ opacity: 0, y: -5, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -5, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute top-full left-0 mt-1 w-56 bg-card border border-border/50 rounded-xl shadow-xl overflow-hidden z-50"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/40 rounded-xl shadow-2xl overflow-hidden z-50"
                 >
-                  {categoryTools.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => {
-                        setSelectedTool(t);
-                        setModelMenuOpen(false);
-                        setResultUrls([]);
-                      }}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 text-right transition-colors ${
-                        tool.id === t.id ? "bg-primary/10" : "hover:bg-secondary/50"
-                      }`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-xs font-semibold truncate ${tool.id === t.id ? "text-primary" : "text-foreground"}`}>
-                          {t.title}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground truncate">{t.provider} • {t.description}</p>
-                      </div>
-                      {t.isPro && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary shrink-0">PRO</span>
-                      )}
-                    </button>
-                  ))}
+                  <div className="max-h-64 overflow-y-auto">
+                    {categoryTools.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => {
+                          setSelectedTool(t);
+                          setModelMenuOpen(false);
+                          setResultUrls([]);
+                          // Reset frames when switching models
+                          if (firstFrame) { URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }
+                          if (lastFrame) { URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-right transition-colors ${
+                          tool.id === t.id ? "bg-primary/10" : "hover:bg-secondary/50"
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs font-semibold truncate ${tool.id === t.id ? "text-primary" : "text-foreground"}`}>
+                            {t.title}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground truncate">{t.provider}</p>
+                        </div>
+                        {t.isPro && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary shrink-0">PRO</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium">
+          {/* Mode badge */}
+          <span className="shrink-0 text-[9px] px-2 py-1 rounded-full bg-primary/15 text-primary font-bold">
             {getMode()}
           </span>
         </div>
+
+        {/* Row 2: Settings chips (scrollable) */}
+        {(showAspectSettings || showResolutionSettings || showUpscaleSettings) && (
+          <div className="border-t border-border/20 px-3 py-2 max-w-3xl mx-auto">
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide items-center">
+              {/* Aspect Ratio */}
+              {showAspectSettings && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-[9px] text-muted-foreground/70 font-semibold">الأبعاد</span>
+                  <div className="flex gap-1">
+                    {(Object.keys(ratioConfig) as AspectRatio[]).map((ratio) => (
+                      <button
+                        key={ratio}
+                        onClick={() => setAspectRatio(ratio)}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                          aspectRatio === ratio
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                        }`}
+                      >
+                        {ratioConfig[ratio].label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Divider */}
+              {showAspectSettings && showResolutionSettings && (
+                <div className="w-px h-5 bg-border/30 shrink-0" />
+              )}
+
+              {/* Resolution */}
+              {showResolutionSettings && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-[9px] text-muted-foreground/70 font-semibold">الدقة</span>
+                  <div className="flex gap-1">
+                    {resolutions.map((res) => (
+                      <button
+                        key={res}
+                        onClick={() => setResolution(res)}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                          resolution === res
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                        }`}
+                      >
+                        {res.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Upscale Factor */}
+              {showUpscaleSettings && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-[9px] text-muted-foreground/70 font-semibold">التكبير</span>
+                  <div className="flex gap-1">
+                    {upscaleFactors.map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => setUpscaleFactor(f)}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                          upscaleFactor === f
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                        }`}
+                      >
+                        {f}x
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
-      {/* Center area */}
+      {/* ── Center area ── */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 min-h-0">
         {resultUrls.length > 1 && !loading && (
           <div className="w-full max-w-3xl overflow-x-auto flex gap-2 mb-4 scrollbar-hide">
             {resultUrls.slice(1).map((url, i) => (
-              <div
-                key={i}
-                className="shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-border/50 cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => openViewer(url)}
-              >
+              <div key={i} className="shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-border/50 cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => openViewer(url)}>
                 <img src={url} alt="" className="w-full h-full object-cover" />
               </div>
             ))}
@@ -450,11 +554,7 @@ const StudioPage = () => {
           layout
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           className={`relative rounded-2xl overflow-hidden flex items-center justify-center border ${
-            resultUrls.length > 0 && !loading
-              ? "border-transparent"
-              : loading
-              ? "border-primary/30"
-              : "border-border/30"
+            resultUrls.length > 0 && !loading ? "border-transparent" : loading ? "border-primary/30" : "border-border/30"
           }`}
           style={{
             width: "100%",
@@ -485,13 +585,8 @@ const StudioPage = () => {
         {resultUrls.length > 0 && !loading && (
           <div className="mt-3 flex gap-2">
             {resultUrls.map((url, i) => (
-              <a
-                key={i}
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-primary hover:underline bg-primary/10 px-3 py-1 rounded-full"
-              >
+              <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline bg-primary/10 px-3 py-1 rounded-full">
                 تحميل {resultUrls.length > 1 ? `${i + 1}` : ""}
               </a>
             ))}
@@ -499,101 +594,88 @@ const StudioPage = () => {
         )}
       </div>
 
-      {/* Bottom bar */}
-      <div className="shrink-0 bg-nav-bg/90 backdrop-blur-xl border-t border-border/50 px-4 py-3 z-50 relative">
-        <AnimatePresence>
-          {settingsOpen && (
-            <motion.div
-              ref={popoverRef}
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="absolute bottom-full right-4 mb-2 w-64 bg-card border border-border/50 rounded-xl shadow-xl p-4 space-y-4"
-            >
-              {!isVideoTool && !isImageOnlyTool && (
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-muted-foreground">Size</label>
-                  <div className="flex gap-1.5">
-                    {(Object.keys(ratioConfig) as AspectRatio[]).map((ratio) => {
-                      const cfg = ratioConfig[ratio];
-                      return (
-                        <button
-                          key={ratio}
-                          onClick={() => setAspectRatio(ratio)}
-                          className={`flex-1 py-2 rounded-lg flex flex-col items-center gap-1 transition-all text-[10px] font-semibold ${
-                            aspectRatio === ratio
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-secondary text-secondary-foreground"
-                          }`}
-                        >
-                          <div
-                            className={`border-[1.5px] rounded-sm ${aspectRatio === ratio ? "border-primary-foreground" : "border-muted-foreground/50"}`}
-                            style={{ width: cfg.w, height: cfg.h }}
-                          />
-                          {cfg.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {!isVideoTool && !isImageOnlyTool && (
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-muted-foreground">Resolution</label>
-                  <div className="flex gap-1.5">
-                    {resolutions.map((res) => (
-                      <button
-                        key={res}
-                        onClick={() => setResolution(res)}
-                        className={`flex-1 py-2 rounded-lg text-[10px] font-semibold transition-all ${
-                          resolution === res
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-secondary text-secondary-foreground"
-                        }`}
-                      >
-                        {res.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {isUpscaleTool && (
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-muted-foreground">معامل التكبير</label>
-                  <div className="flex gap-1.5">
-                    {upscaleFactors.map((f) => (
-                      <button
-                        key={f}
-                        onClick={() => setUpscaleFactor(f)}
-                        className={`flex-1 py-2 rounded-lg text-[10px] font-semibold transition-all ${
-                          upscaleFactor === f
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-secondary text-secondary-foreground"
-                        }`}
-                      >
-                        {f}x
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
+      {/* ── Bottom bar ── */}
+      <div className="shrink-0 bg-card/90 backdrop-blur-xl border-t border-border/30 px-4 py-3 z-50">
         <div className="max-w-3xl mx-auto space-y-2">
-          {refImages.length > 0 && (
+          {/* Frame upload boxes for first/last frame models */}
+          {hasFrameMode && (
+            <div className="flex gap-2">
+              {/* First Frame */}
+              <input ref={firstFrameInputRef} type="file" accept="image/*" className="hidden"
+                onChange={(e) => handleFrameUpload("first", e)} />
+              <button
+                onClick={() => firstFrameInputRef.current?.click()}
+                className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
+                  firstFrame ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
+                }`}
+                style={{ minHeight: "56px" }}
+              >
+                {firstFrame ? (
+                  <div className="relative w-full h-14">
+                    <img src={firstFrame.preview} alt="First frame" className="w-full h-full object-cover rounded-lg" />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }}
+                      className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                    >
+                      <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                    </button>
+                    <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">
+                      First Frame
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-1 py-2">
+                    <Upload className="w-4 h-4 text-muted-foreground/60" />
+                    <span className="text-[9px] font-semibold text-muted-foreground/70">First Frame</span>
+                  </div>
+                )}
+              </button>
+
+              {/* Last Frame (only for first-last mode) */}
+              {tool.frameMode === "first-last" && (
+                <>
+                  <input ref={lastFrameInputRef} type="file" accept="image/*" className="hidden"
+                    onChange={(e) => handleFrameUpload("last", e)} />
+                  <button
+                    onClick={() => lastFrameInputRef.current?.click()}
+                    className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
+                      lastFrame ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
+                    }`}
+                    style={{ minHeight: "56px" }}
+                  >
+                    {lastFrame ? (
+                      <div className="relative w-full h-14">
+                        <img src={lastFrame.preview} alt="Last frame" className="w-full h-full object-cover rounded-lg" />
+                        <button
+                          onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }}
+                          className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                        >
+                          <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                        </button>
+                        <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">
+                          Last Frame
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-1 py-2">
+                        <Upload className="w-4 h-4 text-muted-foreground/60" />
+                        <span className="text-[9px] font-semibold text-muted-foreground/70">Last Frame</span>
+                      </div>
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Regular image uploads strip */}
+          {!hasFrameMode && refImages.length > 0 && (
             <div className="flex gap-2">
               {refImages.map((img, i) => (
                 <div key={i} className="relative w-11 h-11 rounded-lg overflow-hidden border border-border/50">
                   <img src={img.preview} alt="" className="w-full h-full object-cover" />
-                  <button
-                    onClick={() => removeImage(i)}
-                    className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
-                  >
+                  <button onClick={() => removeImage(i)}
+                    className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-destructive flex items-center justify-center">
                     <X className="w-2.5 h-2.5 text-destructive-foreground" />
                   </button>
                 </div>
@@ -601,41 +683,17 @@ const StudioPage = () => {
             </div>
           )}
 
+          {/* Input row */}
           <div className="flex items-center gap-2">
             <input ref={fileInputRef} type="file" accept="image/*" multiple={!isImageOnlyTool} className="hidden" onChange={handleImageUpload} />
 
-            {refImages.length < maxImages && (
+            {/* Upload button (only if not frame mode) */}
+            {!hasFrameMode && refImages.length < maxImages && (
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="shrink-0 w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors"
               >
                 <ImageIcon className="w-4 h-4 text-muted-foreground" />
-              </button>
-            )}
-
-            {!isImageOnlyTool && (
-              <button
-                onClick={() => setSettingsOpen((v) => !v)}
-                className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
-                  settingsOpen
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground border border-border/50"
-                }`}
-              >
-                <Settings2 className="w-4 h-4" />
-              </button>
-            )}
-
-            {isUpscaleTool && (
-              <button
-                onClick={() => setSettingsOpen((v) => !v)}
-                className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
-                  settingsOpen
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground border border-border/50"
-                }`}
-              >
-                <Settings2 className="w-4 h-4" />
               </button>
             )}
 
@@ -650,7 +708,7 @@ const StudioPage = () => {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder={isRemixTool ? "صف التعديل المطلوب..." : "اكتب وصفاً لما تريد توليده..."}
-                className="flex-1 h-9 rounded-lg bg-card border border-border/50 px-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                className="flex-1 h-9 rounded-lg bg-secondary/40 border border-border/30 px-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/40"
                 dir="ltr"
                 onKeyDown={(e) => e.key === "Enter" && !loading && handleGenerate()}
               />
