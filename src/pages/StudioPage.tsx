@@ -604,7 +604,7 @@ const StudioPage = () => {
           <div className="flex items-center gap-2">
             <input ref={fileInputRef} type="file" accept="image/*" multiple={!isImageOnlyTool} className="hidden" onChange={handleImageUpload} />
 
-            {(isImageOnlyTool ? refImages.length < 1 : refImages.length < 3) && (
+            {refImages.length < maxImages && (
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="shrink-0 w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors"
