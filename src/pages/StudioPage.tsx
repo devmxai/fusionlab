@@ -153,7 +153,11 @@ const StudioPage = () => {
   const { user, credits, refreshCredits } = useAuth();
 
   const handleGenerate = async () => {
-    if (!prompt.trim() && refImages.length === 0) {
+    if (isImageOnlyTool && refImages.length === 0) {
+      toast.error("يجب رفع صورة أولاً");
+      return;
+    }
+    if (!isImageOnlyTool && !prompt.trim() && refImages.length === 0) {
       toast.error("اكتب وصفاً أو ارفع صورة");
       return;
     }
