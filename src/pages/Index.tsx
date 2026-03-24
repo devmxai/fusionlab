@@ -157,6 +157,47 @@ const Index = () => {
           </section>
         )}
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border/20 mt-12 bg-secondary/10">
+        <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-2 sm:grid-cols-4 gap-8" dir="ltr">
+          <div>
+            <h4 className="text-xs font-bold text-foreground mb-4 tracking-wider uppercase">Products</h4>
+            <ul className="space-y-2.5">
+              {["Image Generation", "Video Generation", "Audio Studio", "Background Removal", "Upscaler"].map(item => (
+                <li key={item}><span className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">{item}</span></li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-foreground mb-4 tracking-wider uppercase">Use Cases</h4>
+            <ul className="space-y-2.5">
+              {["Marketing", "Social Media", "E-Commerce", "Entertainment", "Education"].map(item => (
+                <li key={item}><span className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">{item}</span></li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-foreground mb-4 tracking-wider uppercase">Models</h4>
+            <ul className="space-y-2.5">
+              {["Kling", "Veo", "Seedance", "Nano Banana", "Z Image"].map(item => (
+                <li key={item}><span className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">{item}</span></li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-foreground mb-4 tracking-wider uppercase">About</h4>
+            <ul className="space-y-2.5">
+              {["Company", "Pricing", "Terms of Service", "Privacy Policy", "Contact"].map(item => (
+                <li key={item}><span className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">{item}</span></li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="border-t border-border/10 py-5 text-center">
+          <p className="text-[10px] text-muted-foreground/50">© 2025 FusionLab. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 };
