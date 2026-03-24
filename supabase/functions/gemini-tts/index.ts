@@ -252,7 +252,15 @@ serve(async (req) => {
 
     // ─── Preview (short text) ───
     if (action === "preview") {
-      const { voiceName = "Kore", previewText } = body;
+      const {
+        voiceName = "Kore",
+        previewText,
+        styleInstruction: prevStyle = "",
+        dialectHint: prevDialect = "",
+        emotionHint: prevEmotion = "",
+        toneHint: prevTone = "",
+        stability: prevStability = 0.7,
+      } = body;
 
       const voiceValidationError = validateOfficialVoice(voiceName);
       if (voiceValidationError) {
@@ -262,12 +270,22 @@ serve(async (req) => {
         );
       }
 
+      // Build preview prompt with same style logic as synthesize
+      const spokenText = previewText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟";
+      const previewParts: string[] = [];
+      previewParts.push("Speak naturally with human-like emotional expression.");
+      previewParts.push("Language: Arabic (ar-001). Speak entirely in Arabic.");
+      if (prevDialect) previewParts.push(`Dialect target: ${prevDialect}.`);
+      if (prevEmotion) previewParts.push(`Emotion profile: ${prevEmotion}.`);
+      if (prevTone) previewParts.push(`Tone profile: ${prevTone}.`);
+      if (prevStyle) previewParts.push(`Style prompt: ${prevStyle}`);
+      if (prevStability < 0.5) previewParts.push("Allow more vocal variation.");
+      if (prevStability > 0.8) previewParts.push("Maintain consistent vocal tone.");
+
+      const previewPrompt = previewParts.join("\n") + "\n\n---\n\n" + spokenText;
+
       const requestBody = {
-        contents: [
-          {
-            parts: [{ text: previewText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟" }],
-          },
-        ],
+        contents: [{ parts: [{ text: previewPrompt }] }],
         generationConfig: {
           responseModalities: ["AUDIO"],
           speechConfig: {
