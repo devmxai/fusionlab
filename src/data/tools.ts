@@ -220,9 +220,8 @@ export const tools: AITool[] = [
     category: "فيديو",
     model: "veo3",
     isVeoApi: true,
+    frameMode: "first-only",
   },
-  {
-    id: "kling-3",
     title: "Kling 3.0",
     provider: "Kling",
     description: "فيديوهات سينمائية احترافية",
