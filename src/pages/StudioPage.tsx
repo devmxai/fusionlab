@@ -1037,8 +1037,8 @@ const StudioPage = () => {
 
           {/* Input row */}
           <div className="flex items-center gap-2">
-            {/* Upload button (only for non-remix, non-frame, non-avatar, non-image-only categories) */}
-            {!hasFrameMode && !isRemixTool && !isAvatarTool && !isImageOnlyTool && refImages.length < maxImages && (
+            {/* Upload button (only for models that support image input via maxImages in capabilities) */}
+            {!hasFrameMode && !isRemixTool && !isAvatarTool && !isImageOnlyTool && (caps?.maxImages ?? 0) > 0 && refImages.length < (caps?.maxImages ?? 0) && (
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="shrink-0 w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors"
