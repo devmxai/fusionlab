@@ -17,6 +17,10 @@ export interface ModelCapabilities {
   frameMode?: "first-last" | "first-only";
   /** Upscale factors */
   upscaleFactors?: string[];
+  /** Max reference images for remix/edit models */
+  maxImages?: number;
+  /** Minimum required images */
+  minImages?: number;
 }
 
 export const modelCapabilities: Record<string, ModelCapabilities> = {
@@ -36,21 +40,34 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
   "grok-imagine/text-to-image": {},
 
   // ─── Remix / Image Edit Models ───
-  "google/nano-banana-edit": {},
+  "google/nano-banana-edit": {
+    maxImages: 3,
+    minImages: 1,
+  },
   "flux-kontext-pro": {
     aspectRatios: ["1:1", "3:4", "9:16"],
+    maxImages: 1,
+    minImages: 1,
   },
   "flux-kontext-max": {
     aspectRatios: ["1:1", "3:4", "9:16"],
+    maxImages: 1,
+    minImages: 1,
   },
   "qwen/image-edit": {
     aspectRatios: ["1:1", "3:4", "9:16"],
+    maxImages: 1,
+    minImages: 1,
   },
   "gpt-image/1.5-image-to-image": {
     aspectRatios: ["1:1", "3:4", "9:16"],
+    maxImages: 16,
+    minImages: 1,
   },
   "seedream/4.5-edit": {
     aspectRatios: ["1:1", "3:4", "9:16"],
+    maxImages: 14,
+    minImages: 1,
   },
 
   // ─── Video Models ───
