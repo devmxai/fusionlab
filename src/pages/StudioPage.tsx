@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { tools, buildModelInput, AITool } from "@/data/tools";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Image as ImageIcon, Send, X, Sparkles, ChevronDown, Upload } from "lucide-react";
+import { ArrowRight, Image as ImageIcon, Send, X, Sparkles, ChevronDown, Upload } from "lucide-react";
 import { createTask, createVeoTask, createFluxKontextTask, pollTask } from "@/lib/kie-ai";
 import { uploadFileBase64 } from "@/lib/kie-ai";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +44,7 @@ const ratioConfig: Record<AspectRatio, { label: string; w: number; h: number; cs
 
 const resolutions: Resolution[] = ["1k", "2k", "4k"];
 const upscaleFactors: UpscaleFactor[] = ["1.5", "2", "4"];
+const videoDurations = ["5", "8", "10"];
 
 const StudioPage = () => {
   const { category } = useParams();
@@ -52,6 +53,10 @@ const StudioPage = () => {
   const firstFrameInputRef = useRef<HTMLInputElement>(null);
   const lastFrameInputRef = useRef<HTMLInputElement>(null);
   const modelMenuRef = useRef<HTMLDivElement>(null);
+  const aspectMenuRef = useRef<HTMLDivElement>(null);
+  const resMenuRef = useRef<HTMLDivElement>(null);
+  const durationMenuRef = useRef<HTMLDivElement>(null);
+  const upscaleMenuRef = useRef<HTMLDivElement>(null);
 
   const categoryName = category ? categorySlugMap[category] : undefined;
   const studioTitle = category ? categoryTitleMap[category] : "استديو";
@@ -63,6 +68,11 @@ const StudioPage = () => {
 
   const [selectedTool, setSelectedTool] = useState<AITool | null>(null);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [aspectMenuOpen, setAspectMenuOpen] = useState(false);
+  const [resMenuOpen, setResMenuOpen] = useState(false);
+  const [durationMenuOpen, setDurationMenuOpen] = useState(false);
+  const [upscaleMenuOpen, setUpscaleMenuOpen] = useState(false);
+  const [videoDuration, setVideoDuration] = useState("5");
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
@@ -87,13 +97,20 @@ const StudioPage = () => {
   // Close model menu on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (modelMenuRef.current && !modelMenuRef.current.contains(e.target as Node)) {
-        setModelMenuOpen(false);
-      }
+      const refs = [modelMenuRef, aspectMenuRef, resMenuRef, durationMenuRef, upscaleMenuRef];
+      refs.forEach((ref) => {
+        if (ref.current && !ref.current.contains(e.target as Node)) {
+          if (ref === modelMenuRef) setModelMenuOpen(false);
+          if (ref === aspectMenuRef) setAspectMenuOpen(false);
+          if (ref === resMenuRef) setResMenuOpen(false);
+          if (ref === durationMenuRef) setDurationMenuOpen(false);
+          if (ref === upscaleMenuRef) setUpscaleMenuOpen(false);
+        }
+      });
     };
-    if (modelMenuOpen) document.addEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [modelMenuOpen]);
+  }, []);
 
   if (!categoryName || categoryTools.length === 0) {
     return (
@@ -386,64 +403,47 @@ const StudioPage = () => {
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden" dir="rtl">
       {/* ── Header / App Bar ── */}
       <header className="shrink-0 bg-card/90 backdrop-blur-xl border-b border-border/30 z-50 rounded-b-2xl shadow-lg">
-        {/* Row 1: Back + Model selector + Mode badge */}
-        <div className="flex items-center gap-2 px-3 py-2.5 max-w-3xl mx-auto">
+        <div className="flex items-center gap-2 px-3 py-2.5 max-w-3xl mx-auto overflow-x-auto scrollbar-hide">
+          {/* Back button - arrow pointing right for RTL */}
           <button
             onClick={() => navigate("/")}
             className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowRight className="w-5 h-5" />
           </button>
 
-          {/* Subtle divider */}
           <div className="w-px h-6 bg-border/40 shrink-0" />
 
           {/* Model dropdown */}
-          <div className="relative flex-1 min-w-0" ref={modelMenuRef}>
+          <div className="relative shrink-0" ref={modelMenuRef}>
             <button
-              onClick={() => setModelMenuOpen((v) => !v)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/60 border border-border/30 hover:bg-secondary/80 transition-colors w-full"
+              onClick={() => { setModelMenuOpen((v) => !v); setAspectMenuOpen(false); setResMenuOpen(false); setDurationMenuOpen(false); setUpscaleMenuOpen(false); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/60 border border-border/30 hover:bg-secondary/80 transition-colors"
             >
-              <span className="text-[11px] font-bold text-foreground truncate">
-                {tool.title}
-              </span>
-              <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform mr-auto ${modelMenuOpen ? "rotate-180" : ""}`} />
+              <span className="text-[11px] font-bold text-foreground truncate max-w-[100px]">{tool.title}</span>
+              <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${modelMenuOpen ? "rotate-180" : ""}`} />
             </button>
-
             <AnimatePresence>
               {modelMenuOpen && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
+                  initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
-                  className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/40 rounded-xl shadow-2xl overflow-hidden z-50"
+                  className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/40 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[180px]"
                 >
                   <div className="max-h-64 overflow-y-auto">
                     {categoryTools.map((t) => (
-                      <button
-                        key={t.id}
-                        onClick={() => {
-                          setSelectedTool(t);
-                          setModelMenuOpen(false);
-                          setResultUrls([]);
-                          // Reset frames when switching models
+                      <button key={t.id}
+                        onClick={() => { setSelectedTool(t); setModelMenuOpen(false); setResultUrls([]);
                           if (firstFrame) { URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }
                           if (lastFrame) { URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }
                         }}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-right transition-colors ${
-                          tool.id === t.id ? "bg-primary/10" : "hover:bg-secondary/50"
-                        }`}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-right transition-colors ${tool.id === t.id ? "bg-primary/10" : "hover:bg-secondary/50"}`}
                       >
                         <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-semibold truncate ${tool.id === t.id ? "text-primary" : "text-foreground"}`}>
-                            {t.title}
-                          </p>
+                          <p className={`text-xs font-semibold truncate ${tool.id === t.id ? "text-primary" : "text-foreground"}`}>{t.title}</p>
                           <p className="text-[10px] text-muted-foreground truncate">{t.provider}</p>
                         </div>
-                        {t.isPro && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary shrink-0">PRO</span>
-                        )}
+                        {t.isPro && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary shrink-0">PRO</span>}
                       </button>
                     ))}
                   </div>
@@ -452,89 +452,114 @@ const StudioPage = () => {
             </AnimatePresence>
           </div>
 
-          {/* Mode badge */}
-          <span className="shrink-0 text-[9px] px-2 py-1 rounded-full bg-primary/15 text-primary font-bold">
-            {getMode()}
-          </span>
-        </div>
-
-        {/* Row 2: Settings chips (scrollable) */}
-        {(showAspectSettings || showResolutionSettings || showUpscaleSettings) && (
-          <div className="border-t border-border/20 px-3 py-2 max-w-3xl mx-auto">
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide items-center">
-              {/* Aspect Ratio */}
-              {showAspectSettings && (
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-[9px] text-muted-foreground/70 font-semibold">الأبعاد</span>
-                  <div className="flex gap-1">
+          {/* Aspect Ratio dropdown */}
+          {showAspectSettings && (
+            <div className="relative shrink-0" ref={aspectMenuRef}>
+              <button
+                onClick={() => { setAspectMenuOpen((v) => !v); setModelMenuOpen(false); setResMenuOpen(false); setDurationMenuOpen(false); setUpscaleMenuOpen(false); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/60 border border-border/30 hover:bg-secondary/80 transition-colors"
+              >
+                <span className="text-[11px] font-bold text-foreground">{aspectRatio}</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${aspectMenuOpen ? "rotate-180" : ""}`} />
+              </button>
+              <AnimatePresence>
+                {aspectMenuOpen && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-full left-0 mt-1 bg-card border border-border/40 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[100px]"
+                  >
                     {(Object.keys(ratioConfig) as AspectRatio[]).map((ratio) => (
-                      <button
-                        key={ratio}
-                        onClick={() => setAspectRatio(ratio)}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
-                          aspectRatio === ratio
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-                        }`}
-                      >
-                        {ratioConfig[ratio].label}
-                      </button>
+                      <button key={ratio} onClick={() => { setAspectRatio(ratio); setAspectMenuOpen(false); }}
+                        className={`w-full px-3 py-2 text-right text-xs font-semibold transition-colors ${aspectRatio === ratio ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary/50"}`}
+                      >{ratio}</button>
                     ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Divider */}
-              {showAspectSettings && showResolutionSettings && (
-                <div className="w-px h-5 bg-border/30 shrink-0" />
-              )}
-
-              {/* Resolution */}
-              {showResolutionSettings && (
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-[9px] text-muted-foreground/70 font-semibold">الدقة</span>
-                  <div className="flex gap-1">
-                    {resolutions.map((res) => (
-                      <button
-                        key={res}
-                        onClick={() => setResolution(res)}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
-                          resolution === res
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-                        }`}
-                      >
-                        {res.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Upscale Factor */}
-              {showUpscaleSettings && (
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-[9px] text-muted-foreground/70 font-semibold">التكبير</span>
-                  <div className="flex gap-1">
-                    {upscaleFactors.map((f) => (
-                      <button
-                        key={f}
-                        onClick={() => setUpscaleFactor(f)}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
-                          upscaleFactor === f
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-                        }`}
-                      >
-                        {f}x
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Resolution dropdown (non-video) */}
+          {showResolutionSettings && (
+            <div className="relative shrink-0" ref={resMenuRef}>
+              <button
+                onClick={() => { setResMenuOpen((v) => !v); setModelMenuOpen(false); setAspectMenuOpen(false); setDurationMenuOpen(false); setUpscaleMenuOpen(false); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/60 border border-border/30 hover:bg-secondary/80 transition-colors"
+              >
+                <span className="text-[11px] font-bold text-foreground">{resolution.toUpperCase()}</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${resMenuOpen ? "rotate-180" : ""}`} />
+              </button>
+              <AnimatePresence>
+                {resMenuOpen && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-full left-0 mt-1 bg-card border border-border/40 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[80px]"
+                  >
+                    {resolutions.map((res) => (
+                      <button key={res} onClick={() => { setResolution(res); setResMenuOpen(false); }}
+                        className={`w-full px-3 py-2 text-right text-xs font-semibold transition-colors ${resolution === res ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary/50"}`}
+                      >{res.toUpperCase()}</button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Duration dropdown (video only) */}
+          {isVideoTool && (
+            <div className="relative shrink-0" ref={durationMenuRef}>
+              <button
+                onClick={() => { setDurationMenuOpen((v) => !v); setModelMenuOpen(false); setAspectMenuOpen(false); setResMenuOpen(false); setUpscaleMenuOpen(false); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/60 border border-border/30 hover:bg-secondary/80 transition-colors"
+              >
+                <span className="text-[11px] font-bold text-foreground">{videoDuration}s</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${durationMenuOpen ? "rotate-180" : ""}`} />
+              </button>
+              <AnimatePresence>
+                {durationMenuOpen && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-full left-0 mt-1 bg-card border border-border/40 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[80px]"
+                  >
+                    {videoDurations.map((d) => (
+                      <button key={d} onClick={() => { setVideoDuration(d); setDurationMenuOpen(false); }}
+                        className={`w-full px-3 py-2 text-right text-xs font-semibold transition-colors ${videoDuration === d ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary/50"}`}
+                      >{d} ثانية</button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Upscale Factor dropdown */}
+          {showUpscaleSettings && (
+            <div className="relative shrink-0" ref={upscaleMenuRef}>
+              <button
+                onClick={() => { setUpscaleMenuOpen((v) => !v); setModelMenuOpen(false); setAspectMenuOpen(false); setResMenuOpen(false); setDurationMenuOpen(false); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/60 border border-border/30 hover:bg-secondary/80 transition-colors"
+              >
+                <span className="text-[11px] font-bold text-foreground">{upscaleFactor}x</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${upscaleMenuOpen ? "rotate-180" : ""}`} />
+              </button>
+              <AnimatePresence>
+                {upscaleMenuOpen && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-full left-0 mt-1 bg-card border border-border/40 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[80px]"
+                  >
+                    {upscaleFactors.map((f) => (
+                      <button key={f} onClick={() => { setUpscaleFactor(f); setUpscaleMenuOpen(false); }}
+                        className={`w-full px-3 py-2 text-right text-xs font-semibold transition-colors ${upscaleFactor === f ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary/50"}`}
+                      >{f}x</button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* ── Center area ── */}
