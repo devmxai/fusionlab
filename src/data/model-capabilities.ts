@@ -30,6 +30,10 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
   },
   "nano-banana-2": {},
   "nano-banana-pro": {},
+  "seedream/5-lite-text-to-image": {
+    aspectRatios: ["1:1", "4:3", "3:4", "16:9", "9:16", "2:3", "3:2", "21:9"],
+    qualities: ["basic", "high"],
+  },
   "seedream/4.5-text-to-image": {
     aspectRatios: ["1:1", "3:4", "9:16"],
   },
