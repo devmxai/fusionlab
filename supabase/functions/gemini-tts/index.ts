@@ -139,42 +139,39 @@ serve(async (req) => {
         );
       }
 
-      // ─── Build professional style prompt per documentation ───
-      // The style prompt is the PRIMARY control surface for voice performance
+      // ─── Build style prompt ENTIRELY in Arabic to keep native pronunciation ───
       const directionParts: string[] = [];
 
-      // Core voice acting instructions
-      directionParts.push("Speak naturally with human-like emotional expression and realistic pauses.");
-      directionParts.push("Never pronounce control tags literally — they are performance directions only.");
-      directionParts.push("Apply each inline tag (like [laughing], [whispering], [sarcasm], etc.) to the nearest following phrase, then return to the base style.");
-      directionParts.push("For Arabic text, keep pronunciation clear and avoid flattening emotional variation.");
+      // Core instructions in Arabic
+      directionParts.push("تحدث بشكل طبيعي تماماً كمتحدث عربي أصلي مع تعبيرات عاطفية واقعية ووقفات طبيعية.");
+      directionParts.push("لا تنطق أي علامات تحكم حرفياً مثل [laughing] أو [whispering] — هذه توجيهات أداء فقط، طبّقها على العبارة التالية ثم ارجع للأسلوب الأساسي.");
+      directionParts.push("تحدث باللغة العربية فقط بنطق عربي أصيل وطبيعي.");
 
-      // Language direction
-      directionParts.push(`Language: Arabic (${languageCode}). Speak entirely in Arabic with natural Arabic pronunciation.`);
-
-      // Dialect
+      // Dialect — always default to Iraqi
       if (dialectHint) {
-        directionParts.push(`Dialect target: ${dialectHint}.`);
+        directionParts.push(`اللهجة المطلوبة: ${dialectHint}.`);
+      } else {
+        directionParts.push("تحدث بلهجة عربية طبيعية.");
       }
 
       // Emotion
       if (emotionHint) {
-        directionParts.push(`Emotion profile: ${emotionHint}.`);
+        directionParts.push(`المشاعر: ${emotionHint}.`);
       }
 
       // Tone
       if (toneHint) {
-        directionParts.push(`Tone profile: ${toneHint}.`);
+        directionParts.push(`النبرة: ${toneHint}.`);
       }
 
-      // User style instruction — the main steering layer
+      // User style instruction
       if (styleInstruction) {
-        directionParts.push(`Style prompt: ${styleInstruction}`);
+        directionParts.push(`أسلوب الأداء: ${styleInstruction}`);
       }
 
       // Stability modifiers
-      if (stability < 0.5) directionParts.push("Allow more vocal variation and expressiveness.");
-      if (stability > 0.8) directionParts.push("Maintain consistent vocal tone with minimal variation.");
+      if (stability < 0.5) directionParts.push("اسمح بتنوع صوتي أكثر وتعبير أقوى.");
+      if (stability > 0.8) directionParts.push("حافظ على نبرة صوت ثابتة ومتسقة.");
 
       // Construct the final prompt: style direction + text in a single turn
       const fullPrompt = directionParts.join("\n") + "\n\n---\n\n" + text;
