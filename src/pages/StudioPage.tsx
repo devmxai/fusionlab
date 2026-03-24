@@ -443,16 +443,16 @@ const StudioPage = () => {
   const DropdownBtn = ({ id, label, value, hasValue }: { id: string; label: string; value: string; hasValue: boolean }) => (
     <button
       onClick={() => setOpenMenu(openMenu === id ? null : id)}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-200 ${
+      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border transition-all duration-200 ${
         hasValue
           ? "bg-primary/10 border-primary/50"
           : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"
       }`}
     >
-      <span className={`text-[11px] font-bold truncate max-w-[100px] ${hasValue ? "text-primary" : "text-foreground"}`}>
+      <span className={`text-xs font-bold truncate max-w-[110px] ${hasValue ? "text-primary" : "text-foreground"}`}>
         {hasValue ? value : label}
       </span>
-      <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${openMenu === id ? "rotate-180" : ""}`} />
+      <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${openMenu === id ? "rotate-180" : ""}`} />
     </button>
   );
 
