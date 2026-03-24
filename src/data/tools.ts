@@ -431,6 +431,21 @@ export function buildModelInput(
     };
   }
 
+  // ─── UTILITY MODELS ───
+
+  // Recraft Remove Background (image only)
+  if (model === "recraft/remove-background") {
+    return { image: imageUrls?.[0] || "" };
+  }
+
+  // Topaz Image Upscale (image + factor)
+  if (model === "topaz/image-upscale") {
+    return {
+      image_url: imageUrls?.[0] || "",
+      upscale_factor: extraParams?.upscale_factor || "2",
+    };
+  }
+
   // Default fallback
   if (imageUrls?.length) {
     return { prompt, image_url: imageUrls[0] };

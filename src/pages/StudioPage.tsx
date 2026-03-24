@@ -13,6 +13,7 @@ import ImageViewer from "@/components/ImageViewer";
 
 type AspectRatio = "1:1" | "3:4" | "9:16";
 type Resolution = "1k" | "2k" | "4k";
+type UpscaleFactor = "1.5" | "2" | "4";
 
 const categorySlugMap: Record<string, string> = {
   images: "صور",
