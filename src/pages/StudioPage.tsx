@@ -151,8 +151,12 @@ const StudioPage = () => {
   const hasFrameMode = !!(caps?.frameMode || tool.frameMode);
   const frameMode = caps?.frameMode || tool.frameMode;
 
+  // Remix image limits from capabilities
+  const remixMaxImages = isRemixTool ? (caps?.maxImages ?? 3) : 0;
+  const remixMinImages = isRemixTool ? (caps?.minImages ?? 0) : 0;
+
   const maxImages = isRemixTool
-    ? (tool.model === "gpt-image/1.5-image-to-image" ? 16 : tool.model === "seedream/4.5-edit" ? 14 : 3)
+    ? remixMaxImages
     : isImageOnlyTool ? 1 : 3;
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
