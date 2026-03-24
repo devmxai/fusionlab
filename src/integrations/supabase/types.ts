@@ -44,6 +44,45 @@ export type Database = {
         }
         Relationships: []
       }
+      generations: {
+        Row: {
+          created_at: string
+          file_type: string
+          file_url: string
+          id: string
+          metadata: Json | null
+          prompt: string | null
+          thumbnail_url: string | null
+          tool_id: string
+          tool_name: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_type?: string
+          file_url: string
+          id?: string
+          metadata?: Json | null
+          prompt?: string | null
+          thumbnail_url?: string | null
+          tool_id: string
+          tool_name?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          metadata?: Json | null
+          prompt?: string | null
+          thumbnail_url?: string | null
+          tool_id?: string
+          tool_name?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
