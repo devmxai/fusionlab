@@ -321,58 +321,57 @@ const AudioStudioPage = () => {
             </div>
           </div>
 
-          {/* Audio Player */}
-          {audioUrl && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-xl border border-border/50 p-4 space-y-3"
-            >
-              <audio
-                ref={audioRef}
-                src={audioUrl}
-                onTimeUpdate={handleTimeUpdate}
-                onEnded={() => setIsPlaying(false)}
-                onLoadedMetadata={handleTimeUpdate}
-              />
+          {/* Audio Player - Always visible */}
+          <div className="bg-card rounded-xl border border-border/50 p-4 space-y-3">
+            <audio
+              ref={audioRef}
+              src={audioUrl || undefined}
+              onTimeUpdate={handleTimeUpdate}
+              onEnded={() => setIsPlaying(false)}
+              onLoadedMetadata={handleTimeUpdate}
+            />
 
-              {/* Waveform-style progress */}
-              <div className="relative h-12 flex items-center gap-[2px] px-2">
-                {Array.from({ length: 60 }).map((_, i) => {
-                  const filled = audioDuration > 0 && (i / 60) <= (audioProgress / audioDuration);
-                  const height = 15 + Math.sin(i * 0.5) * 10 + Math.random() * 8;
-                  return (
-                    <div
-                      key={i}
-                      className={`flex-1 rounded-full transition-colors duration-150 ${
-                        filled ? "bg-primary" : "bg-secondary"
-                      }`}
-                      style={{ height: `${height}px` }}
-                      onClick={() => {
-                        if (audioRef.current && audioDuration > 0) {
-                          audioRef.current.currentTime = (i / 60) * audioDuration;
-                        }
-                      }}
-                    />
-                  );
-                })}
-              </div>
+            {/* Waveform-style progress */}
+            <div className="relative h-12 flex items-center gap-[2px] px-2">
+              {Array.from({ length: 60 }).map((_, i) => {
+                const filled = audioDuration > 0 && (i / 60) <= (audioProgress / audioDuration);
+                const height = 15 + Math.sin(i * 0.5) * 10 + Math.sin(i * 1.3) * 5;
+                return (
+                  <div
+                    key={i}
+                    className={`flex-1 rounded-full transition-colors duration-150 cursor-pointer ${
+                      !audioUrl ? "bg-secondary/50" : filled ? "bg-primary" : "bg-secondary"
+                    }`}
+                    style={{ height: `${height}px` }}
+                    onClick={() => {
+                      if (audioRef.current && audioDuration > 0) {
+                        audioRef.current.currentTime = (i / 60) * audioDuration;
+                      }
+                    }}
+                  />
+                );
+              })}
+            </div>
 
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground px-2">
-                <span>{formatTime(audioProgress)}</span>
-                <span>{formatTime(audioDuration)}</span>
-              </div>
+            <div className="flex items-center justify-between text-[10px] text-muted-foreground px-2">
+              <span>{formatTime(audioProgress)}</span>
+              <span>{audioDuration > 0 ? formatTime(audioDuration) : "0:00"}</span>
+            </div>
 
-              <div className="flex items-center justify-center gap-3">
-                <button
-                  onClick={togglePlay}
-                  className="w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors"
-                >
-                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-                </button>
-              </div>
-            </motion.div>
-          )}
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={togglePlay}
+                disabled={!audioUrl}
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors ${
+                  audioUrl
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                    : "bg-secondary text-muted-foreground cursor-not-allowed"
+                }`}
+              >
+                {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+              </button>
+            </div>
+          </div>
 
           {/* Action Buttons */}
           <div className="flex gap-2">
@@ -389,10 +388,9 @@ const AudioStudioPage = () => {
               {loading ? "جاري التوليد..." : "توليد الصوت"}
             </Button>
 
-            {audioUrl && (
-              <Button variant="outline" onClick={handleDownload} className="gap-2">
-                <Download className="w-4 h-4" />
-                تحميل
+            <Button variant="outline" onClick={handleDownload} disabled={!audioUrl} className="gap-2">
+              <Download className="w-4 h-4" />
+              تحميل
               </Button>
             )}
           </div>
