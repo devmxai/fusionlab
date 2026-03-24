@@ -476,12 +476,14 @@ export function buildModelInput(
   }
 
   if (model === "bytedance/seedance-1.5-pro") {
-    return {
+    const input: Record<string, unknown> = {
       prompt,
       aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio,
       resolution: "720p",
       duration: 8,
     };
+    if (imageUrls?.length) input.image_url = imageUrls[0];
+    return input;
   }
 
   if (model === "bytedance/v1-pro-text-to-video") {
