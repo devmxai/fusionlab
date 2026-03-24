@@ -403,7 +403,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
               <p className="text-xs text-muted-foreground">لا توجد عناصر بعد</p>
             </motion.div>
           ) : (
-            <motion.div custom={2} variants={bounceIn} className="columns-2 gap-1.5 space-y-1.5">
+            <motion.div custom={2} variants={bounceIn} className="columns-2 gap-[6px]" style={{ orphans: 1, widows: 1 }}>
               {displayItems.map((gen, i) => {
                 const isAudio = gen.file_type?.startsWith("audio");
                 const isVideo = gen.file_type?.startsWith("video");
@@ -418,34 +418,40 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setViewerItem(gen)}
-                    className="break-inside-avoid rounded-xl overflow-hidden bg-secondary/30 border border-border/20 cursor-pointer relative group"
+                    className="break-inside-avoid mb-[6px] rounded-xl overflow-hidden bg-secondary/30 border border-border/20 cursor-pointer relative group"
                   >
                     {isImage ? (
                       <img
                         src={gen.thumbnail_url || gen.file_url}
                         alt=""
-                        className="w-full object-cover"
+                        className="w-full block"
                         loading="lazy"
-                        style={{ minHeight: 80 }}
                       />
                     ) : isVideo ? (
-                      <div className="w-full aspect-video flex items-center justify-center bg-secondary/50">
-                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                          <Play className="w-5 h-5 text-primary" />
+                      <div className="relative">
+                        {gen.thumbnail_url ? (
+                          <img src={gen.thumbnail_url} alt="" className="w-full block" loading="lazy" />
+                        ) : (
+                          <div className="w-full aspect-video bg-secondary/50" />
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                            <Play className="w-4 h-4 text-white fill-white" />
+                          </div>
                         </div>
                       </div>
                     ) : (
-                      <div className="w-full flex items-center gap-2.5 p-3 bg-secondary/40">
-                        <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
-                          <Music className="w-4 h-4 text-primary" />
+                      <div className="w-full flex items-center gap-2 p-2.5 bg-secondary/40">
+                        <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                          <Music className="w-3.5 h-3.5 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-[10px] text-foreground truncate font-medium">{gen.tool_name || "صوت"}</p>
-                          <p className="text-[8px] text-muted-foreground truncate">{gen.prompt?.slice(0, 40) || ""}</p>
+                          <p className="text-[8px] text-muted-foreground truncate">{gen.prompt?.slice(0, 30) || ""}</p>
                         </div>
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors pointer-events-none" />
                   </motion.div>
                 );
               })}
