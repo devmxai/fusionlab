@@ -29,6 +29,7 @@ const categorySlugMap: Record<string, string> = {
 const categoryTitleMap: Record<string, string> = {
   images: "استديو الصور",
   video: "استديو الفيديو",
+  remix: "استديو الريمكس",
   audio: "استديو الصوت",
   avatar: "استديو الأفتار",
   "remove-bg": "حذف الخلفية",
