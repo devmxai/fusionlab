@@ -133,7 +133,6 @@ const PricingPage = () => {
         </motion.div>
       </div>
 
-      <BottomNav />
     </div>
   );
 };
