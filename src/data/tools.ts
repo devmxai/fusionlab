@@ -448,6 +448,11 @@ export function buildModelInput(
     return { image: imageUrls?.[0] || "" };
   }
 
+  // Recraft Crisp Upscale (image only)
+  if (model === "recraft/crisp-upscale") {
+    return { image: imageUrls?.[0] || "" };
+  }
+
   // Topaz Image Upscale (image + factor)
   if (model === "topaz/image-upscale") {
     return {
