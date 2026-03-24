@@ -566,6 +566,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
   };
 
   return (
+    <>
     <AnimatePresence>
       {open && (
         <>
@@ -593,7 +594,6 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
               borderBottomLeftRadius: "24px",
             }}
           >
-            {/* Close button */}
             <button
               onClick={onClose}
               className="absolute top-4 left-4 z-10 p-1.5 rounded-full bg-secondary/40 hover:bg-secondary/70 transition-colors"
@@ -650,7 +650,6 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
               </div>
             )}
 
-            {/* Download button */}
             <button
               onClick={() => handleDownload(viewerItem.file_url, viewerItem.tool_name || "download")}
               className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/60 hover:bg-black/80 border border-border/30 backdrop-blur-sm transition-colors"
@@ -659,7 +658,6 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
               <span className="text-xs text-foreground font-medium">تحميل</span>
             </button>
 
-            {/* Close */}
             <button
               onClick={() => setViewerItem(null)}
               className="absolute top-3 right-3 p-2 rounded-full bg-black/60 hover:bg-black/80 transition-colors"
@@ -670,6 +668,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
         </motion.div>
       )}
     </AnimatePresence>
+    </>
   );
 };
 
