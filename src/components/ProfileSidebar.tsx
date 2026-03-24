@@ -26,6 +26,8 @@ import {
   Music,
   Sparkles,
   X,
+  Play,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +67,7 @@ const bounceIn = {
 };
 
 const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
+  const [viewerItem, setViewerItem] = useState<any>(null);
   const { user, credits, isAdmin, signOut, refreshCredits } = useAuth();
   const navigate = useNavigate();
   const [view, setView] = useState<SidebarView>("main");
@@ -186,11 +189,8 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
     <motion.div className="flex flex-col h-full" initial="hidden" animate="visible">
       {/* Avatar centered at top */}
       <motion.div custom={0} variants={bounceIn} className="flex flex-col items-center pt-8 pb-3">
-        <div className="relative">
-          <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/50 shadow-[0_0_20px_hsl(var(--primary)/0.3)]">
-            <img src={userAvatar} alt="avatar" className="w-full h-full object-cover" />
-          </div>
-          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-green-500 border-2 border-background" />
+        <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary/50 shadow-[0_0_20px_hsl(var(--primary)/0.3)]">
+          <img src={userAvatar} alt="avatar" className="w-full h-full object-cover" />
         </div>
       </motion.div>
 
@@ -430,10 +430,49 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
     );
   };
 
+  // Masonry layout pattern for collage effect
+  const getMasonryLayout = (items: any[]) => {
+    // Pattern: tall, wide, square variations
+    const patterns = [
+      { colSpan: 1, rowSpan: 2 }, // tall portrait
+      { colSpan: 1, rowSpan: 1 }, // square
+      { colSpan: 1, rowSpan: 1 }, // square
+      { colSpan: 2, rowSpan: 1 }, // wide landscape
+      { colSpan: 1, rowSpan: 1 }, // square
+      { colSpan: 1, rowSpan: 2 }, // tall portrait
+      { colSpan: 1, rowSpan: 1 }, // square
+      { colSpan: 2, rowSpan: 1 }, // wide landscape
+      { colSpan: 1, rowSpan: 1 }, // square
+      { colSpan: 1, rowSpan: 1 }, // square
+      { colSpan: 1, rowSpan: 1 }, // square
+      { colSpan: 1, rowSpan: 2 }, // tall
+    ];
+    return items.map((item, i) => ({
+      ...item,
+      layout: patterns[i % patterns.length],
+    }));
+  };
+
+  const handleDownload = async (url: string, filename?: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename || "download";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast.success("تم التحميل");
+    } catch {
+      toast.error("فشل التحميل");
+    }
+  };
+
   const renderLibraryView = () => {
     const images = generations.filter(g => g.file_type?.startsWith("image"));
     const videos = generations.filter(g => g.file_type?.startsWith("video"));
     const audio = generations.filter(g => g.file_type?.startsWith("audio"));
+    const layoutItems = getMasonryLayout(generations.slice(0, 12));
 
     return (
       <motion.div className="flex flex-col h-full" initial="hidden" animate="visible">
@@ -468,31 +507,56 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
             ))}
           </motion.div>
 
-          {/* Recent generations */}
+          {/* Masonry collage grid */}
           {generations.length === 0 ? (
             <motion.div custom={2} variants={bounceIn} className="text-center py-8">
               <Sparkles className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
               <p className="text-xs text-muted-foreground">لا توجد عناصر بعد</p>
             </motion.div>
           ) : (
-            <motion.div custom={2} variants={bounceIn} className="grid grid-cols-3 gap-1.5">
-              {generations.slice(0, 9).map((gen) => (
-                <div
+            <motion.div
+              custom={2}
+              variants={bounceIn}
+              className="grid grid-cols-3 auto-rows-[70px] gap-1.5"
+            >
+              {layoutItems.map((gen) => (
+                <motion.div
                   key={gen.id}
-                  className="aspect-square rounded-xl overflow-hidden bg-secondary/30 border border-border/20"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setViewerItem(gen)}
+                  className="rounded-xl overflow-hidden bg-secondary/30 border border-border/20 cursor-pointer relative group"
+                  style={{
+                    gridColumn: `span ${gen.layout.colSpan}`,
+                    gridRow: `span ${gen.layout.rowSpan}`,
+                  }}
                 >
                   {gen.file_type?.startsWith("image") ? (
-                    <img src={gen.thumbnail_url || gen.file_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    <img
+                      src={gen.thumbnail_url || gen.file_url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
                   ) : gen.file_type?.startsWith("video") ? (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Video className="w-5 h-5 text-muted-foreground" />
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-secondary/40">
+                      <Video className="w-5 h-5 text-primary mb-1" />
+                      <span className="text-[8px] text-muted-foreground">فيديو</span>
                     </div>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Music className="w-5 h-5 text-muted-foreground" />
+                    <div className="w-full h-full flex items-center gap-2 px-3 bg-secondary/40">
+                      <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                        <Play className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[9px] text-foreground truncate">{gen.tool_name || "صوت"}</p>
+                        <p className="text-[8px] text-muted-foreground truncate">{gen.prompt?.slice(0, 30) || ""}</p>
+                      </div>
                     </div>
                   )}
-                </div>
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                </motion.div>
               ))}
             </motion.div>
           )}
@@ -502,6 +566,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
   };
 
   return (
+    <>
     <AnimatePresence>
       {open && (
         <>
@@ -529,7 +594,6 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
               borderBottomLeftRadius: "24px",
             }}
           >
-            {/* Close button */}
             <button
               onClick={onClose}
               className="absolute top-4 left-4 z-10 p-1.5 rounded-full bg-secondary/40 hover:bg-secondary/70 transition-colors"
@@ -547,6 +611,64 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
         </>
       )}
     </AnimatePresence>
+
+    {/* Fullscreen Image/Video Viewer */}
+    <AnimatePresence>
+      {viewerItem && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl"
+          onClick={() => setViewerItem(null)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring" as const, damping: 25, stiffness: 300 }}
+            className="relative max-w-[90vw] max-h-[85vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {viewerItem.file_type?.startsWith("image") ? (
+              <img
+                src={viewerItem.file_url}
+                alt=""
+                className="max-w-full max-h-[85vh] object-contain rounded-xl"
+              />
+            ) : viewerItem.file_type?.startsWith("video") ? (
+              <video
+                src={viewerItem.file_url}
+                controls
+                autoPlay
+                className="max-w-full max-h-[85vh] rounded-xl"
+              />
+            ) : (
+              <div className="p-8 rounded-2xl bg-card border border-border/30 text-center">
+                <Music className="w-12 h-12 text-primary mx-auto mb-3" />
+                <audio src={viewerItem.file_url} controls autoPlay className="w-64" />
+              </div>
+            )}
+
+            <button
+              onClick={() => handleDownload(viewerItem.file_url, viewerItem.tool_name || "download")}
+              className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/60 hover:bg-black/80 border border-border/30 backdrop-blur-sm transition-colors"
+            >
+              <Download className="w-4 h-4 text-foreground" />
+              <span className="text-xs text-foreground font-medium">تحميل</span>
+            </button>
+
+            <button
+              onClick={() => setViewerItem(null)}
+              className="absolute top-3 right-3 p-2 rounded-full bg-black/60 hover:bg-black/80 transition-colors"
+            >
+              <X className="w-4 h-4 text-foreground" />
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+    </>
   );
 };
 
