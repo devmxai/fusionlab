@@ -90,6 +90,10 @@ const StudioPage = () => {
   const [lastFrame, setLastFrame] = useState<{ file: File; preview: string } | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState("");
+  // Avatar-specific state
+  const [avatarImage, setAvatarImage] = useState<{ file: File; preview: string } | null>(null);
+  const [avatarAudio, setAvatarAudio] = useState<{ file: File; name: string } | null>(null);
+  const [avatarVideo, setAvatarVideo] = useState<{ file: File; name: string } | null>(null);
 
   // Dropdown open states
   const [openMenu, setOpenMenu] = useState<string | null>(null);
