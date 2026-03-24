@@ -97,13 +97,20 @@ const StudioPage = () => {
   // Close model menu on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (modelMenuRef.current && !modelMenuRef.current.contains(e.target as Node)) {
-        setModelMenuOpen(false);
-      }
+      const refs = [modelMenuRef, aspectMenuRef, resMenuRef, durationMenuRef, upscaleMenuRef];
+      refs.forEach((ref) => {
+        if (ref.current && !ref.current.contains(e.target as Node)) {
+          if (ref === modelMenuRef) setModelMenuOpen(false);
+          if (ref === aspectMenuRef) setAspectMenuOpen(false);
+          if (ref === resMenuRef) setResMenuOpen(false);
+          if (ref === durationMenuRef) setDurationMenuOpen(false);
+          if (ref === upscaleMenuRef) setUpscaleMenuOpen(false);
+        }
+      });
     };
-    if (modelMenuOpen) document.addEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [modelMenuOpen]);
+  }, []);
 
   if (!categoryName || categoryTools.length === 0) {
     return (
