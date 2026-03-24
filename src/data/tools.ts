@@ -507,7 +507,7 @@ export function buildModelInput(
   if (model === "bytedance/v1-pro-text-to-video") {
     return {
       prompt,
-      aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9",
+      aspect_ratio: aspectRatio || "16:9",
       resolution: (extraParams?.resolution as string) || "720p",
       duration: (extraParams?.duration as string) || "5",
     };
