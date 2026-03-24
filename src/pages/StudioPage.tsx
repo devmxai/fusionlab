@@ -19,6 +19,7 @@ type UpscaleFactor = "1.5" | "2" | "4";
 const categorySlugMap: Record<string, string> = {
   images: "صور",
   video: "فيديو",
+  remix: "ريمكس",
   audio: "صوت",
   avatar: "افتار",
   "remove-bg": "حذف الخلفية",
