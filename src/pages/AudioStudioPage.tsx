@@ -128,19 +128,23 @@ const AudioStudioPage = () => {
 
     setLoading(true);
     try {
+      // Parse style instruction to extract dialect/emotion/tone hints
+      const hasIraqi = styleInstruction.includes("عراقي") || styleInstruction.includes("بغداد");
+      const dialectHint = hasIraqi ? "لهجة عراقية عامية واضحة" : "";
+
       const { data, error } = await supabase.functions.invoke("gemini-tts", {
         body: {
           action: "synthesize",
           prebuiltModel: GEMINI_FLASH_TTS_MODEL,
           text,
           voiceName: selectedVoice.name,
-          styleInstruction,
+          styleInstruction: styleInstruction.trim(),
           speakingRate,
           pitch,
           stability,
-          dialectHint: styleInstruction.includes("عراقي") ? "لهجة عراقية عامية واضحة" : "",
-          emotionHint: "",
-          toneHint: "",
+          dialectHint,
+          emotionHint: styleInstruction.trim() ? "طبيعي وبشري" : "",
+          toneHint: styleInstruction.trim() ? "واضح وقريب من المستمع" : "",
         },
       });
 
@@ -199,11 +203,18 @@ const AudioStudioPage = () => {
   const handlePreviewVoice = async () => {
     setPreviewing(true);
     try {
+      const hasIraqiPreview = styleInstruction.includes("عراقي") || styleInstruction.includes("بغداد");
       const { data, error } = await supabase.functions.invoke("gemini-tts", {
         body: {
           action: "preview",
           prebuiltModel: GEMINI_FLASH_TTS_MODEL,
           voiceName: selectedVoice.name,
+          previewText: "مرحباً، أنا صوتك الجديد. كيف أبدو؟",
+          styleInstruction: styleInstruction.trim(),
+          dialectHint: hasIraqiPreview ? "لهجة عراقية عامية واضحة" : "",
+          emotionHint: styleInstruction.trim() ? "طبيعي وبشري" : "",
+          toneHint: styleInstruction.trim() ? "واضح وقريب من المستمع" : "",
+          stability,
         },
       });
       if (error) throw new Error(error.message);
