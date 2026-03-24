@@ -119,13 +119,16 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
   },
 
   // ─── Avatar Models ───
+  // Kling Avatar: image_url + audio_url + prompt only, no resolution
   "kling/ai-avatar-standard": {},
   "kling/ai-avatar-pro": {},
+  // Infinitalk: image_url + audio_url + prompt + resolution (480p/720p)
   "infinitalk/from-audio": {
-    resolutions: ["480p"],
+    resolutions: ["480p", "720p"],
   },
+  // Wan Animate: video_url + image_url + resolution (480p/580p/720p)
   "wan/2-2-animate-move": {
-    resolutions: ["480p"],
+    resolutions: ["480p", "580p", "720p"],
   },
 
   // ─── Utility Models ───
