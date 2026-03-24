@@ -266,8 +266,8 @@ const AudioStudioPage = () => {
     a.click();
   };
 
-  const insertTag = (tag: string) => {
-    setText((prev) => prev + " " + tag + " ");
+  const insertTag = (tag: InlineTag) => {
+    setText((prev) => prev + ` ${tag.tag} `);
   };
 
   const applyPreset = (style: string) => {
