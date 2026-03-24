@@ -432,7 +432,16 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
                         {gen.thumbnail_url ? (
                           <img src={gen.thumbnail_url} alt="" className="w-full block" loading="lazy" />
                         ) : (
-                          <div className="w-full aspect-video bg-secondary/50" />
+                          <video
+                            src={gen.file_url}
+                            muted
+                            preload="metadata"
+                            className="w-full block"
+                            onLoadedData={(e) => {
+                              const vid = e.currentTarget;
+                              vid.currentTime = 0.5;
+                            }}
+                          />
                         )}
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
