@@ -210,9 +210,8 @@ export const tools: AITool[] = [
     category: "فيديو",
     model: "veo3_fast",
     isVeoApi: true,
+    frameMode: "first-only",
   },
-  {
-    id: "veo31-quality",
     title: "Veo 3.1 Quality",
     provider: "Google",
     description: "أعلى جودة فيديو من Google",
