@@ -290,8 +290,27 @@ const AudioStudioPage = () => {
     a.click();
   };
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const insertTag = (tag: InlineTag) => {
-    setText((prev) => prev + ` ${tag.emoji} `);
+    const el = textareaRef.current;
+    if (!el) {
+      setText((prev) => prev + ` ${tag.emoji} `);
+      return;
+    }
+    const start = el.selectionStart ?? text.length;
+    const end = el.selectionEnd ?? text.length;
+    const before = text.slice(0, start);
+    const after = text.slice(end);
+    const insertion = ` ${tag.emoji} `;
+    const newText = before + insertion + after;
+    setText(newText);
+    // Restore cursor position after the inserted emoji
+    requestAnimationFrame(() => {
+      const newPos = start + insertion.length;
+      el.focus();
+      el.setSelectionRange(newPos, newPos);
+    });
   };
 
   const applyPreset = (style: string) => {
@@ -372,6 +391,7 @@ const AudioStudioPage = () => {
               النص
             </label>
             <Textarea
+              ref={textareaRef}
               value={text}
               onChange={(e) => setText(tagsToEmojis(e.target.value))}
               placeholder="اكتب النص الذي تريد تحويله إلى صوت..."
