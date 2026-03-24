@@ -231,6 +231,7 @@ export const tools: AITool[] = [
     isPro: false,
     category: "فيديو",
     model: "kling-3.0",
+    frameMode: "first-last",
   },
   {
     id: "kling-2-6",
