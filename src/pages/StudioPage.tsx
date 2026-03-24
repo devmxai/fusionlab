@@ -58,8 +58,10 @@ const StudioPage = () => {
   const { category } = useParams();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const remixSlotInputRef = useRef<HTMLInputElement>(null);
   const firstFrameInputRef = useRef<HTMLInputElement>(null);
   const lastFrameInputRef = useRef<HTMLInputElement>(null);
+  const [remixUploadSlot, setRemixUploadSlot] = useState<number>(-1);
 
   const categoryName = category ? categorySlugMap[category] : undefined;
 
