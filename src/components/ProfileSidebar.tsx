@@ -611,6 +611,65 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
         </>
       )}
     </AnimatePresence>
+
+    {/* Fullscreen Image/Video Viewer */}
+    <AnimatePresence>
+      {viewerItem && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl"
+          onClick={() => setViewerItem(null)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring" as const, damping: 25, stiffness: 300 }}
+            className="relative max-w-[90vw] max-h-[85vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {viewerItem.file_type?.startsWith("image") ? (
+              <img
+                src={viewerItem.file_url}
+                alt=""
+                className="max-w-full max-h-[85vh] object-contain rounded-xl"
+              />
+            ) : viewerItem.file_type?.startsWith("video") ? (
+              <video
+                src={viewerItem.file_url}
+                controls
+                autoPlay
+                className="max-w-full max-h-[85vh] rounded-xl"
+              />
+            ) : (
+              <div className="p-8 rounded-2xl bg-card border border-border/30 text-center">
+                <Music className="w-12 h-12 text-primary mx-auto mb-3" />
+                <audio src={viewerItem.file_url} controls autoPlay className="w-64" />
+              </div>
+            )}
+
+            {/* Download button */}
+            <button
+              onClick={() => handleDownload(viewerItem.file_url, viewerItem.tool_name || "download")}
+              className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/60 hover:bg-black/80 border border-border/30 backdrop-blur-sm transition-colors"
+            >
+              <Download className="w-4 h-4 text-foreground" />
+              <span className="text-xs text-foreground font-medium">تحميل</span>
+            </button>
+
+            {/* Close */}
+            <button
+              onClick={() => setViewerItem(null)}
+              className="absolute top-3 right-3 p-2 rounded-full bg-black/60 hover:bg-black/80 transition-colors"
+            >
+              <X className="w-4 h-4 text-foreground" />
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
