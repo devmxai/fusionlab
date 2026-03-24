@@ -29,6 +29,8 @@ interface GeminiVoice {
   description: string;
 }
 
+const GEMINI_FLASH_TTS_MODEL = "gemini-2.5-flash-tts";
+
 const geminiVoices: GeminiVoice[] = [
   { name: "Puck", label: "Puck", gender: "male", description: "صوت شاب ديناميكي" },
   { name: "Charon", label: "Charon", gender: "male", description: "صوت عميق وهادئ" },
@@ -113,6 +115,7 @@ const AudioStudioPage = () => {
       const { data, error } = await supabase.functions.invoke("gemini-tts", {
         body: {
           action: "synthesize",
+          prebuiltModel: GEMINI_FLASH_TTS_MODEL,
           text,
           voiceName: selectedVoice.name,
           styleInstruction,
@@ -183,6 +186,7 @@ const AudioStudioPage = () => {
       const { data, error } = await supabase.functions.invoke("gemini-tts", {
         body: {
           action: "preview",
+          prebuiltModel: GEMINI_FLASH_TTS_MODEL,
           voiceName: selectedVoice.name,
         },
       });
