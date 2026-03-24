@@ -23,6 +23,16 @@ export const categories = [
 
 export const tools: AITool[] = [
   {
+    id: "z-image",
+    title: "Z Image",
+    provider: "KIE.AI",
+    description: "توليد صور واقعية فائقة الجودة",
+    image: "image-gen",
+    isPro: false,
+    category: "صور",
+    model: "z-image",
+  },
+  {
     id: "nano-banana",
     title: "Nano Banana 2",
     provider: "Google",
