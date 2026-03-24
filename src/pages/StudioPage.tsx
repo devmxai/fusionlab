@@ -415,7 +415,7 @@ const StudioPage = () => {
             tool_name: tool.title,
             prompt,
             file_url: fileUrl,
-            file_type: isVideoTool ? "video" : "image",
+            file_type: (isVideoTool || isAvatarTool) ? "video" : "image",
             metadata: { aspectRatio, resolution, model: tool.model } as any,
           });
         }
