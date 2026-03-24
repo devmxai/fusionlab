@@ -69,11 +69,29 @@ const presets = [
   { label: "إنفلونسر", style: "كلام عفوي، مرح، شبابي، طاقة إيجابية" },
 ];
 
-// ─── Inline Tags ───
-const inlineTags = [
-  "[short pause]", "[medium pause]", "[long pause]",
-  "[whispering]", "[shouting]", "[sarcasm]", "[laughing]",
-  "[sigh]", "[fast]", "[scared]", "[curious]",
+// ─── Inline Tags with Emoji ───
+interface InlineTag {
+  id: string;
+  emoji: string;
+  label: string;
+  tag: string; // the actual tag sent to backend
+}
+
+const inlineTags: InlineTag[] = [
+  { id: "short-pause", emoji: "⏸️", label: "وقفة قصيرة", tag: "[short pause]" },
+  { id: "medium-pause", emoji: "⏯️", label: "وقفة متوسطة", tag: "[medium pause]" },
+  { id: "long-pause", emoji: "⏹️", label: "وقفة طويلة", tag: "[long pause]" },
+  { id: "whispering", emoji: "🤫", label: "همس", tag: "[whispering]" },
+  { id: "shouting", emoji: "🗣️", label: "صراخ", tag: "[shouting]" },
+  { id: "sarcasm", emoji: "😏", label: "سخرية", tag: "[sarcasm]" },
+  { id: "laughing", emoji: "😂", label: "ضحك", tag: "[laughing]" },
+  { id: "sigh", emoji: "😮‍💨", label: "تنهيدة", tag: "[sigh]" },
+  { id: "fast", emoji: "⚡", label: "سريع", tag: "[fast]" },
+  { id: "scared", emoji: "😨", label: "خوف", tag: "[scared]" },
+  { id: "curious", emoji: "🤔", label: "فضول", tag: "[curious]" },
+  { id: "bored", emoji: "😑", label: "ملل", tag: "[bored]" },
+  { id: "uhm", emoji: "🤨", label: "تردد", tag: "[uhm]" },
+  { id: "gasp", emoji: "😲", label: "شهقة", tag: "[gasp]" },
 ];
 
 const AudioStudioPage = () => {
@@ -248,8 +266,8 @@ const AudioStudioPage = () => {
     a.click();
   };
 
-  const insertTag = (tag: string) => {
-    setText((prev) => prev + " " + tag + " ");
+  const insertTag = (tag: InlineTag) => {
+    setText((prev) => prev + ` ${tag.tag} `);
   };
 
   const applyPreset = (style: string) => {
@@ -336,15 +354,17 @@ const AudioStudioPage = () => {
               className="min-h-[120px] bg-card border-border/50 text-sm resize-none focus:border-primary/50"
               dir="rtl"
             />
-            {/* Inline Tags */}
-            <div className="flex gap-1 flex-wrap">
+            {/* Inline Tags - Emoji Chips */}
+            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
               {inlineTags.map((tag) => (
                 <button
-                  key={tag}
+                  key={tag.id}
                   onClick={() => insertTag(tag)}
-                  className="text-[9px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/70 hover:text-primary hover:bg-primary/20 transition-all font-mono"
+                  title={tag.label}
+                  className="shrink-0 flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-foreground transition-all border border-primary/10 hover:border-primary/30"
                 >
-                  {tag}
+                  <span className="text-sm">{tag.emoji}</span>
+                  <span className="text-[10px] text-muted-foreground">{tag.label}</span>
                 </button>
               ))}
             </div>
