@@ -97,6 +97,7 @@ const StudioPage = () => {
 
   // Dropdown open states
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [expandedProvider, setExpandedProvider] = useState<string | null>(null);
   const headerRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
