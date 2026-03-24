@@ -70,6 +70,7 @@ const StudioPage = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState("");
+  const [upscaleFactor, setUpscaleFactor] = useState<UpscaleFactor>("2");
 
   // Auto-select first tool
   useEffect(() => {
