@@ -65,6 +65,7 @@ const bounceIn = {
 };
 
 const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
+  const [viewerItem, setViewerItem] = useState<any>(null);
   const { user, credits, isAdmin, signOut, refreshCredits } = useAuth();
   const navigate = useNavigate();
   const [view, setView] = useState<SidebarView>("main");
