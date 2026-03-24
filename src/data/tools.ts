@@ -535,7 +535,7 @@ export function buildModelInput(
     return {
       video_url: extraParams?.video_url || "",
       image_url: extraParams?.image_url || (imageUrls?.[0] ?? ""),
-      resolution: "480p",
+      resolution: (extraParams?.resolution as string) || "480p",
     };
   }
 
