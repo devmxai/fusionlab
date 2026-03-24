@@ -288,7 +288,7 @@ const AudioStudioPage = () => {
   };
 
   const insertTag = (tag: InlineTag) => {
-    setText((prev) => prev + ` ${tag.tag} `);
+    setText((prev) => prev + ` ${tag.emoji} `);
   };
 
   const applyPreset = (style: string) => {
