@@ -124,6 +124,10 @@ const StudioPage = () => {
     // Reset frames
     if (firstFrame) { URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }
     if (lastFrame) { URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }
+    // Reset avatar
+    if (avatarImage) { URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }
+    setAvatarAudio(null);
+    setAvatarVideo(null);
     // Baseline defaults
     setAspectRatio("1:1");
     setVideoDuration("5");
