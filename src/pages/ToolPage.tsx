@@ -4,6 +4,8 @@ import { tools, buildModelInput } from "@/data/tools";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Image as ImageIcon, Send, X, Settings2, Sparkles } from "lucide-react";
 import { createTask, pollTask, uploadFileBase64 } from "@/lib/kie-ai";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import CircularProgress from "@/components/CircularProgress";
