@@ -7,8 +7,10 @@ export interface AITool {
   isPro: boolean;
   category: string;
   model: string;
-  /** Input params builder per model */
-  inputParams?: Record<string, unknown>;
+  /** Whether this model uses the Veo API instead of standard createTask */
+  isVeoApi?: boolean;
+  /** Input type: what the model needs besides prompt */
+  inputType?: "text-to-video" | "avatar" | "animate";
 }
 
 export const categories = [
@@ -22,6 +24,7 @@ export const categories = [
 ] as const;
 
 export const tools: AITool[] = [
+  // ─── Image Models ───
   {
     id: "z-image",
     title: "Z Image",
@@ -61,16 +64,6 @@ export const tools: AITool[] = [
     isPro: false,
     category: "صور",
     model: "google/nano-banana-edit",
-  },
-  {
-    id: "kling-3",
-    title: "Kling 3.0",
-    provider: "Kling",
-    description: "فيديوهات سينمائية احترافية",
-    image: "video-gen",
-    isPro: false,
-    category: "فيديو",
-    model: "kling-3.0/video",
   },
   {
     id: "seedream-4-5",
@@ -122,9 +115,73 @@ export const tools: AITool[] = [
     category: "صور",
     model: "grok-imagine/text-to-image",
   },
+
+  // ─── Video Models ───
+  {
+    id: "grok-video",
+    title: "Grok Video",
+    provider: "xAI",
+    description: "توليد فيديو بتقنية Grok",
+    image: "video-gen",
+    isPro: false,
+    category: "فيديو",
+    model: "grok-imagine/text-to-video",
+  },
+  {
+    id: "veo31-fast",
+    title: "Veo 3.1 Fast",
+    provider: "Google",
+    description: "توليد فيديو سريع بتقنية Google",
+    image: "video-gen",
+    isPro: false,
+    category: "فيديو",
+    model: "veo3_fast",
+    isVeoApi: true,
+  },
+  {
+    id: "veo31-quality",
+    title: "Veo 3.1 Quality",
+    provider: "Google",
+    description: "أعلى جودة فيديو من Google",
+    image: "video-gen",
+    isPro: true,
+    category: "فيديو",
+    model: "veo3",
+    isVeoApi: true,
+  },
+  {
+    id: "kling-3",
+    title: "Kling 3.0",
+    provider: "Kling",
+    description: "فيديوهات سينمائية احترافية",
+    image: "video-gen",
+    isPro: false,
+    category: "فيديو",
+    model: "kling-3.0",
+  },
+  {
+    id: "kling-2-6",
+    title: "Kling 2.6",
+    provider: "Kling",
+    description: "فيديوهات بجودة عالية ومؤثرات صوتية",
+    image: "video-gen",
+    isPro: false,
+    category: "فيديو",
+    model: "kling-2.6/text-to-video",
+  },
+  {
+    id: "kling-2-1-master",
+    title: "Kling 2.1 Master",
+    provider: "Kling",
+    description: "نسخة متقدمة بدقة احترافية",
+    image: "video-gen",
+    isPro: true,
+    category: "فيديو",
+    model: "kling/v2-1-master-text-to-video",
+  },
   {
     id: "seedance",
-    title: "SeeDance 1.5 Pro",
+    title: "Seedance 1.5 Pro",
     provider: "Bytedance",
     description: "رقص وحركة طبيعية بالفيديو",
     image: "inpaint",
@@ -132,112 +189,249 @@ export const tools: AITool[] = [
     category: "فيديو",
     model: "bytedance/seedance-1.5-pro",
   },
+  {
+    id: "seedance-v1-pro",
+    title: "Seedance V1 Pro",
+    provider: "Bytedance",
+    description: "فيديوهات سينمائية بكاميرا متحركة",
+    image: "inpaint",
+    isPro: false,
+    category: "فيديو",
+    model: "bytedance/v1-pro-text-to-video",
+  },
+  {
+    id: "sora-2",
+    title: "Sora 2",
+    provider: "OpenAI",
+    description: "توليد فيديو متقدم من OpenAI",
+    image: "video-gen",
+    isPro: true,
+    category: "فيديو",
+    model: "sora-2-text-to-video",
+  },
+  {
+    id: "wan-2-6",
+    title: "Wan 2.6",
+    provider: "Alibaba",
+    description: "فيديو بدقة عالية ومدد متعددة",
+    image: "video-gen",
+    isPro: false,
+    category: "فيديو",
+    model: "wan/2-6-text-to-video",
+  },
+
+  // ─── Avatar Models ───
+  {
+    id: "kling-avatar-standard",
+    title: "Kling Avatar",
+    provider: "Kling",
+    description: "أفتار ناطق من صورة وصوت",
+    image: "ai-influencer",
+    isPro: false,
+    category: "افتار",
+    model: "kling/ai-avatar-standard",
+    inputType: "avatar",
+  },
+  {
+    id: "kling-avatar-pro",
+    title: "Kling Avatar Pro",
+    provider: "Kling",
+    description: "أفتار احترافي بجودة فائقة",
+    image: "ai-influencer",
+    isPro: true,
+    category: "افتار",
+    model: "kling/ai-avatar-pro",
+    inputType: "avatar",
+  },
+  {
+    id: "infinitalk",
+    title: "Infinitalk",
+    provider: "Infinitalk",
+    description: "أفتار متحدث بتزامن شفاه دقيق",
+    image: "ai-influencer",
+    isPro: false,
+    category: "افتار",
+    model: "infinitalk/from-audio",
+    inputType: "avatar",
+  },
+  {
+    id: "wan-animate",
+    title: "Wan Animate",
+    provider: "Alibaba",
+    description: "تحريك صورة حسب فيديو مرجعي",
+    image: "ai-influencer",
+    isPro: false,
+    category: "افتار",
+    model: "wan/2-2-animate-move",
+    inputType: "animate",
+  },
 ];
 
-// Build correct input params based on model — aligned with KIE.AI API docs
+// ─── Build correct input params based on model ───
 export function buildModelInput(
   model: string,
   prompt: string,
   aspectRatio: string,
   resolution: string,
-  imageUrls?: string[]
+  imageUrls?: string[],
+  extraParams?: Record<string, unknown>
 ): Record<string, unknown> {
-  // Nano Banana 2 — model: "nano-banana-2"
-  // Docs: input.prompt (required), input.image_input (optional, array of URLs up to 14)
-  if (model === "nano-banana-2") {
+  // ─── IMAGE MODELS ───
+
+  if (model === "nano-banana-2" || model === "nano-banana-pro") {
     const input: Record<string, unknown> = { prompt };
-    if (imageUrls?.length) {
-      input.image_input = imageUrls;
-    }
+    if (imageUrls?.length) input.image_input = imageUrls;
     return input;
   }
 
-  // Nano Banana Pro — model: "nano-banana-pro"
-  // Same structure as Nano Banana 2
-  if (model === "nano-banana-pro") {
-    const input: Record<string, unknown> = { prompt };
-    if (imageUrls?.length) {
-      input.image_input = imageUrls;
-    }
-    return input;
-  }
-
-  // Nano Banana Edit — model: "google/nano-banana-edit"
-  // Docs: input.prompt (required), input.image_input (required, array of URLs)
   if (model === "google/nano-banana-edit") {
-    return {
-      prompt,
-      image_input: imageUrls || [],
-    };
+    return { prompt, image_input: imageUrls || [] };
   }
 
-  // Seedream 4.5 Text to Image — model: "seedream/4.5-text-to-image"
-  // Docs: input.prompt, input.aspect_ratio, input.quality ("basic")
   if (model === "seedream/4.5-text-to-image") {
-    return {
-      prompt,
-      aspect_ratio: aspectRatio,
-      quality: "basic",
-    };
+    return { prompt, aspect_ratio: aspectRatio, quality: "basic" };
   }
 
-  // Flux-2 Pro Text to Image — model: "flux-2/pro-text-to-image"
-  // Docs: input.prompt, input.aspect_ratio, input.resolution ("1K", "2K", "4K")
   if (model === "flux-2/pro-text-to-image") {
-    return {
-      prompt,
-      aspect_ratio: aspectRatio,
-      resolution: resolution.toUpperCase(),
-    };
+    return { prompt, aspect_ratio: aspectRatio, resolution: resolution.toUpperCase() };
   }
 
-  // Grok Imagine Text to Image — model: "grok-imagine/text-to-image"
-  // Docs: input.prompt only
   if (model === "grok-imagine/text-to-image") {
     return { prompt };
   }
 
-  // Kling 3.0 — model: "kling-3.0/video"
-  // Docs: input.prompt, input.duration, input.aspect_ratio, input.mode, input.multi_shots, input.sound, input.image_urls
-  if (model === "kling-3.0/video") {
+  if (model === "z-image") {
+    const arMap: Record<string, string> = { "1:1": "1:1", "3:4": "3:4", "9:16": "9:16" };
+    return { prompt, aspect_ratio: arMap[aspectRatio] || "1:1" };
+  }
+
+  // ─── VIDEO MODELS ───
+
+  // Grok Imagine Text to Video
+  if (model === "grok-imagine/text-to-video") {
+    return {
+      prompt,
+      aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9",
+      mode: "normal",
+      duration: "6",
+      resolution: "720p",
+    };
+  }
+
+  // Kling 3.0
+  if (model === "kling-3.0") {
     const input: Record<string, unknown> = {
       prompt,
       duration: "5",
-      aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio,
+      aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9",
       mode: "std",
       multi_shots: false,
       sound: false,
     };
-    if (imageUrls?.length) {
-      input.image_urls = imageUrls;
-    }
+    if (imageUrls?.length) input.image_urls = imageUrls;
     return input;
   }
 
-  // Seedance 1.5 Pro — model: "bytedance/seedance-1.5-pro"
-  // Docs: input.prompt, input.aspect_ratio
+  // Kling 2.6 Text to Video
+  if (model === "kling-2.6/text-to-video") {
+    return {
+      prompt,
+      sound: false,
+      aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9",
+      duration: "5",
+    };
+  }
+
+  // Kling 2.1 Master Text to Video
+  if (model === "kling/v2-1-master-text-to-video") {
+    return {
+      prompt,
+      aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9",
+      duration: "5",
+      mode: "std",
+    };
+  }
+
+  // Seedance 1.5 Pro
   if (model === "bytedance/seedance-1.5-pro") {
     return {
       prompt,
-      aspect_ratio: aspectRatio,
+      aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio,
+      resolution: "720p",
+      duration: 8,
     };
   }
 
-  // Z Image — model: "z-image"
-  // Docs: input.prompt (required), input.aspect_ratio (required: "1:1","4:3","3:4","16:9","9:16")
-  if (model === "z-image") {
-    const arMap: Record<string, string> = {
-      "1:1": "1:1",
-      "3:4": "3:4",
-      "9:16": "9:16",
-    };
+  // Seedance V1 Pro Text to Video
+  if (model === "bytedance/v1-pro-text-to-video") {
     return {
       prompt,
-      aspect_ratio: arMap[aspectRatio] || "1:1",
+      aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9",
+      resolution: "720p",
+      duration: "5",
     };
   }
 
-  // Default fallback (Topaz, Recraft, etc.)
+  // Sora 2 Text to Video
+  if (model === "sora-2-text-to-video") {
+    return {
+      prompt,
+      aspect_ratio: aspectRatio === "9:16" || aspectRatio === "3:4" ? "portrait" : "landscape",
+      n_frames: "10",
+      remove_watermark: true,
+    };
+  }
+
+  // Wan 2.6 Text to Video
+  if (model === "wan/2-6-text-to-video") {
+    return {
+      prompt,
+      duration: "5",
+      resolution: "1080p",
+    };
+  }
+
+  // ─── AVATAR MODELS ───
+
+  // Kling AI Avatar (Standard & Pro)
+  if (model === "kling/ai-avatar-standard" || model === "kling/ai-avatar-pro") {
+    return {
+      image_url: extraParams?.image_url || (imageUrls?.[0] ?? ""),
+      audio_url: extraParams?.audio_url || "",
+      prompt: prompt || "",
+    };
+  }
+
+  // Infinitalk
+  if (model === "infinitalk/from-audio") {
+    return {
+      image_url: extraParams?.image_url || (imageUrls?.[0] ?? ""),
+      audio_url: extraParams?.audio_url || "",
+      prompt: prompt || "",
+      resolution: "480p",
+    };
+  }
+
+  // Wan Animate Move
+  if (model === "wan/2-2-animate-move") {
+    return {
+      video_url: extraParams?.video_url || "",
+      image_url: extraParams?.image_url || (imageUrls?.[0] ?? ""),
+      resolution: "480p",
+    };
+  }
+
+  // ─── VEO 3.1 (handled separately in edge function) ───
+  if (model === "veo3" || model === "veo3_fast") {
+    return {
+      prompt,
+      model,
+      aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "16:9" : aspectRatio === "9:16" ? "9:16" : "16:9",
+      generationType: "TEXT_2_VIDEO",
+    };
+  }
+
+  // Default fallback
   if (imageUrls?.length) {
     return { prompt, image_url: imageUrls[0] };
   }

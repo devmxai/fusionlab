@@ -49,14 +49,39 @@ export async function getCredits(): Promise<number> {
   return data?.data ?? 0;
 }
 
+// ─── Veo 3.1 API ───
+
+export async function createVeoTask(params: Record<string, unknown>) {
+  const { data, error } = await supabase.functions.invoke("kie-ai", {
+    body: { action: "veo-create", ...params },
+  });
+  if (error) throw new Error(error.message);
+  if (data?.code !== 200) throw new Error(data?.msg || "Failed to create Veo task: " + JSON.stringify(data));
+  return data.data as { taskId: string };
+}
+
+export async function getVeoTaskStatus(taskId: string): Promise<TaskResult> {
+  const { data, error } = await supabase.functions.invoke("kie-ai", {
+    body: { action: "veo-status", taskId },
+  });
+  if (error) throw new Error(error.message);
+  if (data?.code !== 200) throw new Error(data?.msg || "Failed to get Veo status");
+  return data.data as TaskResult;
+}
+
+// ─── Unified polling ───
+
 export async function pollTask(
   taskId: string,
   onProgress?: (state: string, progress?: number) => void,
   maxAttempts = 120,
-  intervalMs = 3000
+  intervalMs = 3000,
+  isVeo = false
 ): Promise<TaskResult> {
+  const statusFn = isVeo ? getVeoTaskStatus : getTaskStatus;
+
   for (let i = 0; i < maxAttempts; i++) {
-    const result = await getTaskStatus(taskId);
+    const result = await statusFn(taskId);
     onProgress?.(result.state || "waiting", result.progress);
 
     if (result.state === "success") return result;
