@@ -8,18 +8,13 @@ const corsHeaders = {
 
 const GEMINI_API = "https://generativelanguage.googleapis.com/v1beta/models";
 const MODEL = "gemini-2.5-flash-preview-tts";
+// All 24 official Gemini TTS voices (from Google Cloud documentation)
 const OFFICIAL_GEMINI_FLASH_TTS_VOICES = new Set([
-  "Puck",
-  "Achird",
-  "Algenib",
-  "Alnilam",
-  "Achernar",
-  "Aoede",
-  "Charon",
-  "Kore",
-  "Leda",
-  "Orus",
-  "Zephyr",
+  "Achernar", "Achird", "Algenib", "Alnilam", "Aoede",
+  "Charon", "Elara", "Fenrir", "Gacrux", "Iapetus",
+  "Kore", "Laomedeia", "Leda", "Orus", "Pulcherrima",
+  "Puck", "Rasalgethi", "Sadachbia", "Sadaltager", "Schedar",
+  "Sulafat", "Umbriel", "Vindemiatrix", "Zephyr", "Zubenelgenubi",
 ]);
 
 function pcmToWav(rawB64: string, rawMime: string): { audioBase64: string; mimeType: string } {
@@ -146,6 +141,9 @@ serve(async (req) => {
 
       // Build style direction as a separate "turn" before the spoken text
       const stylePromptParts: string[] = [];
+
+      // Always add language direction for Arabic
+      stylePromptParts.push(`Language: Arabic (${languageCode}). Speak entirely in Arabic with natural Arabic pronunciation.`);
 
       if (dialectHint) stylePromptParts.push(`Dialect: ${dialectHint}`);
       if (emotionHint) stylePromptParts.push(`Emotion: ${emotionHint}`);

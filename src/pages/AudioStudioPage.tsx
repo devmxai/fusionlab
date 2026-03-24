@@ -32,17 +32,33 @@ interface GeminiVoice {
 const GEMINI_FLASH_TTS_MODEL = "gemini-2.5-flash-preview-tts";
 
 const geminiVoices: GeminiVoice[] = [
-  { name: "Puck", label: "Puck", gender: "male", description: "صوت شاب ديناميكي" },
+  // ─── Male Voices (14) ───
+  { name: "Puck", label: "Puck", gender: "male", description: "صوت شاب ديناميكي ومرن" },
   { name: "Charon", label: "Charon", gender: "male", description: "صوت عميق وهادئ" },
   { name: "Orus", label: "Orus", gender: "male", description: "صوت واضح ومهني" },
   { name: "Achird", label: "Achird", gender: "male", description: "صوت دافئ وطبيعي" },
   { name: "Algenib", label: "Algenib", gender: "male", description: "صوت قوي وواثق" },
   { name: "Alnilam", label: "Alnilam", gender: "male", description: "صوت رصين ومتزن" },
+  { name: "Fenrir", label: "Fenrir", gender: "male", description: "صوت حاد وجريء" },
+  { name: "Gacrux", label: "Gacrux", gender: "male", description: "صوت ناضج ومستقر" },
+  { name: "Iapetus", label: "Iapetus", gender: "male", description: "صوت واضح ومتوازن" },
+  { name: "Rasalgethi", label: "Rasalgethi", gender: "male", description: "صوت عميق ومؤثر" },
+  { name: "Sadachbia", label: "Sadachbia", gender: "male", description: "صوت هادئ ولطيف" },
+  { name: "Sadaltager", label: "Sadaltager", gender: "male", description: "صوت طبيعي وسلس" },
+  { name: "Schedar", label: "Schedar", gender: "male", description: "صوت قوي ورسمي" },
+  { name: "Umbriel", label: "Umbriel", gender: "male", description: "صوت ثابت ومحايد" },
+  { name: "Zubenelgenubi", label: "Zubenelgenubi", gender: "male", description: "صوت متميز وفريد" },
+  // ─── Female Voices (10) ───
   { name: "Kore", label: "Kore", gender: "female", description: "صوت أنثوي دافئ" },
   { name: "Leda", label: "Leda", gender: "female", description: "صوت ناعم وراقي" },
   { name: "Zephyr", label: "Zephyr", gender: "female", description: "صوت حيوي ومرح" },
   { name: "Aoede", label: "Aoede", gender: "female", description: "صوت غني ومعبّر" },
   { name: "Achernar", label: "Achernar", gender: "female", description: "صوت هادئ ومريح" },
+  { name: "Elara", label: "Elara", gender: "female", description: "صوت صافي ورقيق" },
+  { name: "Laomedeia", label: "Laomedeia", gender: "female", description: "صوت أنيق ومتزن" },
+  { name: "Pulcherrima", label: "Pulcherrima", gender: "female", description: "صوت جميل وناعم" },
+  { name: "Sulafat", label: "Sulafat", gender: "female", description: "صوت مميز وجذاب" },
+  { name: "Vindemiatrix", label: "Vindemiatrix", gender: "female", description: "صوت قوي وأنثوي" },
 ];
 
 // ─── Enhancement Presets ───
