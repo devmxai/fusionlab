@@ -27,47 +27,36 @@ serve(async (req) => {
     "Content-Type": "application/json",
   };
 
+  const jsonRes = (data: unknown, status = 200) =>
+    new Response(JSON.stringify(data), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
   try {
     const body = await req.json();
     const { action } = body;
 
-    // Upload file (base64) and return URL
+    // ─── Upload file (base64) ───
     if (action === "upload") {
       const { base64Data, fileName } = body;
       const response = await fetch(`${KIE_UPLOAD_BASE}/api/file-base64-upload`, {
         method: "POST",
         headers: authHeaders,
-        body: JSON.stringify({
-          base64Data,
-          uploadPath: "references",
-          fileName,
-        }),
+        body: JSON.stringify({ base64Data, uploadPath: "references", fileName }),
       });
-
       const data = await response.json();
       console.log("Upload response:", JSON.stringify(data));
-
       if (!response.ok || !data?.success) {
-        return new Response(
-          JSON.stringify({ error: data?.msg || "Upload failed", details: data }),
-          { status: response.status || 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonRes({ error: data?.msg || "Upload failed", details: data }, response.status || 500);
       }
-
-      return new Response(
-        JSON.stringify({
-          code: 200,
-          data: { fileUrl: data.data?.downloadUrl },
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonRes({ code: 200, data: { fileUrl: data.data?.downloadUrl } });
     }
 
     // ─── Veo 3.1 Create ───
     if (action === "veo-create") {
       const { prompt, model, aspect_ratio, generationType, imageUrls } = body;
       console.log("Creating Veo task:", JSON.stringify({ prompt, model, aspect_ratio, generationType }));
-
       const veoBody: Record<string, unknown> = {
         prompt,
         model: model || "veo3_fast",
@@ -76,34 +65,19 @@ serve(async (req) => {
       };
       if (imageUrls?.length) {
         veoBody.imageUrls = imageUrls;
-        if (!generationType) {
-          veoBody.generationType = "FIRST_AND_LAST_FRAMES_2_VIDEO";
-        }
+        if (!generationType) veoBody.generationType = "FIRST_AND_LAST_FRAMES_2_VIDEO";
       }
-
       const response = await fetch(`${KIE_BASE}/veo/generate`, {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify(veoBody),
       });
-
       const data = await response.json();
       console.log("Veo create response:", JSON.stringify(data));
-
-      // Normalize response to match standard format
       if (data?.code === 200 && data?.data?.taskId) {
-        return new Response(JSON.stringify({
-          code: 200,
-          data: { taskId: data.data.taskId },
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonRes({ code: 200, data: { taskId: data.data.taskId } });
       }
-
-      return new Response(JSON.stringify(data), {
-        status: response.ok ? 200 : response.status,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonRes(data, response.ok ? 200 : response.status);
     }
 
     // ─── Veo 3.1 Status ───
@@ -112,98 +86,122 @@ serve(async (req) => {
       const response = await fetch(`${KIE_BASE}/veo/record-info?taskId=${taskId}`, {
         headers: { Authorization: `Bearer ${KIE_API_KEY}` },
       });
-
       const data = await response.json();
       console.log("Veo status response:", JSON.stringify(data));
-
-      // Normalize Veo response to match standard TaskResult format
       if (data?.code === 200 && data?.data) {
         const veoData = data.data;
         const successFlag = veoData.successFlag ?? veoData.response?.successFlag;
-
         let state: string;
         if (successFlag === 1) state = "success";
         else if (successFlag === 2 || successFlag === 3) state = "fail";
         else state = "generating";
-
-        const result: Record<string, unknown> = {
-          taskId: veoData.taskId,
-          state,
-        };
-
+        const result: Record<string, unknown> = { taskId: veoData.taskId, state };
         if (state === "success" && veoData.response) {
-          result.resultJson = JSON.stringify({
-            resultUrls: veoData.response.resultUrls || [],
-          });
+          result.resultJson = JSON.stringify({ resultUrls: veoData.response.resultUrls || [] });
         }
         if (state === "fail") {
           result.failMsg = veoData.response?.errorMessage || veoData.errorMessage || "Veo generation failed";
         }
-
-        return new Response(JSON.stringify({ code: 200, data: result }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonRes({ code: 200, data: result });
       }
+      return jsonRes(data);
+    }
 
-      return new Response(JSON.stringify(data), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    // ─── Flux Kontext Create ───
+    if (action === "flux-kontext-create") {
+      const { prompt, model, aspectRatio, inputImage, enableTranslation, outputFormat } = body;
+      console.log("Creating Flux Kontext task:", JSON.stringify({ prompt, model, aspectRatio }));
+      const fkBody: Record<string, unknown> = {
+        prompt,
+        model: model || "flux-kontext-pro",
+        enableTranslation: enableTranslation ?? true,
+        outputFormat: outputFormat || "jpeg",
+      };
+      if (aspectRatio) fkBody.aspectRatio = aspectRatio;
+      if (inputImage) fkBody.inputImage = inputImage;
+      const response = await fetch(`${KIE_BASE}/flux/kontext/generate`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify(fkBody),
       });
+      const data = await response.json();
+      console.log("Flux Kontext create response:", JSON.stringify(data));
+      if (data?.code === 200 && data?.data?.taskId) {
+        return jsonRes({ code: 200, data: { taskId: data.data.taskId } });
+      }
+      return jsonRes(data, response.ok ? 200 : response.status);
+    }
+
+    // ─── Flux Kontext Status ───
+    if (action === "flux-kontext-status") {
+      const { taskId } = body;
+      const response = await fetch(`${KIE_BASE}/flux/kontext/record-info?taskId=${taskId}`, {
+        headers: { Authorization: `Bearer ${KIE_API_KEY}` },
+      });
+      const data = await response.json();
+      console.log("Flux Kontext status response:", JSON.stringify(data));
+      if (data?.code === 200 && data?.data) {
+        const fkData = data.data;
+        const successFlag = fkData.successFlag ?? fkData.response?.successFlag;
+        let state: string;
+        if (successFlag === 1) state = "success";
+        else if (successFlag === 2 || successFlag === 3) state = "fail";
+        else state = "generating";
+        const result: Record<string, unknown> = { taskId: fkData.taskId, state };
+        if (state === "success" && fkData.response) {
+          const resultUrl = fkData.response.resultImageUrl || fkData.response.originImageUrl;
+          result.resultJson = JSON.stringify({ resultUrls: resultUrl ? [resultUrl] : [] });
+        }
+        if (state === "fail") {
+          result.failMsg = fkData.response?.errorMessage || fkData.errorMessage || "Flux Kontext generation failed";
+        }
+        return jsonRes({ code: 200, data: result });
+      }
+      return jsonRes(data);
     }
 
     // ─── Standard Create Task ───
     if (action === "create") {
       const { model, input } = body;
       console.log("Creating task:", JSON.stringify({ model, input }));
-
       const response = await fetch(`${KIE_BASE}/jobs/createTask`, {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({ model, input }),
       });
-
       const data = await response.json();
       console.log("Create task response:", JSON.stringify(data));
-
-      return new Response(JSON.stringify(data), {
-        status: response.ok ? 200 : response.status,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonRes(data, response.ok ? 200 : response.status);
     }
 
-    // Poll task status
+    // ─── Poll task status ───
     if (action === "status") {
       const { taskId } = body;
       const response = await fetch(`${KIE_BASE}/jobs/recordInfo?taskId=${taskId}`, {
         headers: { Authorization: `Bearer ${KIE_API_KEY}` },
       });
-
       const data = await response.json();
-      return new Response(JSON.stringify(data), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonRes(data);
     }
 
-    // Check credits
+    // ─── Check credits ───
     if (action === "credits") {
       const response = await fetch(`${KIE_BASE}/chat/credit`, {
         headers: { Authorization: `Bearer ${KIE_API_KEY}` },
       });
-
       const data = await response.json();
-      return new Response(JSON.stringify(data), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonRes(data);
     }
 
-    return new Response(
-      JSON.stringify({ error: "Invalid action. Use: create, status, credits, upload, veo-create, veo-status" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    return jsonRes(
+      { error: "Invalid action. Use: create, status, credits, upload, veo-create, veo-status, flux-kontext-create, flux-kontext-status" },
+      400
     );
   } catch (e) {
     console.error("kie-ai error:", e);
-    return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    return jsonRes(
+      { error: e instanceof Error ? e.message : "Unknown error" },
+      500
     );
   }
 });
