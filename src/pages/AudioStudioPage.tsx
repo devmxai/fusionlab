@@ -391,8 +391,8 @@ const AudioStudioPage = () => {
             <Button variant="outline" onClick={handleDownload} disabled={!audioUrl} className="gap-2">
               <Download className="w-4 h-4" />
               تحميل
-              </Button>
-            )}
+            </Button>
+          </div>
           </div>
         </div>
       </div>
