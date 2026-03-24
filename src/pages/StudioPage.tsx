@@ -40,6 +40,7 @@ const ratioConfig: Record<AspectRatio, { label: string; w: number; h: number; cs
 };
 
 const resolutions: Resolution[] = ["1k", "2k", "4k"];
+const upscaleFactors: UpscaleFactor[] = ["1.5", "2", "4"];
 
 const StudioPage = () => {
   const { category } = useParams();
