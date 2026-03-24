@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { tools, buildModelInput } from "@/data/tools";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Image as ImageIcon, Send, X, Settings2, Sparkles } from "lucide-react";
-import { createTask, pollTask, uploadFileBase64 } from "@/lib/kie-ai";
+import { createTask, createVeoTask, pollTask, uploadFileBase64 } from "@/lib/kie-ai";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -143,12 +143,20 @@ const ToolPage = () => {
         }
       }
 
+      const isVeo = tool.isVeoApi === true;
       const input = buildModelInput(tool.model, prompt, aspectRatio, resolution, imageUrls);
 
       setStatus("جاري إنشاء المهمة...");
       setProgress(30);
 
-      const { taskId } = await createTask({ model: tool.model, input });
+      let taskId: string;
+      if (isVeo) {
+        const veoResult = await createVeoTask(input);
+        taskId = veoResult.taskId;
+      } else {
+        const stdResult = await createTask({ model: tool.model, input });
+        taskId = stdResult.taskId;
+      }
 
       const result = await pollTask(taskId, (state, prog) => {
         const m: Record<string, string> = {
@@ -169,7 +177,7 @@ const ToolPage = () => {
             state === "success" ? 100 : progress
           );
         }
-      });
+      }, 120, 3000, isVeo);
 
       if (result.resultJson) {
         const parsed = JSON.parse(result.resultJson);

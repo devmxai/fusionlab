@@ -54,7 +54,6 @@ serve(async (req) => {
         );
       }
 
-      // Return normalized response with downloadUrl
       return new Response(
         JSON.stringify({
           code: 200,
@@ -64,7 +63,94 @@ serve(async (req) => {
       );
     }
 
-    // Create a new generation task
+    // ─── Veo 3.1 Create ───
+    if (action === "veo-create") {
+      const { prompt, model, aspect_ratio, generationType, imageUrls } = body;
+      console.log("Creating Veo task:", JSON.stringify({ prompt, model, aspect_ratio, generationType }));
+
+      const veoBody: Record<string, unknown> = {
+        prompt,
+        model: model || "veo3_fast",
+        aspect_ratio: aspect_ratio || "16:9",
+        generationType: generationType || "TEXT_2_VIDEO",
+      };
+      if (imageUrls?.length) {
+        veoBody.imageUrls = imageUrls;
+        if (!generationType) {
+          veoBody.generationType = "FIRST_AND_LAST_FRAMES_2_VIDEO";
+        }
+      }
+
+      const response = await fetch(`${KIE_BASE}/veo/generate`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify(veoBody),
+      });
+
+      const data = await response.json();
+      console.log("Veo create response:", JSON.stringify(data));
+
+      // Normalize response to match standard format
+      if (data?.code === 200 && data?.data?.taskId) {
+        return new Response(JSON.stringify({
+          code: 200,
+          data: { taskId: data.data.taskId },
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify(data), {
+        status: response.ok ? 200 : response.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ─── Veo 3.1 Status ───
+    if (action === "veo-status") {
+      const { taskId } = body;
+      const response = await fetch(`${KIE_BASE}/veo/record-info?taskId=${taskId}`, {
+        headers: { Authorization: `Bearer ${KIE_API_KEY}` },
+      });
+
+      const data = await response.json();
+      console.log("Veo status response:", JSON.stringify(data));
+
+      // Normalize Veo response to match standard TaskResult format
+      if (data?.code === 200 && data?.data) {
+        const veoData = data.data;
+        const successFlag = veoData.successFlag ?? veoData.response?.successFlag;
+
+        let state: string;
+        if (successFlag === 1) state = "success";
+        else if (successFlag === 2 || successFlag === 3) state = "fail";
+        else state = "generating";
+
+        const result: Record<string, unknown> = {
+          taskId: veoData.taskId,
+          state,
+        };
+
+        if (state === "success" && veoData.response) {
+          result.resultJson = JSON.stringify({
+            resultUrls: veoData.response.resultUrls || [],
+          });
+        }
+        if (state === "fail") {
+          result.failMsg = veoData.response?.errorMessage || veoData.errorMessage || "Veo generation failed";
+        }
+
+        return new Response(JSON.stringify({ code: 200, data: result }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ─── Standard Create Task ───
     if (action === "create") {
       const { model, input } = body;
       console.log("Creating task:", JSON.stringify({ model, input }));
@@ -110,7 +196,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ error: "Invalid action. Use: create, status, credits, upload" }),
+      JSON.stringify({ error: "Invalid action. Use: create, status, credits, upload, veo-create, veo-status" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
