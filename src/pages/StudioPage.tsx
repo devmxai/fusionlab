@@ -61,6 +61,9 @@ const StudioPage = () => {
   const remixSlotInputRef = useRef<HTMLInputElement>(null);
   const firstFrameInputRef = useRef<HTMLInputElement>(null);
   const lastFrameInputRef = useRef<HTMLInputElement>(null);
+  const avatarImageInputRef = useRef<HTMLInputElement>(null);
+  const avatarAudioInputRef = useRef<HTMLInputElement>(null);
+  const avatarVideoInputRef = useRef<HTMLInputElement>(null);
   const [remixUploadSlot, setRemixUploadSlot] = useState<number>(-1);
 
   const categoryName = category ? categorySlugMap[category] : undefined;
