@@ -90,7 +90,6 @@ const Index = () => {
         </section>
       </main>
 
-      <BottomNav />
     </div>
   );
 };
