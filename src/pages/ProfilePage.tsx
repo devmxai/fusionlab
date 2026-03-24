@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ArrowRight, Coins, Crown, Clock, LogOut, Shield, Sparkles } from "lucide-react";
-import BottomNav from "@/components/BottomNav";
+
 
 const ProfilePage = () => {
   const { user, credits, isAdmin, signOut, loading } = useAuth();
