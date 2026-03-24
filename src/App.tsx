@@ -12,6 +12,7 @@ import ProfilePage from "./pages/ProfilePage.tsx";
 import PricingPage from "./pages/PricingPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
 import LibraryPage from "./pages/LibraryPage.tsx";
+import AudioStudioPage from "./pages/AudioStudioPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
