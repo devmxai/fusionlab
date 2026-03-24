@@ -29,7 +29,7 @@ interface GeminiVoice {
   description: string;
 }
 
-const GEMINI_FLASH_TTS_MODEL = "gemini-2.5-flash-tts";
+const GEMINI_FLASH_TTS_MODEL = "gemini-2.5-flash-preview-tts";
 
 const geminiVoices: GeminiVoice[] = [
   { name: "Puck", label: "Puck", gender: "male", description: "صوت شاب ديناميكي" },
