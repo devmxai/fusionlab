@@ -117,10 +117,14 @@ const StudioPage = () => {
   const isRemixTool = category === "remix";
   const isFluxKontext = tool.isFluxKontextApi === true;
 
+  const maxImages = isRemixTool
+    ? (tool.model === "gpt-image/1.5-image-to-image" ? 16 : tool.model === "seedream/4.5-edit" ? 14 : 3)
+    : isImageOnlyTool ? 1 : 3;
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (refImages.length + files.length > 3) {
-      toast.error("الحد الأقصى 3 صور");
+    if (refImages.length + files.length > maxImages) {
+      toast.error(`الحد الأقصى ${maxImages} صور`);
       return;
     }
     const newImages = files.map((file) => ({
