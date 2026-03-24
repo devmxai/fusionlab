@@ -4,6 +4,8 @@ import { tools, buildModelInput, AITool } from "@/data/tools";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Image as ImageIcon, Send, X, Settings2, Sparkles, ChevronDown } from "lucide-react";
 import { createTask, pollTask, uploadFileBase64 } from "@/lib/kie-ai";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import CircularProgress from "@/components/CircularProgress";
@@ -143,11 +145,24 @@ const StudioPage = () => {
       reader.readAsDataURL(file);
     });
 
+  const { user, credits, refreshCredits } = useAuth();
+
   const handleGenerate = async () => {
     if (!prompt.trim() && refImages.length === 0) {
       toast.error("اكتب وصفاً أو ارفع صورة");
       return;
     }
+    if (!user) {
+      toast.error("يجب تسجيل الدخول أولاً");
+      navigate("/auth");
+      return;
+    }
+    if (credits <= 0) {
+      toast.error("لا يوجد رصيد كافٍ. قم بترقية اشتراكك");
+      navigate("/pricing");
+      return;
+    }
+
     setLoading(true);
     setStatus("جاري الإرسال...");
     setProgress(5);
@@ -199,6 +214,44 @@ const StudioPage = () => {
         setResultUrls(parsed.resultUrls || []);
         toast.success("تم التوليد بنجاح!");
         setProgress(100);
+
+        // Deduct 1 credit
+        const { data: currentCredits } = await supabase
+          .from("user_credits")
+          .select("balance, total_spent")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (currentCredits) {
+          await supabase.from("user_credits").update({
+            balance: Math.max(0, currentCredits.balance - 1),
+            total_spent: (currentCredits.total_spent || 0) + 1,
+            updated_at: new Date().toISOString(),
+          }).eq("user_id", user.id);
+
+          await supabase.from("credit_transactions").insert({
+            user_id: user.id,
+            amount: 1,
+            action: "spent" as any,
+            description: `توليد بـ ${tool.title}`,
+          });
+        }
+
+        // Save to generations
+        const fileUrl = parsed.resultUrls?.[0];
+        if (fileUrl) {
+          await supabase.from("generations").insert({
+            user_id: user.id,
+            tool_id: tool.id,
+            tool_name: tool.title,
+            prompt,
+            file_url: fileUrl,
+            file_type: isVideoTool ? "video" : "image",
+            metadata: { aspectRatio, resolution, model: tool.model } as any,
+          });
+        }
+
+        await refreshCredits();
       }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "حدث خطأ");

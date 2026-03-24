@@ -23,6 +23,16 @@ export const categories = [
 
 export const tools: AITool[] = [
   {
+    id: "z-image",
+    title: "Z Image",
+    provider: "KIE.AI",
+    description: "توليد صور واقعية فائقة الجودة",
+    image: "image-gen",
+    isPro: false,
+    category: "صور",
+    model: "z-image",
+  },
+  {
     id: "nano-banana",
     title: "Nano Banana 2",
     provider: "Google",
@@ -210,6 +220,20 @@ export function buildModelInput(
     return {
       prompt,
       aspect_ratio: aspectRatio,
+    };
+  }
+
+  // Z Image — model: "z-image"
+  // Docs: input.prompt (required), input.aspect_ratio (required: "1:1","4:3","3:4","16:9","9:16")
+  if (model === "z-image") {
+    const arMap: Record<string, string> = {
+      "1:1": "1:1",
+      "3:4": "3:4",
+      "9:16": "9:16",
+    };
+    return {
+      prompt,
+      aspect_ratio: arMap[aspectRatio] || "1:1",
     };
   }
 
