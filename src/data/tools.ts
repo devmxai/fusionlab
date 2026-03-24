@@ -455,10 +455,10 @@ export function buildModelInput(
   if (model === "grok-imagine/text-to-video") {
     return {
       prompt,
-      aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9",
-      mode: "normal",
+      aspect_ratio: aspectRatio || "2:3",
+      mode: (extraParams?.quality as string) || "normal",
       duration: (extraParams?.duration as string) || "6",
-      resolution: "720p",
+      resolution: (extraParams?.resolution as string) || "480p",
     };
   }
 
