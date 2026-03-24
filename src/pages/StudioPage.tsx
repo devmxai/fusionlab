@@ -114,6 +114,8 @@ const StudioPage = () => {
   const isVideoTool = category === "video";
   const isImageOnlyTool = category === "remove-bg" || category === "upscale";
   const isUpscaleTool = category === "upscale";
+  const isRemixTool = category === "remix";
+  const isFluxKontext = tool.isFluxKontextApi === true;
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
