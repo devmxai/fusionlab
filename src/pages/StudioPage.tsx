@@ -471,7 +471,7 @@ const StudioPage = () => {
 
   const DropdownItem = ({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: React.ReactNode }) => (
     <button onClick={onClick}
-      className={`w-full px-3 py-2 rounded-lg text-right text-xs font-semibold transition-colors ${
+      className={`w-full px-3.5 py-2.5 rounded-lg text-right text-sm font-semibold transition-colors ${
         selected ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary/50"
       }`}
     >{children}</button>

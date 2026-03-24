@@ -367,7 +367,11 @@ export function buildModelInput(
   // ─── IMAGE MODELS ───
 
   if (model === "nano-banana-2" || model === "nano-banana-pro") {
-    const input: Record<string, unknown> = { prompt };
+    const input: Record<string, unknown> = {
+      prompt,
+      aspect_ratio: aspectRatio || "1:1",
+      resolution: (extraParams?.resolution as string) || resolution || "1K",
+    };
     if (imageUrls?.length) input.image_input = imageUrls;
     return input;
   }
@@ -385,20 +389,27 @@ export function buildModelInput(
   }
 
   if (model === "seedream/4.5-text-to-image") {
-    return { prompt, aspect_ratio: aspectRatio, quality: "basic" };
+    return {
+      prompt,
+      aspect_ratio: aspectRatio,
+      quality: (extraParams?.quality as string) || "basic",
+    };
   }
 
   if (model === "flux-2/pro-text-to-image") {
-    return { prompt, aspect_ratio: aspectRatio, resolution: resolution.toUpperCase() };
+    return {
+      prompt,
+      aspect_ratio: aspectRatio,
+      resolution: (extraParams?.resolution as string) || resolution || "1K",
+    };
   }
 
   if (model === "grok-imagine/text-to-image") {
-    return { prompt };
+    return { prompt, aspect_ratio: aspectRatio || "1:1" };
   }
 
   if (model === "z-image") {
-    const arMap: Record<string, string> = { "1:1": "1:1", "3:4": "3:4", "9:16": "9:16" };
-    return { prompt, aspect_ratio: arMap[aspectRatio] || "1:1" };
+    return { prompt, aspect_ratio: aspectRatio || "1:1" };
   }
 
   // ─── REMIX / IMAGE EDIT MODELS ───
