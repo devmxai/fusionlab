@@ -12,6 +12,7 @@ import ProfilePage from "./pages/ProfilePage.tsx";
 import PricingPage from "./pages/PricingPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
 import LibraryPage from "./pages/LibraryPage.tsx";
+import AudioStudioPage from "./pages/AudioStudioPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/library" element={<LibraryPage />} />
+            <Route path="/studio/audio" element={<AudioStudioPage />} />
             <Route path="/studio/:category" element={<StudioPage />} />
             <Route path="/tool/:toolId" element={<ToolPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
