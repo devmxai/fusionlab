@@ -122,10 +122,63 @@ serve(async (req) => {
         );
       }
 
+      const rawMime = audioPart.inlineData.mimeType as string;
+      const rawB64 = audioPart.inlineData.data as string;
+      console.log("Audio mimeType:", rawMime, "base64 length:", rawB64.length);
+
+      // If PCM (audio/L16), convert to WAV for browser playback
+      if (rawMime.startsWith("audio/L16") || rawMime.startsWith("audio/pcm")) {
+        const rateMatch = rawMime.match(/rate=(\d+)/);
+        const sampleRate = rateMatch ? parseInt(rateMatch[1]) : 24000;
+        const channels = 1;
+        const bitsPerSample = 16;
+
+        // Decode base64 to raw PCM bytes
+        const binaryStr = atob(rawB64);
+        const pcmBytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) {
+          pcmBytes[i] = binaryStr.charCodeAt(i);
+        }
+
+        const dataSize = pcmBytes.length;
+        const headerSize = 44;
+        const wavBuffer = new Uint8Array(headerSize + dataSize);
+        const view = new DataView(wavBuffer.buffer);
+
+        // RIFF header
+        wavBuffer.set([0x52, 0x49, 0x46, 0x46], 0); // "RIFF"
+        view.setUint32(4, 36 + dataSize, true);
+        wavBuffer.set([0x57, 0x41, 0x56, 0x45], 8); // "WAVE"
+        wavBuffer.set([0x66, 0x6d, 0x74, 0x20], 12); // "fmt "
+        view.setUint32(16, 16, true); // chunk size
+        view.setUint16(20, 1, true); // PCM format
+        view.setUint16(22, channels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * channels * (bitsPerSample / 8), true);
+        view.setUint16(32, channels * (bitsPerSample / 8), true);
+        view.setUint16(34, bitsPerSample, true);
+        wavBuffer.set([0x64, 0x61, 0x74, 0x61], 36); // "data"
+        view.setUint32(40, dataSize, true);
+        wavBuffer.set(pcmBytes, 44);
+
+        // Encode WAV to base64
+        let wavB64 = "";
+        const chunkSize = 8192;
+        for (let i = 0; i < wavBuffer.length; i += chunkSize) {
+          wavB64 += String.fromCharCode(...wavBuffer.subarray(i, i + chunkSize));
+        }
+        wavB64 = btoa(wavB64);
+
+        return new Response(
+          JSON.stringify({ audioBase64: wavB64, mimeType: "audio/wav" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(
         JSON.stringify({
-          audioBase64: audioPart.inlineData.data,
-          mimeType: audioPart.inlineData.mimeType,
+          audioBase64: rawB64,
+          mimeType: rawMime,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
