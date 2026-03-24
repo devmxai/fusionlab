@@ -455,10 +455,10 @@ export function buildModelInput(
   if (model === "grok-imagine/text-to-video") {
     return {
       prompt,
-      aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9",
-      mode: "normal",
+      aspect_ratio: aspectRatio || "2:3",
+      mode: (extraParams?.quality as string) || "normal",
       duration: (extraParams?.duration as string) || "6",
-      resolution: "720p",
+      resolution: (extraParams?.resolution as string) || "480p",
     };
   }
 
@@ -507,7 +507,7 @@ export function buildModelInput(
   if (model === "bytedance/v1-pro-text-to-video") {
     return {
       prompt,
-      aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9",
+      aspect_ratio: aspectRatio || "16:9",
       resolution: (extraParams?.resolution as string) || "720p",
       duration: (extraParams?.duration as string) || "5",
     };
@@ -517,8 +517,9 @@ export function buildModelInput(
     return {
       prompt,
       aspect_ratio: aspectRatio === "9:16" || aspectRatio === "3:4" ? "portrait" : "landscape",
-      n_frames: "10",
+      n_frames: (extraParams?.duration as string) || "10",
       remove_watermark: true,
+      upload_method: "s3",
     };
   }
 

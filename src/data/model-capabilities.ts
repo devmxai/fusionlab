@@ -2,6 +2,9 @@
  * Per-model capabilities: what settings each model supports.
  * Only list options that the model actually accepts.
  * If an array is empty or missing, that setting is hidden for the model.
+ *
+ * ⚠️  Values come from the official KIE.AI API documentation (docs.kie.ai).
+ *     Do NOT change without cross-checking the endpoint spec first.
  */
 
 export interface ModelCapabilities {
@@ -75,10 +78,16 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
   },
 
   // ─── Video Models ───
+
+  // Docs: aspect_ratio 2:3,3:2,1:1,16:9,9:16 | duration 6,10 | resolution 480p,720p | mode fun,normal,spicy
   "grok-imagine/text-to-video": {
-    aspectRatios: ["1:1", "9:16", "16:9"],
-    durations: ["6"],
+    aspectRatios: ["1:1", "2:3", "3:2", "9:16", "16:9"],
+    durations: ["6", "10"],
+    resolutions: ["480p", "720p"],
+    qualities: ["fun", "normal", "spicy"],
   },
+
+  // Docs: aspect_ratio 9:16,16:9 | duration 8 | first+last frame via imageUrls
   "veo3_fast": {
     aspectRatios: ["9:16", "16:9"],
     durations: ["8"],
@@ -89,48 +98,64 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
     durations: ["8"],
     frameMode: "first-last",
   },
+
+  // Docs: aspect_ratio 16:9,9:16,1:1 | duration 3-15 | mode std,pro | sound bool | first+last frame via image_urls
   "kling-3.0": {
     aspectRatios: ["1:1", "9:16", "16:9"],
     durations: ["3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"],
     qualities: ["std", "pro"],
     frameMode: "first-last",
   },
+
+  // Docs: aspect_ratio 1:1,16:9,9:16 | duration 5,10 | sound bool
   "kling-2.6/text-to-video": {
     aspectRatios: ["1:1", "9:16", "16:9"],
     durations: ["5", "10"],
   },
+
+  // Docs: aspect_ratio 16:9,9:16,1:1 | duration 5,10 | no image input (separate i2v endpoint)
   "kling/v2-1-master-text-to-video": {
     aspectRatios: ["1:1", "9:16", "16:9"],
     durations: ["5", "10"],
     frameMode: "first-only",
   },
+
+  // Docs: aspect_ratio 1:1,4:3,3:4,16:9,9:16,21:9 | duration 4,8,12 | resolution 480p,720p,1080p | 0-2 input_urls
   "bytedance/seedance-1.5-pro": {
     aspectRatios: ["1:1", "4:3", "3:4", "16:9", "9:16", "21:9"],
     durations: ["4", "8", "12"],
     resolutions: ["480p", "720p", "1080p"],
     frameMode: "first-last",
   },
+
+  // Docs: aspect_ratio 21:9,16:9,4:3,1:1,3:4,9:16 | duration 5,10 | resolution 480p,720p,1080p
   "bytedance/v1-pro-text-to-video": {
-    aspectRatios: ["1:1", "9:16", "16:9"],
-    durations: ["5"],
+    aspectRatios: ["1:1", "4:3", "3:4", "16:9", "9:16", "21:9"],
+    durations: ["5", "10"],
+    resolutions: ["480p", "720p", "1080p"],
   },
+
+  // Docs: aspect_ratio portrait,landscape | n_frames 10,15
   "sora-2-text-to-video": {
     aspectRatios: ["9:16", "16:9"],
+    durations: ["10", "15"],
   },
+
+  // Docs: duration 5,10,15 | resolution 720p,1080p
   "wan/2-6-text-to-video": {
-    durations: ["5"],
+    durations: ["5", "10", "15"],
     resolutions: ["720p", "1080p"],
   },
 
   // ─── Avatar Models ───
-  // Kling Avatar: image_url + audio_url + prompt only, no resolution
+  // Docs: image_url + audio_url + prompt only, no resolution
   "kling/ai-avatar-standard": {},
   "kling/ai-avatar-pro": {},
-  // Infinitalk: image_url + audio_url + prompt + resolution (480p/720p)
+  // Docs: image_url + audio_url + prompt + resolution (480p/720p)
   "infinitalk/from-audio": {
     resolutions: ["480p", "720p"],
   },
-  // Wan Animate: video_url + image_url + resolution (480p/580p/720p)
+  // Docs: video_url + image_url + resolution (480p/580p/720p)
   "wan/2-2-animate-move": {
     resolutions: ["480p", "580p", "720p"],
   },
