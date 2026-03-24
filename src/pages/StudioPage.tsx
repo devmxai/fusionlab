@@ -457,13 +457,13 @@ const StudioPage = () => {
   );
 
   // ── Dropdown Menu Component ──
-  const DropdownMenu = ({ id, children, minW = "min-w-[100px]" }: { id: string; children: React.ReactNode; minW?: string }) => (
+  const DropdownMenu = ({ id, children, minW = "min-w-[120px]" }: { id: string; children: React.ReactNode; minW?: string }) => (
     <AnimatePresence>
       {openMenu === id && (
         <motion.div {...dropdownAnim}
           className={`absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] ${minW}`}
         >
-          <div className="max-h-64 overflow-y-auto p-1">{children}</div>
+          <div className="max-h-72 overflow-y-auto p-1.5">{children}</div>
         </motion.div>
       )}
     </AnimatePresence>
