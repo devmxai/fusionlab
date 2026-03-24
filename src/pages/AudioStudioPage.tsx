@@ -69,11 +69,29 @@ const presets = [
   { label: "إنفلونسر", style: "كلام عفوي، مرح، شبابي، طاقة إيجابية" },
 ];
 
-// ─── Inline Tags ───
-const inlineTags = [
-  "[short pause]", "[medium pause]", "[long pause]",
-  "[whispering]", "[shouting]", "[sarcasm]", "[laughing]",
-  "[sigh]", "[fast]", "[scared]", "[curious]",
+// ─── Inline Tags with Emoji ───
+interface InlineTag {
+  id: string;
+  emoji: string;
+  label: string;
+  tag: string; // the actual tag sent to backend
+}
+
+const inlineTags: InlineTag[] = [
+  { id: "short-pause", emoji: "⏸️", label: "وقفة قصيرة", tag: "[short pause]" },
+  { id: "medium-pause", emoji: "⏯️", label: "وقفة متوسطة", tag: "[medium pause]" },
+  { id: "long-pause", emoji: "⏹️", label: "وقفة طويلة", tag: "[long pause]" },
+  { id: "whispering", emoji: "🤫", label: "همس", tag: "[whispering]" },
+  { id: "shouting", emoji: "🗣️", label: "صراخ", tag: "[shouting]" },
+  { id: "sarcasm", emoji: "😏", label: "سخرية", tag: "[sarcasm]" },
+  { id: "laughing", emoji: "😂", label: "ضحك", tag: "[laughing]" },
+  { id: "sigh", emoji: "😮‍💨", label: "تنهيدة", tag: "[sigh]" },
+  { id: "fast", emoji: "⚡", label: "سريع", tag: "[fast]" },
+  { id: "scared", emoji: "😨", label: "خوف", tag: "[scared]" },
+  { id: "curious", emoji: "🤔", label: "فضول", tag: "[curious]" },
+  { id: "bored", emoji: "😑", label: "ملل", tag: "[bored]" },
+  { id: "uhm", emoji: "🤨", label: "تردد", tag: "[uhm]" },
+  { id: "gasp", emoji: "😲", label: "شهقة", tag: "[gasp]" },
 ];
 
 const AudioStudioPage = () => {
