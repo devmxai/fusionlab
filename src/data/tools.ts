@@ -539,12 +539,14 @@ export function buildModelInput(
 
   // ─── VEO 3.1 ───
   if (model === "veo3" || model === "veo3_fast") {
-    return {
+    const input: Record<string, unknown> = {
       prompt,
       model,
       aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "16:9" : aspectRatio === "9:16" ? "9:16" : "16:9",
-      generationType: "TEXT_2_VIDEO",
+      generationType: imageUrls?.length ? "IMAGE_2_VIDEO" : "TEXT_2_VIDEO",
     };
+    if (imageUrls?.length) input.image = imageUrls[0];
+    return input;
   }
 
   // ─── UTILITY MODELS ───
