@@ -139,11 +139,6 @@ const Index = () => {
                           <Video className="w-5 h-5 text-white" />
                         </div>
                       </div>
-                      {vid.title && (
-                        <div className="absolute bottom-0 inset-x-0 px-2.5 py-1.5 bg-gradient-to-t from-black/70 to-transparent">
-                          <p className="text-[10px] text-white truncate">{vid.title}</p>
-                        </div>
-                      )}
                     </motion.div>
                   ))}
                 </div>
