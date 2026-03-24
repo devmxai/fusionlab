@@ -109,6 +109,8 @@ const StudioPage = () => {
 
   const tool = selectedTool || categoryTools[0];
   const isVideoTool = category === "video";
+  const isImageOnlyTool = category === "remove-bg" || category === "upscale";
+  const isUpscaleTool = category === "upscale";
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
