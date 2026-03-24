@@ -576,9 +576,9 @@ const StudioPage = () => {
           )}
 
           <div className="flex items-center gap-2">
-            <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
+            <input ref={fileInputRef} type="file" accept="image/*" multiple={!isImageOnlyTool} className="hidden" onChange={handleImageUpload} />
 
-            {refImages.length < 3 && (
+            {(isImageOnlyTool ? refImages.length < 1 : refImages.length < 3) && (
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="shrink-0 w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors"
@@ -587,29 +587,52 @@ const StudioPage = () => {
               </button>
             )}
 
-            <button
-              onClick={() => setSettingsOpen((v) => !v)}
-              className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
-                settingsOpen
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground border border-border/50"
-              }`}
-            >
-              <Settings2 className="w-4 h-4" />
-            </button>
+            {!isImageOnlyTool && (
+              <button
+                onClick={() => setSettingsOpen((v) => !v)}
+                className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+                  settingsOpen
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground border border-border/50"
+                }`}
+              >
+                <Settings2 className="w-4 h-4" />
+              </button>
+            )}
 
-            <input
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="اكتب وصفاً لما تريد توليده..."
-              className="flex-1 h-9 rounded-lg bg-card border border-border/50 px-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-              dir="ltr"
-              onKeyDown={(e) => e.key === "Enter" && !loading && handleGenerate()}
-            />
+            {isUpscaleTool && (
+              <button
+                onClick={() => setSettingsOpen((v) => !v)}
+                className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+                  settingsOpen
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground border border-border/50"
+                }`}
+              >
+                <Settings2 className="w-4 h-4" />
+              </button>
+            )}
+
+            {isImageOnlyTool ? (
+              <div className="flex-1 h-9 rounded-lg bg-card border border-border/50 px-3 flex items-center">
+                <span className="text-xs text-muted-foreground">
+                  {refImages.length > 0 ? "جاهز للمعالجة" : category === "remove-bg" ? "ارفع صورة لحذف الخلفية" : "ارفع صورة لرفع الجودة"}
+                </span>
+              </div>
+            ) : (
+              <input
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="اكتب وصفاً لما تريد توليده..."
+                className="flex-1 h-9 rounded-lg bg-card border border-border/50 px-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                dir="ltr"
+                onKeyDown={(e) => e.key === "Enter" && !loading && handleGenerate()}
+              />
+            )}
 
             <Button
               onClick={handleGenerate}
-              disabled={loading}
+              disabled={loading || (isImageOnlyTool && refImages.length === 0)}
               size="icon"
               className="shrink-0 w-9 h-9 rounded-lg bg-primary text-primary-foreground"
             >
