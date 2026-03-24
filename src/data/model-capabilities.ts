@@ -17,6 +17,10 @@ export interface ModelCapabilities {
   frameMode?: "first-last" | "first-only";
   /** Upscale factors */
   upscaleFactors?: string[];
+  /** Max reference images for remix/edit models */
+  maxImages?: number;
+  /** Minimum required images */
+  minImages?: number;
 }
 
 export const modelCapabilities: Record<string, ModelCapabilities> = {
