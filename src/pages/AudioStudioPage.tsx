@@ -391,6 +391,7 @@ const AudioStudioPage = () => {
               النص
             </label>
             <Textarea
+              ref={textareaRef}
               value={text}
               onChange={(e) => setText(tagsToEmojis(e.target.value))}
               placeholder="اكتب النص الذي تريد تحويله إلى صوت..."
