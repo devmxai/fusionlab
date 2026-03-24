@@ -94,6 +94,28 @@ const inlineTags: InlineTag[] = [
   { id: "gasp", emoji: "😲", label: "شهقة", tag: "[gasp]" },
 ];
 
+// Build emoji↔tag maps
+const emojiToTag = new Map(inlineTags.map((t) => [t.emoji, t.tag]));
+const tagToEmoji = new Map(inlineTags.map((t) => [t.tag, t.emoji]));
+
+// Convert emojis back to [tags] before sending to backend
+function emojisToTags(input: string): string {
+  let result = input;
+  for (const [emoji, tag] of emojiToTag) {
+    result = result.replaceAll(emoji, tag);
+  }
+  return result;
+}
+
+// Convert [tags] to emojis for display (if pasting raw tags)
+function tagsToEmojis(input: string): string {
+  let result = input;
+  for (const [tag, emoji] of tagToEmoji) {
+    result = result.replaceAll(tag, emoji);
+  }
+  return result;
+}
+
 const AudioStudioPage = () => {
   const navigate = useNavigate();
   const { user, credits, refreshCredits } = useAuth();
