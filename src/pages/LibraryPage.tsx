@@ -199,7 +199,7 @@ const LibraryPage = () => {
 
       {/* Image Viewer */}
       {viewerUrl && (
-        <ImageViewer imageUrl={viewerUrl} onClose={() => setViewerUrl(null)} />
+        <ImageViewer src={viewerUrl} open={!!viewerUrl} onClose={() => setViewerUrl(null)} />
       )}
     </div>
   );
