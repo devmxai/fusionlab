@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ArrowRight, Check, Crown, Sparkles, Send } from "lucide-react";
 import { toast } from "sonner";
-import BottomNav from "@/components/BottomNav";
+
 
 const tierColors: Record<string, string> = {
   starter: "from-blue-500/20 to-blue-600/5 border-blue-500/30",
@@ -133,7 +133,6 @@ const PricingPage = () => {
         </motion.div>
       </div>
 
-      <BottomNav />
     </div>
   );
 };
