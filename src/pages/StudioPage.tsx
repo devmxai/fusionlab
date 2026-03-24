@@ -867,8 +867,98 @@ const StudioPage = () => {
             </div>
           )}
 
-          {/* Regular image uploads strip (non-remix, non-frame) */}
-          {!hasFrameMode && !isRemixTool && refImages.length > 0 && (
+          {/* ── Avatar upload strip ── */}
+          {isAvatarTool && selectedTool && (
+            <div className="flex gap-2">
+              {/* Image slot */}
+              <button
+                onClick={() => avatarImageInputRef.current?.click()}
+                className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
+                  avatarImage ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
+                }`}
+                style={{ minHeight: "56px" }}
+              >
+                {avatarImage ? (
+                  <div className="relative w-full h-14">
+                    <img src={avatarImage.preview} alt="Avatar" className="w-full h-full object-cover rounded-lg" />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }}
+                      className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                    >
+                      <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                    </button>
+                    <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">صورة</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-1 py-2">
+                    <Upload className="w-4 h-4 text-muted-foreground/60" />
+                    <span className="text-[9px] font-semibold text-muted-foreground/70">صورة</span>
+                  </div>
+                )}
+              </button>
+
+              {/* Audio slot (for avatar models) */}
+              {isAvatarAudioModel && (
+                <button
+                  onClick={() => avatarAudioInputRef.current?.click()}
+                  className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
+                    avatarAudio ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
+                  }`}
+                  style={{ minHeight: "56px" }}
+                >
+                  {avatarAudio ? (
+                    <div className="relative w-full h-14 flex flex-col items-center justify-center gap-1">
+                      <Music className="w-4 h-4 text-primary" />
+                      <span className="text-[8px] font-bold text-foreground truncate max-w-[80%] px-1">{avatarAudio.name}</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setAvatarAudio(null); }}
+                        className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                      >
+                        <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-1 py-2">
+                      <Music className="w-4 h-4 text-muted-foreground/60" />
+                      <span className="text-[9px] font-semibold text-muted-foreground/70">مقطع صوتي</span>
+                    </div>
+                  )}
+                </button>
+              )}
+
+              {/* Video slot (for animate models like Wan Animate) */}
+              {isAvatarAnimateModel && (
+                <button
+                  onClick={() => avatarVideoInputRef.current?.click()}
+                  className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
+                    avatarVideo ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
+                  }`}
+                  style={{ minHeight: "56px" }}
+                >
+                  {avatarVideo ? (
+                    <div className="relative w-full h-14 flex flex-col items-center justify-center gap-1">
+                      <Video className="w-4 h-4 text-primary" />
+                      <span className="text-[8px] font-bold text-foreground truncate max-w-[80%] px-1">{avatarVideo.name}</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setAvatarVideo(null); }}
+                        className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                      >
+                        <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-1 py-2">
+                      <Video className="w-4 h-4 text-muted-foreground/60" />
+                      <span className="text-[9px] font-semibold text-muted-foreground/70">فيديو مرجعي</span>
+                    </div>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Regular image uploads strip (non-remix, non-frame, non-avatar) */}
+          {!hasFrameMode && !isRemixTool && !isAvatarTool && refImages.length > 0 && (
             <div className="flex gap-2">
               {refImages.map((img, i) => (
                 <div key={i} className="relative w-11 h-11 rounded-lg overflow-hidden border border-border/50">
