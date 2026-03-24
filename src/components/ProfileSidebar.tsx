@@ -135,9 +135,15 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
     }
   }, [view, user]);
 
-  // Reset view on close
+  // Reset view on close + lock body scroll
   useEffect(() => {
-    if (!open) setTimeout(() => setView("main"), 300);
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+      setTimeout(() => setView("main"), 300);
+    }
+    return () => { document.body.style.overflow = ""; };
   }, [open]);
 
   const handleSignOut = async () => {
