@@ -443,27 +443,27 @@ const StudioPage = () => {
   const DropdownBtn = ({ id, label, value, hasValue }: { id: string; label: string; value: string; hasValue: boolean }) => (
     <button
       onClick={() => setOpenMenu(openMenu === id ? null : id)}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-200 ${
+      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border transition-all duration-200 ${
         hasValue
           ? "bg-primary/10 border-primary/50"
           : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"
       }`}
     >
-      <span className={`text-[11px] font-bold truncate max-w-[100px] ${hasValue ? "text-primary" : "text-foreground"}`}>
+      <span className={`text-xs font-bold truncate max-w-[110px] ${hasValue ? "text-primary" : "text-foreground"}`}>
         {hasValue ? value : label}
       </span>
-      <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${openMenu === id ? "rotate-180" : ""}`} />
+      <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${openMenu === id ? "rotate-180" : ""}`} />
     </button>
   );
 
   // ── Dropdown Menu Component ──
-  const DropdownMenu = ({ id, children, minW = "min-w-[100px]" }: { id: string; children: React.ReactNode; minW?: string }) => (
+  const DropdownMenu = ({ id, children, minW = "min-w-[120px]" }: { id: string; children: React.ReactNode; minW?: string }) => (
     <AnimatePresence>
       {openMenu === id && (
         <motion.div {...dropdownAnim}
           className={`absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] ${minW}`}
         >
-          <div className="max-h-64 overflow-y-auto p-1">{children}</div>
+          <div className="max-h-72 overflow-y-auto p-1.5">{children}</div>
         </motion.div>
       )}
     </AnimatePresence>
@@ -471,7 +471,7 @@ const StudioPage = () => {
 
   const DropdownItem = ({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: React.ReactNode }) => (
     <button onClick={onClick}
-      className={`w-full px-3 py-2 rounded-lg text-right text-xs font-semibold transition-colors ${
+      className={`w-full px-3.5 py-2.5 rounded-lg text-right text-sm font-semibold transition-colors ${
         selected ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary/50"
       }`}
     >{children}</button>
