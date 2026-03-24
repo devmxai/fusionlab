@@ -3,7 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, FolderOpen, Activity, CreditCard, LogOut, Shield, X, Crown } from "lucide-react";
+import {
+  User,
+  FolderOpen,
+  Activity,
+  CreditCard,
+  LogOut,
+  Shield,
+  X,
+  Crown,
+  ChevronLeft,
+  Coins,
+} from "lucide-react";
 
 interface ProfileSidebarProps {
   open: boolean;
@@ -45,6 +56,8 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
   };
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "مستخدم";
+  const maxCredits = 2000;
+  const creditRatio = Math.min(credits / maxCredits, 1);
 
   return (
     <AnimatePresence>
@@ -55,77 +68,121 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[6px]"
             onClick={onClose}
           />
 
-          {/* Sidebar */}
+          {/* Sidebar from RIGHT */}
           <motion.div
+            dir="rtl"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 28, stiffness: 300 }}
-            className="fixed top-0 right-0 z-50 h-full w-[280px] bg-card/80 backdrop-blur-2xl border-l border-border/30 rounded-tl-2xl rounded-bl-2xl flex flex-col"
+            transition={{ type: "spring", damping: 30, stiffness: 320 }}
+            className="fixed top-0 right-0 z-50 h-full w-[300px] flex flex-col overflow-hidden"
+            style={{
+              background: "linear-gradient(180deg, hsl(240 15% 8% / 0.95) 0%, hsl(240 12% 6% / 0.98) 100%)",
+              backdropFilter: "blur(40px)",
+              borderLeft: "1px solid hsl(var(--border) / 0.3)",
+              borderTopLeftRadius: "20px",
+              borderBottomLeftRadius: "20px",
+            }}
           >
-            {/* Close button */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 left-4 p-1.5 rounded-full hover:bg-secondary/60 transition-colors"
-            >
-              <X className="w-4 h-4 text-muted-foreground" />
-            </button>
+            {/* Top bar */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-2">
+              <span className="text-[11px] font-bold text-muted-foreground tracking-wide">الملف الشخصي</span>
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-full bg-secondary/40 hover:bg-secondary/70 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
 
-            {/* Profile header */}
-            <div className="flex flex-col items-center pt-10 pb-5 px-4">
-              <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center border-2 border-primary/40 mb-3">
-                {user?.user_metadata?.avatar_url ? (
-                  <img src={user.user_metadata.avatar_url} className="w-full h-full rounded-full object-cover" alt="" />
-                ) : (
-                  <User className="w-7 h-7 text-primary" />
-                )}
+            {/* Profile card */}
+            <div className="mx-4 mt-3 p-4 rounded-2xl bg-secondary/30 border border-border/20">
+              <div className="flex items-center gap-3">
+                {/* Avatar with credit ring */}
+                <div className="relative flex-shrink-0">
+                  <svg width={52} height={52} className="-rotate-90 absolute inset-0">
+                    <circle cx={26} cy={26} r={23} fill="none" stroke="hsl(var(--secondary))" strokeWidth={2.5} opacity={0.3} />
+                    <circle
+                      cx={26} cy={26} r={23} fill="none"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2.5}
+                      strokeLinecap="round"
+                      strokeDasharray={2 * Math.PI * 23}
+                      strokeDashoffset={(2 * Math.PI * 23) * (1 - creditRatio)}
+                      style={{ filter: "drop-shadow(0 0 6px hsl(var(--primary) / 0.5))" }}
+                    />
+                  </svg>
+                  <div className="w-[52px] h-[52px] flex items-center justify-center">
+                    <div className="w-[42px] h-[42px] rounded-full bg-secondary/60 flex items-center justify-center overflow-hidden">
+                      {user?.user_metadata?.avatar_url ? (
+                        <img src={user.user_metadata.avatar_url} className="w-full h-full object-cover" alt="" />
+                      ) : (
+                        <User className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-foreground truncate">{displayName}</p>
+                  <p className="text-[10px] text-muted-foreground truncate" dir="ltr">{user?.email}</p>
+                </div>
               </div>
-              <p className="text-sm font-bold text-foreground">{displayName}</p>
-              <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary font-semibold">
-                  {planName || "مجاني"}
-                </span>
-                <span className="text-[10px] text-muted-foreground font-medium">
-                  {credits} كردت
-                </span>
+
+              {/* Subscription & Credits row */}
+              <div className="flex items-center gap-2 mt-3">
+                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 border border-primary/20">
+                  <Crown className="w-3 h-3 text-primary" />
+                  <span className="text-[10px] font-semibold text-primary">{planName || "مجاني"}</span>
+                </div>
+                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary/50">
+                  <Coins className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-[10px] font-semibold text-foreground">{credits}</span>
+                </div>
               </div>
             </div>
 
-            {/* Menu items */}
-            <div className="flex-1 px-4 space-y-1.5">
+            {/* Menu */}
+            <div className="flex-1 px-4 mt-4 space-y-1">
               {isAdmin && (
                 <button
                   onClick={() => { navigate("/admin"); onClose(); }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors text-primary"
+                  className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl bg-primary/8 hover:bg-primary/15 border border-primary/10 transition-all"
                 >
-                  <Shield className="w-4 h-4" />
-                  <span className="text-xs font-semibold">لوحة التحكم</span>
+                  <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
+                    <Shield className="w-4 h-4 text-primary" />
+                  </div>
+                  <span className="text-xs font-semibold text-primary">لوحة التحكم</span>
                 </button>
               )}
               {menuItems.map((item) => (
                 <button
                   key={item.label}
                   onClick={item.action}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary/60 transition-colors"
+                  className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl hover:bg-secondary/50 transition-all group"
                 >
-                  <item.icon className="w-4 h-4 text-muted-foreground" />
+                  <div className="w-8 h-8 rounded-lg bg-secondary/50 group-hover:bg-secondary/80 flex items-center justify-center transition-colors">
+                    <item.icon className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  </div>
                   <span className="text-xs font-medium text-foreground">{item.label}</span>
                 </button>
               ))}
             </div>
 
             {/* Logout */}
-            <div className="px-4 pb-8 pt-4">
+            <div className="px-4 pb-8 pt-3">
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-destructive/10 transition-colors"
+                className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl hover:bg-destructive/8 transition-all group"
               >
-                <LogOut className="w-4 h-4 text-destructive" />
+                <div className="w-8 h-8 rounded-lg bg-destructive/10 group-hover:bg-destructive/20 flex items-center justify-center transition-colors">
+                  <LogOut className="w-4 h-4 text-destructive" />
+                </div>
                 <span className="text-xs font-medium text-destructive">تسجيل الخروج</span>
               </button>
             </div>
