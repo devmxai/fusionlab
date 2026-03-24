@@ -4,7 +4,7 @@ import HomeHeader from "@/components/HomeHeader";
 import CategoryFilter from "@/components/CategoryFilter";
 import BannerCarousel from "@/components/BannerCarousel";
 import ToolCard from "@/components/ToolCard";
-import BottomNav from "@/components/BottomNav";
+
 import { tools } from "@/data/tools";
 
 const Index = () => {
