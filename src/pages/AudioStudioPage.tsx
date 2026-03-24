@@ -354,15 +354,17 @@ const AudioStudioPage = () => {
               className="min-h-[120px] bg-card border-border/50 text-sm resize-none focus:border-primary/50"
               dir="rtl"
             />
-            {/* Inline Tags */}
-            <div className="flex gap-1 flex-wrap">
+            {/* Inline Tags - Emoji Chips */}
+            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
               {inlineTags.map((tag) => (
                 <button
-                  key={tag}
+                  key={tag.id}
                   onClick={() => insertTag(tag)}
-                  className="text-[9px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/70 hover:text-primary hover:bg-primary/20 transition-all font-mono"
+                  title={tag.label}
+                  className="shrink-0 flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-foreground transition-all border border-primary/10 hover:border-primary/30"
                 >
-                  {tag}
+                  <span className="text-sm">{tag.emoji}</span>
+                  <span className="text-[10px] text-muted-foreground">{tag.label}</span>
                 </button>
               ))}
             </div>
