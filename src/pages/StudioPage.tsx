@@ -485,7 +485,7 @@ const StudioPage = () => {
               transition={{ duration: 0.2 }}
               className="absolute bottom-full right-4 mb-2 w-64 bg-card border border-border/50 rounded-xl shadow-xl p-4 space-y-4"
             >
-              {!isVideoTool && (
+              {!isVideoTool && !isImageOnlyTool && (
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold text-muted-foreground">Size</label>
                   <div className="flex gap-1.5">
@@ -513,7 +513,7 @@ const StudioPage = () => {
                 </div>
               )}
 
-              {!isVideoTool && (
+              {!isVideoTool && !isImageOnlyTool && (
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold text-muted-foreground">Resolution</label>
                   <div className="flex gap-1.5">
@@ -528,6 +528,27 @@ const StudioPage = () => {
                         }`}
                       >
                         {res.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {isUpscaleTool && (
+                <div className="space-y-2">
+                  <label className="text-[11px] font-semibold text-muted-foreground">معامل التكبير</label>
+                  <div className="flex gap-1.5">
+                    {upscaleFactors.map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => setUpscaleFactor(f)}
+                        className={`flex-1 py-2 rounded-lg text-[10px] font-semibold transition-all ${
+                          upscaleFactor === f
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary text-secondary-foreground"
+                        }`}
+                      >
+                        {f}x
                       </button>
                     ))}
                   </div>
