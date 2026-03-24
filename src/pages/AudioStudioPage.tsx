@@ -170,11 +170,14 @@ const AudioStudioPage = () => {
       // Always use Iraqi dialect as default
       const dialectHint = "لهجة عراقية عامية طبيعية";
 
+      // Convert emojis to tags before sending
+      const textForBackend = emojisToTags(text);
+
       const { data, error } = await supabase.functions.invoke("gemini-tts", {
         body: {
           action: "synthesize",
           prebuiltModel: GEMINI_FLASH_TTS_MODEL,
-          text,
+          text: textForBackend,
           voiceName: selectedVoice.name,
           styleInstruction: styleInstruction.trim(),
           speakingRate,
