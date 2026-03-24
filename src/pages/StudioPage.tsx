@@ -193,6 +193,7 @@ const StudioPage = () => {
 
       const extraParams = isUpscaleTool ? { upscale_factor: upscaleFactor } : undefined;
       const input = buildModelInput(tool.model, prompt, aspectRatio, resolution, imageUrls, extraParams);
+      const isVeo = tool.isVeoApi === true;
       setStatus("جاري إنشاء المهمة...");
       setProgress(30);
 
