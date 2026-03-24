@@ -123,7 +123,7 @@ const Index = () => {
             {trendingVideos.length > 0 && (
               <section>
                 <SectionHeader icon={<TrendingUp className="w-4 h-4 text-purple-500" />} title="ترند الفيديو" />
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div className="columns-2 sm:columns-3 gap-[6px]">
                   {trendingVideos.map((vid, i) => (
                     <motion.div
                       key={vid.id}
@@ -131,12 +131,13 @@ const Index = () => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, margin: "-30px" }}
                       transition={{ duration: 0.3, delay: i * 0.04 }}
-                      className="rounded-xl overflow-hidden border border-border/30 group cursor-pointer aspect-video relative bg-secondary/30"
+                      className="break-inside-avoid mb-[6px] rounded-xl overflow-hidden border border-border/30 group cursor-pointer relative"
                     >
                       {vid.thumbnail_url ? (
-                        <img src={vid.thumbnail_url} alt={vid.title || ""} className="w-full h-full object-cover" loading="lazy" />
+                        <img src={vid.thumbnail_url} alt={vid.title || ""} className="w-full block" loading="lazy" />
                       ) : (
-                        <video src={vid.video_url} muted loop className="w-full h-full object-cover" />
+                        <video src={vid.video_url} muted preload="metadata" className="w-full block"
+                          onLoadedData={(e) => { e.currentTarget.currentTime = 0.5; }} />
                       )}
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center group-hover:bg-primary/30 transition-colors">
@@ -144,7 +145,7 @@ const Index = () => {
                         </div>
                       </div>
                       {vid.title && (
-                        <div className="absolute bottom-0 inset-x-0 px-2.5 py-2 bg-gradient-to-t from-black/70 to-transparent">
+                        <div className="absolute bottom-0 inset-x-0 px-2.5 py-1.5 bg-gradient-to-t from-black/70 to-transparent">
                           <p className="text-[10px] text-white truncate">{vid.title}</p>
                         </div>
                       )}
