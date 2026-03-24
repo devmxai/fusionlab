@@ -172,7 +172,11 @@ const StudioPage = () => {
       toast.error("يجب رفع صورة أولاً");
       return;
     }
-    if (!isImageOnlyTool && !prompt.trim() && refImages.length === 0) {
+    if (isRemixTool && refImages.length === 0 && !prompt.trim()) {
+      toast.error("ارفع صورة واحدة على الأقل أو اكتب وصفاً");
+      return;
+    }
+    if (!isImageOnlyTool && !isRemixTool && !prompt.trim() && refImages.length === 0) {
       toast.error("اكتب وصفاً أو ارفع صورة");
       return;
     }
@@ -213,7 +217,14 @@ const StudioPage = () => {
       setProgress(30);
 
       let taskId: string;
-      if (isVeo) {
+      let apiType: "standard" | "veo" | "flux-kontext" = "standard";
+
+      if (isFluxKontext) {
+        apiType = "flux-kontext";
+        const fkResult = await createFluxKontextTask(input);
+        taskId = fkResult.taskId;
+      } else if (isVeo) {
+        apiType = "veo";
         const veoResult = await createVeoTask(input);
         taskId = veoResult.taskId;
       } else {
@@ -240,7 +251,7 @@ const StudioPage = () => {
             state === "success" ? 100 : progress
           );
         }
-      }, 120, 3000, isVeo);
+      }, 120, 3000, false, apiType);
 
       if (result.resultJson) {
         const parsed = JSON.parse(result.resultJson);
