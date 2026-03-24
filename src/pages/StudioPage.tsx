@@ -13,6 +13,7 @@ import ImageViewer from "@/components/ImageViewer";
 
 type AspectRatio = "1:1" | "3:4" | "9:16";
 type Resolution = "1k" | "2k" | "4k";
+type UpscaleFactor = "1.5" | "2" | "4";
 
 const categorySlugMap: Record<string, string> = {
   images: "صور",
@@ -39,6 +40,7 @@ const ratioConfig: Record<AspectRatio, { label: string; w: number; h: number; cs
 };
 
 const resolutions: Resolution[] = ["1k", "2k", "4k"];
+const upscaleFactors: UpscaleFactor[] = ["1.5", "2", "4"];
 
 const StudioPage = () => {
   const { category } = useParams();
@@ -68,6 +70,7 @@ const StudioPage = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState("");
+  const [upscaleFactor, setUpscaleFactor] = useState<UpscaleFactor>("2");
 
   // Auto-select first tool
   useEffect(() => {
@@ -106,6 +109,8 @@ const StudioPage = () => {
 
   const tool = selectedTool || categoryTools[0];
   const isVideoTool = category === "video";
+  const isImageOnlyTool = category === "remove-bg" || category === "upscale";
+  const isUpscaleTool = category === "upscale";
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -129,6 +134,7 @@ const StudioPage = () => {
   };
 
   const getMode = () => {
+    if (isImageOnlyTool) return category === "remove-bg" ? "حذف الخلفية" : "رفع الجودة";
     if (refImages.length === 0) return "Text to Image";
     if (refImages.length === 1) return "Image to Image";
     return "Image Merge";
@@ -148,7 +154,11 @@ const StudioPage = () => {
   const { user, credits, refreshCredits } = useAuth();
 
   const handleGenerate = async () => {
-    if (!prompt.trim() && refImages.length === 0) {
+    if (isImageOnlyTool && refImages.length === 0) {
+      toast.error("يجب رفع صورة أولاً");
+      return;
+    }
+    if (!isImageOnlyTool && !prompt.trim() && refImages.length === 0) {
       toast.error("اكتب وصفاً أو ارفع صورة");
       return;
     }
@@ -182,8 +192,9 @@ const StudioPage = () => {
         }
       }
 
+      const extraParams = isUpscaleTool ? { upscale_factor: upscaleFactor } : undefined;
+      const input = buildModelInput(tool.model, prompt, aspectRatio, resolution, imageUrls, extraParams);
       const isVeo = tool.isVeoApi === true;
-      const input = buildModelInput(tool.model, prompt, aspectRatio, resolution, imageUrls);
       setStatus("جاري إنشاء المهمة...");
       setProgress(30);
 
@@ -475,7 +486,7 @@ const StudioPage = () => {
               transition={{ duration: 0.2 }}
               className="absolute bottom-full right-4 mb-2 w-64 bg-card border border-border/50 rounded-xl shadow-xl p-4 space-y-4"
             >
-              {!isVideoTool && (
+              {!isVideoTool && !isImageOnlyTool && (
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold text-muted-foreground">Size</label>
                   <div className="flex gap-1.5">
@@ -503,7 +514,7 @@ const StudioPage = () => {
                 </div>
               )}
 
-              {!isVideoTool && (
+              {!isVideoTool && !isImageOnlyTool && (
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold text-muted-foreground">Resolution</label>
                   <div className="flex gap-1.5">
@@ -518,6 +529,27 @@ const StudioPage = () => {
                         }`}
                       >
                         {res.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {isUpscaleTool && (
+                <div className="space-y-2">
+                  <label className="text-[11px] font-semibold text-muted-foreground">معامل التكبير</label>
+                  <div className="flex gap-1.5">
+                    {upscaleFactors.map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => setUpscaleFactor(f)}
+                        className={`flex-1 py-2 rounded-lg text-[10px] font-semibold transition-all ${
+                          upscaleFactor === f
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary text-secondary-foreground"
+                        }`}
+                      >
+                        {f}x
                       </button>
                     ))}
                   </div>
@@ -545,9 +577,9 @@ const StudioPage = () => {
           )}
 
           <div className="flex items-center gap-2">
-            <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
+            <input ref={fileInputRef} type="file" accept="image/*" multiple={!isImageOnlyTool} className="hidden" onChange={handleImageUpload} />
 
-            {refImages.length < 3 && (
+            {(isImageOnlyTool ? refImages.length < 1 : refImages.length < 3) && (
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="shrink-0 w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors"
@@ -556,29 +588,52 @@ const StudioPage = () => {
               </button>
             )}
 
-            <button
-              onClick={() => setSettingsOpen((v) => !v)}
-              className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
-                settingsOpen
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground border border-border/50"
-              }`}
-            >
-              <Settings2 className="w-4 h-4" />
-            </button>
+            {!isImageOnlyTool && (
+              <button
+                onClick={() => setSettingsOpen((v) => !v)}
+                className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+                  settingsOpen
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground border border-border/50"
+                }`}
+              >
+                <Settings2 className="w-4 h-4" />
+              </button>
+            )}
 
-            <input
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="اكتب وصفاً لما تريد توليده..."
-              className="flex-1 h-9 rounded-lg bg-card border border-border/50 px-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-              dir="ltr"
-              onKeyDown={(e) => e.key === "Enter" && !loading && handleGenerate()}
-            />
+            {isUpscaleTool && (
+              <button
+                onClick={() => setSettingsOpen((v) => !v)}
+                className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+                  settingsOpen
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground border border-border/50"
+                }`}
+              >
+                <Settings2 className="w-4 h-4" />
+              </button>
+            )}
+
+            {isImageOnlyTool ? (
+              <div className="flex-1 h-9 rounded-lg bg-card border border-border/50 px-3 flex items-center">
+                <span className="text-xs text-muted-foreground">
+                  {refImages.length > 0 ? "جاهز للمعالجة" : category === "remove-bg" ? "ارفع صورة لحذف الخلفية" : "ارفع صورة لرفع الجودة"}
+                </span>
+              </div>
+            ) : (
+              <input
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="اكتب وصفاً لما تريد توليده..."
+                className="flex-1 h-9 rounded-lg bg-card border border-border/50 px-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                dir="ltr"
+                onKeyDown={(e) => e.key === "Enter" && !loading && handleGenerate()}
+              />
+            )}
 
             <Button
               onClick={handleGenerate}
-              disabled={loading}
+              disabled={loading || (isImageOnlyTool && refImages.length === 0)}
               size="icon"
               className="shrink-0 w-9 h-9 rounded-lg bg-primary text-primary-foreground"
             >
