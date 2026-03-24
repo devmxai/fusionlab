@@ -716,6 +716,25 @@ const StudioPage = () => {
           <input ref={remixSlotInputRef} type="file" accept="image/*" className="hidden" onChange={handleRemixSlotUpload} />
           <input ref={firstFrameInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFrameUpload("first", e)} />
           <input ref={lastFrameInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFrameUpload("last", e)} />
+          <input ref={avatarImageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            if (avatarImage) URL.revokeObjectURL(avatarImage.preview);
+            setAvatarImage({ file, preview: URL.createObjectURL(file) });
+            if (avatarImageInputRef.current) avatarImageInputRef.current.value = "";
+          }} />
+          <input ref={avatarAudioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            setAvatarAudio({ file, name: file.name });
+            if (avatarAudioInputRef.current) avatarAudioInputRef.current.value = "";
+          }} />
+          <input ref={avatarVideoInputRef} type="file" accept="video/*" className="hidden" onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            setAvatarVideo({ file, name: file.name });
+            if (avatarVideoInputRef.current) avatarVideoInputRef.current.value = "";
+          }} />
 
           {/* Frame upload boxes for first/last frame video models */}
           {hasFrameMode && selectedTool && (
