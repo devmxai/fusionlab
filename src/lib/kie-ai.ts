@@ -69,16 +69,47 @@ export async function getVeoTaskStatus(taskId: string): Promise<TaskResult> {
   return data.data as TaskResult;
 }
 
+// ─── Flux Kontext API ───
+
+export async function createFluxKontextTask(params: Record<string, unknown>) {
+  const { data, error } = await supabase.functions.invoke("kie-ai", {
+    body: { action: "flux-kontext-create", ...params },
+  });
+  if (error) throw new Error(error.message);
+  if (data?.code !== 200) throw new Error(data?.msg || "Failed to create Flux Kontext task: " + JSON.stringify(data));
+  return data.data as { taskId: string };
+}
+
+export async function getFluxKontextTaskStatus(taskId: string): Promise<TaskResult> {
+  const { data, error } = await supabase.functions.invoke("kie-ai", {
+    body: { action: "flux-kontext-status", taskId },
+  });
+  if (error) throw new Error(error.message);
+  if (data?.code !== 200) throw new Error(data?.msg || "Failed to get Flux Kontext status");
+  return data.data as TaskResult;
+}
+
 // ─── Unified polling ───
+
+export type ApiType = "standard" | "veo" | "flux-kontext";
 
 export async function pollTask(
   taskId: string,
   onProgress?: (state: string, progress?: number) => void,
   maxAttempts = 120,
   intervalMs = 3000,
-  isVeo = false
+  isVeo = false,
+  apiType?: ApiType
 ): Promise<TaskResult> {
-  const statusFn = isVeo ? getVeoTaskStatus : getTaskStatus;
+  let statusFn: (id: string) => Promise<TaskResult>;
+  
+  if (apiType === "flux-kontext") {
+    statusFn = getFluxKontextTaskStatus;
+  } else if (apiType === "veo" || isVeo) {
+    statusFn = getVeoTaskStatus;
+  } else {
+    statusFn = getTaskStatus;
+  }
 
   for (let i = 0; i < maxAttempts; i++) {
     const result = await statusFn(taskId);

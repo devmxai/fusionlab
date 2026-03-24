@@ -3,7 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { tools, buildModelInput, AITool } from "@/data/tools";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Image as ImageIcon, Send, X, Settings2, Sparkles, ChevronDown } from "lucide-react";
-import { createTask, createVeoTask, pollTask, uploadFileBase64 } from "@/lib/kie-ai";
+import { createTask, createVeoTask, createFluxKontextTask, pollTask } from "@/lib/kie-ai";
+import { uploadFileBase64 } from "@/lib/kie-ai";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ type UpscaleFactor = "1.5" | "2" | "4";
 const categorySlugMap: Record<string, string> = {
   images: "صور",
   video: "فيديو",
+  remix: "ريمكس",
   audio: "صوت",
   avatar: "افتار",
   "remove-bg": "حذف الخلفية",
@@ -27,6 +29,7 @@ const categorySlugMap: Record<string, string> = {
 const categoryTitleMap: Record<string, string> = {
   images: "استديو الصور",
   video: "استديو الفيديو",
+  remix: "استديو الريمكس",
   audio: "استديو الصوت",
   avatar: "استديو الأفتار",
   "remove-bg": "حذف الخلفية",
@@ -111,11 +114,17 @@ const StudioPage = () => {
   const isVideoTool = category === "video";
   const isImageOnlyTool = category === "remove-bg" || category === "upscale";
   const isUpscaleTool = category === "upscale";
+  const isRemixTool = category === "remix";
+  const isFluxKontext = tool.isFluxKontextApi === true;
+
+  const maxImages = isRemixTool
+    ? (tool.model === "gpt-image/1.5-image-to-image" ? 16 : tool.model === "seedream/4.5-edit" ? 14 : 3)
+    : isImageOnlyTool ? 1 : 3;
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (refImages.length + files.length > 3) {
-      toast.error("الحد الأقصى 3 صور");
+    if (refImages.length + files.length > maxImages) {
+      toast.error(`الحد الأقصى ${maxImages} صور`);
       return;
     }
     const newImages = files.map((file) => ({
@@ -135,6 +144,11 @@ const StudioPage = () => {
 
   const getMode = () => {
     if (isImageOnlyTool) return category === "remove-bg" ? "حذف الخلفية" : "رفع الجودة";
+    if (isRemixTool) {
+      if (refImages.length === 0) return "Text to Image";
+      if (refImages.length === 1) return "Image Edit";
+      return "Image Remix";
+    }
     if (refImages.length === 0) return "Text to Image";
     if (refImages.length === 1) return "Image to Image";
     return "Image Merge";
@@ -158,7 +172,11 @@ const StudioPage = () => {
       toast.error("يجب رفع صورة أولاً");
       return;
     }
-    if (!isImageOnlyTool && !prompt.trim() && refImages.length === 0) {
+    if (isRemixTool && refImages.length === 0 && !prompt.trim()) {
+      toast.error("ارفع صورة واحدة على الأقل أو اكتب وصفاً");
+      return;
+    }
+    if (!isImageOnlyTool && !isRemixTool && !prompt.trim() && refImages.length === 0) {
       toast.error("اكتب وصفاً أو ارفع صورة");
       return;
     }
@@ -199,7 +217,14 @@ const StudioPage = () => {
       setProgress(30);
 
       let taskId: string;
-      if (isVeo) {
+      let apiType: "standard" | "veo" | "flux-kontext" = "standard";
+
+      if (isFluxKontext) {
+        apiType = "flux-kontext";
+        const fkResult = await createFluxKontextTask(input);
+        taskId = fkResult.taskId;
+      } else if (isVeo) {
+        apiType = "veo";
         const veoResult = await createVeoTask(input);
         taskId = veoResult.taskId;
       } else {
@@ -226,7 +251,7 @@ const StudioPage = () => {
             state === "success" ? 100 : progress
           );
         }
-      }, 120, 3000, isVeo);
+      }, 120, 3000, false, apiType);
 
       if (result.resultJson) {
         const parsed = JSON.parse(result.resultJson);
@@ -579,7 +604,7 @@ const StudioPage = () => {
           <div className="flex items-center gap-2">
             <input ref={fileInputRef} type="file" accept="image/*" multiple={!isImageOnlyTool} className="hidden" onChange={handleImageUpload} />
 
-            {(isImageOnlyTool ? refImages.length < 1 : refImages.length < 3) && (
+            {refImages.length < maxImages && (
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="shrink-0 w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors"
@@ -624,7 +649,7 @@ const StudioPage = () => {
               <input
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="اكتب وصفاً لما تريد توليده..."
+                placeholder={isRemixTool ? "صف التعديل المطلوب..." : "اكتب وصفاً لما تريد توليده..."}
                 className="flex-1 h-9 rounded-lg bg-card border border-border/50 px-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                 dir="ltr"
                 onKeyDown={(e) => e.key === "Enter" && !loading && handleGenerate()}

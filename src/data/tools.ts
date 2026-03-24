@@ -9,6 +9,8 @@ export interface AITool {
   model: string;
   /** Whether this model uses the Veo API instead of standard createTask */
   isVeoApi?: boolean;
+  /** Whether this model uses the Flux Kontext API */
+  isFluxKontextApi?: boolean;
   /** Input type: what the model needs besides prompt */
   inputType?: "text-to-video" | "avatar" | "animate";
 }
@@ -17,6 +19,7 @@ export const categories = [
   "الكل",
   "فيديو",
   "صور",
+  "ريمكس",
   "صوت",
   "افتار",
   "حذف الخلفية",
@@ -56,16 +59,6 @@ export const tools: AITool[] = [
     model: "nano-banana-pro",
   },
   {
-    id: "nano-banana-edit",
-    title: "Nano Banana Edit",
-    provider: "Google",
-    description: "تعديل الصور بالذكاء الاصطناعي",
-    image: "ai-influencer",
-    isPro: false,
-    category: "صور",
-    model: "google/nano-banana-edit",
-  },
-  {
     id: "seedream-4-5",
     title: "Seedream 4.5",
     provider: "Bytedance",
@@ -74,36 +67,6 @@ export const tools: AITool[] = [
     isPro: false,
     category: "صور",
     model: "seedream/4.5-text-to-image",
-  },
-  {
-    id: "recraft-crisp-upscale",
-    title: "Recraft Crisp Upscale",
-    provider: "Recraft",
-    description: "رفع جودة الصور حتى 4x بدون تشويش",
-    image: "upscale",
-    isPro: false,
-    category: "رفع الجودة",
-    model: "recraft/crisp-upscale",
-  },
-  {
-    id: "topaz-upscale",
-    title: "Topaz Upscale",
-    provider: "Topaz",
-    description: "تكبير الصور حتى 4K",
-    image: "upscale",
-    isPro: true,
-    category: "رفع الجودة",
-    model: "topaz/image-upscale",
-  },
-  {
-    id: "recraft-bg",
-    title: "Remove Background",
-    provider: "Recraft",
-    description: "إزالة الخلفية بنقرة واحدة",
-    image: "remove-bg",
-    isPro: false,
-    category: "حذف الخلفية",
-    model: "recraft/remove-background",
   },
   {
     id: "flux-2-pro",
@@ -124,6 +87,104 @@ export const tools: AITool[] = [
     isPro: false,
     category: "صور",
     model: "grok-imagine/text-to-image",
+  },
+
+  // ─── Remix / Image Edit Models ───
+  {
+    id: "nano-banana-edit",
+    title: "Nano Banana Edit",
+    provider: "Google",
+    description: "تعديل ودمج الصور بالذكاء الاصطناعي",
+    image: "ai-influencer",
+    isPro: false,
+    category: "ريمكس",
+    model: "google/nano-banana-edit",
+  },
+  {
+    id: "flux-kontext-pro",
+    title: "Flux Kontext Pro",
+    provider: "Flux",
+    description: "تعديل احترافي بأوامر نصية دقيقة",
+    image: "sketch-edit",
+    isPro: false,
+    category: "ريمكس",
+    model: "flux-kontext-pro",
+    isFluxKontextApi: true,
+  },
+  {
+    id: "flux-kontext-max",
+    title: "Flux Kontext Max",
+    provider: "Flux",
+    description: "أعلى جودة للمشاهد المعقدة والتفاصيل الدقيقة",
+    image: "sketch-edit",
+    isPro: true,
+    category: "ريمكس",
+    model: "flux-kontext-max",
+    isFluxKontextApi: true,
+  },
+  {
+    id: "qwen-image-edit",
+    title: "Qwen Image Edit",
+    provider: "Alibaba",
+    description: "تعديل دقيق مع دعم النصوص ثنائية اللغة",
+    image: "inpaint",
+    isPro: false,
+    category: "ريمكس",
+    model: "qwen/image-edit",
+  },
+  {
+    id: "gpt-image-1-5-edit",
+    title: "GPT Image 1.5",
+    provider: "OpenAI",
+    description: "تعديل ودمج حتى 16 صورة بذكاء",
+    image: "image-merge",
+    isPro: true,
+    category: "ريمكس",
+    model: "gpt-image/1.5-image-to-image",
+  },
+  {
+    id: "seedream-4-5-edit",
+    title: "Seedream 4.5 Edit",
+    provider: "Bytedance",
+    description: "تعديل الصور مع الحفاظ على الجودة العالية",
+    image: "skin-enhance",
+    isPro: false,
+    category: "ريمكس",
+    model: "seedream/4.5-edit",
+  },
+
+  // ─── Upscale Models ───
+  {
+    id: "recraft-crisp-upscale",
+    title: "Recraft Crisp Upscale",
+    provider: "Recraft",
+    description: "رفع جودة الصور حتى 4x بدون تشويش",
+    image: "upscale",
+    isPro: false,
+    category: "رفع الجودة",
+    model: "recraft/crisp-upscale",
+  },
+  {
+    id: "topaz-upscale",
+    title: "Topaz Upscale",
+    provider: "Topaz",
+    description: "تكبير الصور حتى 4K",
+    image: "upscale",
+    isPro: true,
+    category: "رفع الجودة",
+    model: "topaz/image-upscale",
+  },
+
+  // ─── Remove Background ───
+  {
+    id: "recraft-bg",
+    title: "Remove Background",
+    provider: "Recraft",
+    description: "إزالة الخلفية بنقرة واحدة",
+    image: "remove-bg",
+    isPro: false,
+    category: "حذف الخلفية",
+    model: "recraft/remove-background",
   },
 
   // ─── Video Models ───
@@ -315,9 +376,57 @@ export function buildModelInput(
     return { prompt, aspect_ratio: arMap[aspectRatio] || "1:1" };
   }
 
+  // ─── REMIX / IMAGE EDIT MODELS ───
+
+  // Flux Kontext (handled via separate API, but build params here)
+  if (model === "flux-kontext-pro" || model === "flux-kontext-max") {
+    const input: Record<string, unknown> = {
+      prompt,
+      model,
+      aspectRatio: aspectRatio === "3:4" ? "3:4" : aspectRatio === "9:16" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9",
+      enableTranslation: true,
+      outputFormat: "jpeg",
+    };
+    if (imageUrls?.length) input.inputImage = imageUrls[0];
+    return input;
+  }
+
+  // Qwen Image Edit
+  if (model === "qwen/image-edit") {
+    const sizeMap: Record<string, string> = {
+      "1:1": "square",
+      "3:4": "portrait_4_3",
+      "9:16": "portrait_16_9",
+    };
+    return {
+      prompt,
+      image_url: imageUrls?.[0] || "",
+      image_size: sizeMap[aspectRatio] || "square",
+    };
+  }
+
+  // GPT Image 1.5 Image to Image
+  if (model === "gpt-image/1.5-image-to-image") {
+    return {
+      prompt,
+      input_urls: imageUrls || [],
+      aspect_ratio: aspectRatio === "3:4" ? "2:3" : aspectRatio === "9:16" ? "2:3" : aspectRatio === "1:1" ? "1:1" : "3:2",
+      quality: "medium",
+    };
+  }
+
+  // Seedream 4.5 Edit
+  if (model === "seedream/4.5-edit") {
+    return {
+      prompt,
+      image_urls: imageUrls || [],
+      aspect_ratio: aspectRatio === "3:4" ? "3:4" : aspectRatio === "9:16" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9",
+      quality: "basic",
+    };
+  }
+
   // ─── VIDEO MODELS ───
 
-  // Grok Imagine Text to Video
   if (model === "grok-imagine/text-to-video") {
     return {
       prompt,
@@ -328,7 +437,6 @@ export function buildModelInput(
     };
   }
 
-  // Kling 3.0
   if (model === "kling-3.0") {
     const input: Record<string, unknown> = {
       prompt,
@@ -342,7 +450,6 @@ export function buildModelInput(
     return input;
   }
 
-  // Kling 2.6 Text to Video
   if (model === "kling-2.6/text-to-video") {
     return {
       prompt,
@@ -352,7 +459,6 @@ export function buildModelInput(
     };
   }
 
-  // Kling 2.1 Master Text to Video
   if (model === "kling/v2-1-master-text-to-video") {
     return {
       prompt,
@@ -362,7 +468,6 @@ export function buildModelInput(
     };
   }
 
-  // Seedance 1.5 Pro
   if (model === "bytedance/seedance-1.5-pro") {
     return {
       prompt,
@@ -372,7 +477,6 @@ export function buildModelInput(
     };
   }
 
-  // Seedance V1 Pro Text to Video
   if (model === "bytedance/v1-pro-text-to-video") {
     return {
       prompt,
@@ -382,7 +486,6 @@ export function buildModelInput(
     };
   }
 
-  // Sora 2 Text to Video
   if (model === "sora-2-text-to-video") {
     return {
       prompt,
@@ -392,7 +495,6 @@ export function buildModelInput(
     };
   }
 
-  // Wan 2.6 Text to Video
   if (model === "wan/2-6-text-to-video") {
     return {
       prompt,
@@ -403,7 +505,6 @@ export function buildModelInput(
 
   // ─── AVATAR MODELS ───
 
-  // Kling AI Avatar (Standard & Pro)
   if (model === "kling/ai-avatar-standard" || model === "kling/ai-avatar-pro") {
     return {
       image_url: extraParams?.image_url || (imageUrls?.[0] ?? ""),
@@ -412,7 +513,6 @@ export function buildModelInput(
     };
   }
 
-  // Infinitalk
   if (model === "infinitalk/from-audio") {
     return {
       image_url: extraParams?.image_url || (imageUrls?.[0] ?? ""),
@@ -422,7 +522,6 @@ export function buildModelInput(
     };
   }
 
-  // Wan Animate Move
   if (model === "wan/2-2-animate-move") {
     return {
       video_url: extraParams?.video_url || "",
@@ -431,7 +530,7 @@ export function buildModelInput(
     };
   }
 
-  // ─── VEO 3.1 (handled separately in edge function) ───
+  // ─── VEO 3.1 ───
   if (model === "veo3" || model === "veo3_fast") {
     return {
       prompt,
@@ -443,17 +542,14 @@ export function buildModelInput(
 
   // ─── UTILITY MODELS ───
 
-  // Recraft Remove Background (image only)
   if (model === "recraft/remove-background") {
     return { image: imageUrls?.[0] || "" };
   }
 
-  // Recraft Crisp Upscale (image only)
   if (model === "recraft/crisp-upscale") {
     return { image: imageUrls?.[0] || "" };
   }
 
-  // Topaz Image Upscale (image + factor)
   if (model === "topaz/image-upscale") {
     return {
       image_url: imageUrls?.[0] || "",
