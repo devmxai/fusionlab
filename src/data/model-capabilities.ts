@@ -11,6 +11,8 @@ export interface ModelCapabilities {
   durations?: string[];
   /** Supported resolutions */
   resolutions?: string[];
+  /** Supported quality/mode options (model specific) */
+  qualities?: string[];
   /** Frame mode for video models */
   frameMode?: "first-last" | "first-only";
   /** Upscale factors */
@@ -58,20 +60,23 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
   },
   "veo3_fast": {
     aspectRatios: ["9:16", "16:9"],
-    frameMode: "first-only",
+    durations: ["8"],
+    frameMode: "first-last",
   },
   "veo3": {
     aspectRatios: ["9:16", "16:9"],
-    frameMode: "first-only",
+    durations: ["8"],
+    frameMode: "first-last",
   },
   "kling-3.0": {
     aspectRatios: ["1:1", "9:16", "16:9"],
-    durations: ["5", "10"],
+    durations: ["3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"],
+    qualities: ["std", "pro"],
     frameMode: "first-last",
   },
   "kling-2.6/text-to-video": {
     aspectRatios: ["1:1", "9:16", "16:9"],
-    durations: ["5"],
+    durations: ["5", "10"],
   },
   "kling/v2-1-master-text-to-video": {
     aspectRatios: ["1:1", "9:16", "16:9"],
@@ -79,9 +84,10 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
     frameMode: "first-only",
   },
   "bytedance/seedance-1.5-pro": {
-    aspectRatios: ["1:1", "9:16"],
-    durations: ["5", "8"],
-    frameMode: "first-only",
+    aspectRatios: ["1:1", "4:3", "3:4", "16:9", "9:16", "21:9"],
+    durations: ["4", "8", "12"],
+    resolutions: ["480p", "720p", "1080p"],
+    frameMode: "first-last",
   },
   "bytedance/v1-pro-text-to-video": {
     aspectRatios: ["1:1", "9:16", "16:9"],

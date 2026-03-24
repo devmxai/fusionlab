@@ -13,9 +13,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import CircularProgress from "@/components/CircularProgress";
 import ImageViewer from "@/components/ImageViewer";
 
-type AspectRatio = "1:1" | "3:4" | "9:16" | "16:9";
+type AspectRatio = "1:1" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
 type Resolution = string;
 type UpscaleFactor = string;
+type Quality = string;
 
 const categorySlugMap: Record<string, string> = {
   images: "صور",
@@ -40,8 +41,10 @@ const categoryTitleMap: Record<string, string> = {
 const ratioConfig: Record<string, { label: string; cssAspect: string; placeholderMaxW: string }> = {
   "1:1":  { label: "1:1",   cssAspect: "1/1",  placeholderMaxW: "260px" },
   "3:4":  { label: "3:4",   cssAspect: "3/4",  placeholderMaxW: "220px" },
+  "4:3":  { label: "4:3",   cssAspect: "4/3",  placeholderMaxW: "320px" },
   "9:16": { label: "9:16",  cssAspect: "9/16", placeholderMaxW: "180px" },
   "16:9": { label: "16:9",  cssAspect: "16/9", placeholderMaxW: "340px" },
+  "21:9": { label: "21:9",  cssAspect: "21/9", placeholderMaxW: "360px" },
 };
 
 const dropdownAnim = {
@@ -76,6 +79,7 @@ const StudioPage = () => {
   const [resolution, setResolution] = useState<Resolution>("2k");
   const [videoDuration, setVideoDuration] = useState("5");
   const [upscaleFactor, setUpscaleFactor] = useState<UpscaleFactor>("2");
+  const [quality, setQuality] = useState<Quality>("std");
   const [refImages, setRefImages] = useState<{ file: File; preview: string }[]>([]);
   const [firstFrame, setFirstFrame] = useState<{ file: File; preview: string } | null>(null);
   const [lastFrame, setLastFrame] = useState<{ file: File; preview: string } | null>(null);
@@ -111,12 +115,19 @@ const StudioPage = () => {
     // Reset frames
     if (firstFrame) { URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }
     if (lastFrame) { URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }
+    // Baseline defaults
+    setAspectRatio("1:1");
+    setVideoDuration("5");
+    setResolution("2k");
+    setUpscaleFactor("2");
+    setQuality("std");
     // Set defaults from capabilities
     const c = getModelCapabilities(t.model);
     if (c.aspectRatios?.length) setAspectRatio(c.aspectRatios[0] as AspectRatio);
     if (c.durations?.length) setVideoDuration(c.durations[0]);
     if (c.resolutions?.length) setResolution(c.resolutions[0]);
     if (c.upscaleFactors?.length) setUpscaleFactor(c.upscaleFactors[0]);
+    if (c.qualities?.length) setQuality(c.qualities[0]);
   };
 
   if (!categoryName || categoryTools.length === 0) {
@@ -246,7 +257,12 @@ const StudioPage = () => {
         }
       }
 
-      const extraParams = isUpscaleTool ? { upscale_factor: upscaleFactor } : undefined;
+      const extraParams: Record<string, unknown> = {
+        upscale_factor: upscaleFactor,
+        duration: videoDuration,
+        resolution,
+        quality,
+      };
       const input = buildModelInput(tool.model, prompt, aspectRatio, resolution, imageUrls, extraParams);
       const isVeo = tool.isVeoApi === true;
       setStatus("جاري إنشاء المهمة...");
@@ -434,8 +450,9 @@ const StudioPage = () => {
 
   // Determine which settings to show based on model capabilities
   const showAspect = !!(selectedTool && caps?.aspectRatios?.length);
-  const showDuration = !!(selectedTool && caps?.durations && caps.durations.length > 1);
+  const showDuration = !!(selectedTool && caps?.durations && caps.durations.length > 0);
   const showRes = !!(selectedTool && caps?.resolutions?.length);
+  const showQuality = !!(selectedTool && caps?.qualities?.length);
   const showUpscale = !!(selectedTool && caps?.upscaleFactors?.length);
 
   return (
@@ -485,6 +502,20 @@ const StudioPage = () => {
                       {caps!.durations!.map((d) => (
                         <DropdownItem key={d} selected={videoDuration === d} onClick={() => { setVideoDuration(d); setOpenMenu(null); }}>
                           {d} ثانية
+                        </DropdownItem>
+                      ))}
+                    </DropdownMenu>
+                  </div>
+                )}
+
+                {/* Quality / Mode */}
+                {showQuality && (
+                  <div className="relative shrink-0">
+                    <DropdownBtn id="quality" label="الجودة" value={quality.toUpperCase()} hasValue={!!selectedTool} />
+                    <DropdownMenu id="quality">
+                      {caps!.qualities!.map((q) => (
+                        <DropdownItem key={q} selected={quality === q} onClick={() => { setQuality(q); setOpenMenu(null); }}>
+                          {q.toUpperCase()}
                         </DropdownItem>
                       ))}
                     </DropdownMenu>

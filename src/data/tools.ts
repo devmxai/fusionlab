@@ -210,7 +210,7 @@ export const tools: AITool[] = [
     category: "فيديو",
     model: "veo3_fast",
     isVeoApi: true,
-    frameMode: "first-only",
+    frameMode: "first-last",
   },
   {
     id: "veo31-quality",
@@ -222,7 +222,7 @@ export const tools: AITool[] = [
     category: "فيديو",
     model: "veo3",
     isVeoApi: true,
-    frameMode: "first-only",
+    frameMode: "first-last",
   },
   {
     id: "kling-3",
@@ -265,7 +265,7 @@ export const tools: AITool[] = [
     isPro: true,
     category: "فيديو",
     model: "bytedance/seedance-1.5-pro",
-    frameMode: "first-only",
+    frameMode: "first-last",
   },
   {
     id: "seedance-v1-pro",
@@ -439,7 +439,7 @@ export function buildModelInput(
       prompt,
       aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9",
       mode: "normal",
-      duration: "6",
+      duration: (extraParams?.duration as string) || "6",
       resolution: "720p",
     };
   }
@@ -447,9 +447,9 @@ export function buildModelInput(
   if (model === "kling-3.0") {
     const input: Record<string, unknown> = {
       prompt,
-      duration: "5",
+      duration: (extraParams?.duration as string) || "5",
       aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9",
-      mode: "std",
+      mode: (extraParams?.quality as string) || "std",
       multi_shots: false,
       sound: false,
     };
@@ -462,7 +462,7 @@ export function buildModelInput(
       prompt,
       sound: false,
       aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9",
-      duration: "5",
+      duration: (extraParams?.duration as string) || "5",
     };
   }
 
@@ -470,7 +470,7 @@ export function buildModelInput(
     return {
       prompt,
       aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9",
-      duration: "5",
+      duration: (extraParams?.duration as string) || "5",
       mode: "std",
     };
   }
@@ -478,11 +478,11 @@ export function buildModelInput(
   if (model === "bytedance/seedance-1.5-pro") {
     const input: Record<string, unknown> = {
       prompt,
-      aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio,
-      resolution: "720p",
-      duration: 8,
+      aspect_ratio: aspectRatio,
+      resolution: (extraParams?.resolution as string) || "720p",
+      duration: Number((extraParams?.duration as string) || "8"),
     };
-    if (imageUrls?.length) input.image_url = imageUrls[0];
+    if (imageUrls?.length) input.input_urls = imageUrls.slice(0, 2);
     return input;
   }
 
@@ -490,8 +490,8 @@ export function buildModelInput(
     return {
       prompt,
       aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9",
-      resolution: "720p",
-      duration: "5",
+      resolution: (extraParams?.resolution as string) || "720p",
+      duration: (extraParams?.duration as string) || "5",
     };
   }
 
@@ -507,8 +507,8 @@ export function buildModelInput(
   if (model === "wan/2-6-text-to-video") {
     return {
       prompt,
-      duration: "5",
-      resolution: "1080p",
+      duration: (extraParams?.duration as string) || "5",
+      resolution: (extraParams?.resolution as string) || "1080p",
     };
   }
 
@@ -544,10 +544,10 @@ export function buildModelInput(
     const input: Record<string, unknown> = {
       prompt,
       model,
-      aspect_ratio: aspectRatio === "3:4" ? "9:16" : aspectRatio === "1:1" ? "16:9" : aspectRatio === "9:16" ? "9:16" : "16:9",
-      generationType: imageUrls?.length ? "IMAGE_2_VIDEO" : "TEXT_2_VIDEO",
+      aspect_ratio: aspectRatio === "9:16" ? "9:16" : "16:9",
+      generationType: imageUrls?.length ? "FIRST_AND_LAST_FRAMES_2_VIDEO" : "TEXT_2_VIDEO",
     };
-    if (imageUrls?.length) input.image = imageUrls[0];
+    if (imageUrls?.length) input.imageUrls = imageUrls.slice(0, 2);
     return input;
   }
 
