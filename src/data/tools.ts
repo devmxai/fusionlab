@@ -376,6 +376,14 @@ export function buildModelInput(
     return { prompt, image_input: imageUrls || [] };
   }
 
+  if (model === "seedream/5-lite-text-to-image") {
+    return {
+      prompt,
+      aspect_ratio: aspectRatio,
+      quality: (extraParams?.quality as string) || "basic",
+    };
+  }
+
   if (model === "seedream/4.5-text-to-image") {
     return { prompt, aspect_ratio: aspectRatio, quality: "basic" };
   }
