@@ -270,14 +270,15 @@ serve(async (req) => {
       // Build preview prompt with same style logic as synthesize
       const spokenText = previewText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟";
       const previewParts: string[] = [];
-      previewParts.push("Speak naturally with human-like emotional expression.");
-      previewParts.push("Language: Arabic (ar-001). Speak entirely in Arabic.");
-      if (prevDialect) previewParts.push(`Dialect target: ${prevDialect}.`);
-      if (prevEmotion) previewParts.push(`Emotion profile: ${prevEmotion}.`);
-      if (prevTone) previewParts.push(`Tone profile: ${prevTone}.`);
-      if (prevStyle) previewParts.push(`Style prompt: ${prevStyle}`);
-      if (prevStability < 0.5) previewParts.push("Allow more vocal variation.");
-      if (prevStability > 0.8) previewParts.push("Maintain consistent vocal tone.");
+      previewParts.push("تحدث بشكل طبيعي تماماً كمتحدث عربي أصلي مع تعبيرات عاطفية واقعية.");
+      previewParts.push("تحدث باللغة العربية فقط بنطق عربي أصيل وطبيعي.");
+      if (prevDialect) previewParts.push(`اللهجة المطلوبة: ${prevDialect}.`);
+      else previewParts.push("تحدث بلهجة عربية طبيعية.");
+      if (prevEmotion) previewParts.push(`المشاعر: ${prevEmotion}.`);
+      if (prevTone) previewParts.push(`النبرة: ${prevTone}.`);
+      if (prevStyle) previewParts.push(`أسلوب الأداء: ${prevStyle}`);
+      if (prevStability < 0.5) previewParts.push("اسمح بتنوع صوتي أكثر.");
+      if (prevStability > 0.8) previewParts.push("حافظ على نبرة صوت ثابتة.");
 
       const previewPrompt = previewParts.join("\n") + "\n\n---\n\n" + spokenText;
 
