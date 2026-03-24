@@ -104,15 +104,10 @@ const Index = () => {
                     >
                       <img
                         src={img.image_url}
-                        alt={img.title || ""}
+                        alt=""
                         className="w-full block transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
                       />
-                      {img.title && (
-                        <div className="px-2.5 py-1.5 bg-card">
-                          <p className="text-[10px] text-muted-foreground truncate">{img.title}</p>
-                        </div>
-                      )}
                     </motion.div>
                   ))}
                 </div>
@@ -144,11 +139,6 @@ const Index = () => {
                           <Video className="w-5 h-5 text-white" />
                         </div>
                       </div>
-                      {vid.title && (
-                        <div className="absolute bottom-0 inset-x-0 px-2.5 py-1.5 bg-gradient-to-t from-black/70 to-transparent">
-                          <p className="text-[10px] text-white truncate">{vid.title}</p>
-                        </div>
-                      )}
                     </motion.div>
                   ))}
                 </div>
