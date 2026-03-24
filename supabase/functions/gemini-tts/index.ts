@@ -7,7 +7,20 @@ const corsHeaders = {
 };
 
 const GEMINI_API = "https://generativelanguage.googleapis.com/v1beta/models";
-const MODEL = "gemini-2.5-flash-preview-tts";
+const MODEL = "gemini-2.5-flash-tts";
+const OFFICIAL_GEMINI_FLASH_TTS_VOICES = new Set([
+  "Puck",
+  "Achird",
+  "Algenib",
+  "Alnilam",
+  "Achernar",
+  "Aoede",
+  "Charon",
+  "Kore",
+  "Leda",
+  "Orus",
+  "Zephyr",
+]);
 
 function pcmToWav(rawB64: string, rawMime: string): { audioBase64: string; mimeType: string } {
   const rateMatch = rawMime.match(/rate=(\d+)/);
@@ -51,6 +64,31 @@ function pcmToWav(rawB64: string, rawMime: string): { audioBase64: string; mimeT
   return { audioBase64: wavB64, mimeType: "audio/wav" };
 }
 
+function validateModelLock(body: Record<string, unknown>): string | null {
+  const requestedModel =
+    typeof body.prebuiltModel === "string"
+      ? body.prebuiltModel
+      : typeof body.model === "string"
+      ? body.model
+      : null;
+
+  if (requestedModel && requestedModel !== MODEL) {
+    return `Only ${MODEL} is allowed for this endpoint`;
+  }
+
+  return null;
+}
+
+function validateOfficialVoice(voiceName: string): string | null {
+  if (!OFFICIAL_GEMINI_FLASH_TTS_VOICES.has(voiceName)) {
+    return `Unsupported voice '${voiceName}'. Allowed voices: ${Array.from(
+      OFFICIAL_GEMINI_FLASH_TTS_VOICES
+    ).join(", ")}`;
+  }
+
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -68,6 +106,14 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
+    const modelValidationError = validateModelLock(body as Record<string, unknown>);
+    if (modelValidationError) {
+      return new Response(
+        JSON.stringify({ error: modelValidationError, model: MODEL }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ─── Generate TTS ───
     if (action === "synthesize") {
       const {
@@ -82,6 +128,14 @@ serve(async (req) => {
         toneHint = "",
         styleInstruction = "",
       } = body;
+
+      const voiceValidationError = validateOfficialVoice(voiceName);
+      if (voiceValidationError) {
+        return new Response(
+          JSON.stringify({ error: voiceValidationError, model: MODEL }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
       if (!text?.trim()) {
         return new Response(
@@ -123,7 +177,7 @@ serve(async (req) => {
         },
       };
 
-      console.log("TTS request:", JSON.stringify({ voiceName, languageCode, speakingRate, textLength: text.length }));
+      console.log("TTS request:", JSON.stringify({ model: MODEL, voiceName, languageCode, speakingRate, textLength: text.length }));
 
       const response = await fetch(
         `${GEMINI_API}/${MODEL}:generateContent?key=${GOOGLE_API_KEY}`,
@@ -168,13 +222,13 @@ serve(async (req) => {
       if (rawMime.startsWith("audio/L16") || rawMime.startsWith("audio/pcm")) {
         const wavResult = pcmToWav(rawB64, rawMime);
         return new Response(
-          JSON.stringify(wavResult),
+          JSON.stringify({ ...wavResult, model: MODEL, voiceName }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
       return new Response(
-        JSON.stringify({ audioBase64: rawB64, mimeType: rawMime }),
+        JSON.stringify({ audioBase64: rawB64, mimeType: rawMime, model: MODEL, voiceName }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -182,6 +236,14 @@ serve(async (req) => {
     // ─── Preview (short text) ───
     if (action === "preview") {
       const { voiceName = "Kore", previewText } = body;
+
+      const voiceValidationError = validateOfficialVoice(voiceName);
+      if (voiceValidationError) {
+        return new Response(
+          JSON.stringify({ error: voiceValidationError, model: MODEL }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
       const requestBody = {
         contents: [
@@ -234,13 +296,13 @@ serve(async (req) => {
       if (prevMime.startsWith("audio/L16") || prevMime.startsWith("audio/pcm")) {
         const wavResult = pcmToWav(prevB64, prevMime);
         return new Response(
-          JSON.stringify(wavResult),
+          JSON.stringify({ ...wavResult, model: MODEL, voiceName }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
       return new Response(
-        JSON.stringify({ audioBase64: prevB64, mimeType: prevMime }),
+        JSON.stringify({ audioBase64: prevB64, mimeType: prevMime, model: MODEL, voiceName }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
