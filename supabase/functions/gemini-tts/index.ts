@@ -357,20 +357,27 @@ serve(async (req) => {
         );
       }
 
-      // Build preview prompt with same style logic as synthesize
-      const spokenText = previewText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟";
+      // Build preview prompt with same style + tag logic as synthesize
+      const previewRawText = previewText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟";
+      const { spokenText: previewSpokenText, directives: previewTagDirectives } = extractTagDirectives(previewRawText);
+
       const previewParts: string[] = [];
       previewParts.push("تحدث بشكل طبيعي تماماً كمتحدث عربي أصلي مع تعبيرات عاطفية واقعية.");
       previewParts.push("تحدث باللغة العربية فقط بنطق عربي أصيل وطبيعي.");
+      previewParts.push("لا تنطق علامات التحكم حرفياً؛ نفّذها كتعليمات أداء فقط.");
       if (prevDialect) previewParts.push(`اللهجة المطلوبة: ${prevDialect}.`);
-      else previewParts.push("تحدث بلهجة عربية طبيعية.");
+      else previewParts.push("تحدث بلهجة عراقية عامية طبيعية.");
       if (prevEmotion) previewParts.push(`المشاعر: ${prevEmotion}.`);
       if (prevTone) previewParts.push(`النبرة: ${prevTone}.`);
       if (prevStyle) previewParts.push(`أسلوب الأداء: ${prevStyle}`);
       if (prevStability < 0.5) previewParts.push("اسمح بتنوع صوتي أكثر.");
       if (prevStability > 0.8) previewParts.push("حافظ على نبرة صوت ثابتة.");
+      if (previewTagDirectives.length) {
+        previewParts.push("التزم بتوجيهات الأداء المحلية التالية بدقة وبشكل مسموع دون نطق أسماء العلامات:");
+        previewParts.push(...previewTagDirectives);
+      }
 
-      const previewPrompt = previewParts.join("\n") + "\n\n---\n\n" + spokenText;
+      const previewPrompt = previewParts.join("\n") + "\n\n---\n\n" + (previewSpokenText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟");
 
       const requestBody = {
         contents: [{ parts: [{ text: previewPrompt }] }],
