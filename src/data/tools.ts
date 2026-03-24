@@ -252,6 +252,7 @@ export const tools: AITool[] = [
     isPro: true,
     category: "فيديو",
     model: "kling/v2-1-master-text-to-video",
+    frameMode: "first-only",
   },
   {
     id: "seedance",
