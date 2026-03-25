@@ -547,10 +547,15 @@ const ToolPage = () => {
 
             <Button
               onClick={handleGenerate}
-              disabled={loading}
-              size="icon"
-              className="shrink-0 w-9 h-9 rounded-lg bg-primary text-primary-foreground"
+              disabled={loading || insufficientCredits}
+              className="shrink-0 h-9 rounded-lg bg-primary text-primary-foreground px-3 gap-1.5"
             >
+              {estimatedCost > 0 && (
+                <span className="flex items-center gap-0.5 text-[10px] font-bold opacity-90">
+                  <Coins className="w-3 h-3" />
+                  {estimatedCost}
+                </span>
+              )}
               <Send className="w-4 h-4" />
             </Button>
           </div>
