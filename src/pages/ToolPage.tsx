@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { tools, buildModelInput } from "@/data/tools";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Image as ImageIcon, Send, X, Settings2, Sparkles } from "lucide-react";
+import { ArrowRight, Image as ImageIcon, Send, X, Settings2, Sparkles, Coins } from "lucide-react";
 import { createTask, createVeoTask, pollTask, uploadFileBase64 } from "@/lib/kie-ai";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import CircularProgress from "@/components/CircularProgress";
 import ImageViewer from "@/components/ImageViewer";
+import { usePricing } from "@/hooks/use-pricing";
+import { buildPricingSnapshot } from "@/lib/pricing-engine";
 
 type AspectRatio = "1:1" | "3:4" | "9:16";
 type Resolution = "1k" | "2k" | "4k";
