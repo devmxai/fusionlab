@@ -282,8 +282,8 @@ const StudioPage = () => {
       navigate("/auth");
       return;
     }
-    if (credits <= 0) {
-      toast.error("لا يوجد رصيد كافٍ. قم بترقية اشتراكك");
+    if (insufficientCredits || credits <= 0) {
+      toast.error(`رصيدك ${credits} كريدت — التكلفة ${estimatedCost} كريدت`);
       navigate("/pricing");
       return;
     }
