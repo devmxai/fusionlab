@@ -20,10 +20,12 @@ interface GenerationQueueSidebarProps {
 
 const GenerationQueueSidebar = ({ items, open = false, onOpen, onClose }: GenerationQueueSidebarProps) => {
   const [localOpen, setLocalOpen] = useState(false);
+  const [openedAt, setOpenedAt] = useState(0);
   const isOpen = open || localOpen;
   const activeCount = items.filter((i) => i.status === "generating" || i.status === "pending").length;
 
   const handleOpen = () => {
+    setOpenedAt(Date.now());
     setLocalOpen(true);
     onOpen?.();
   };
