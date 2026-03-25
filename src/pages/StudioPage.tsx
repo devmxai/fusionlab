@@ -478,7 +478,6 @@ const StudioPage = () => {
     } finally {
       setLoading(false);
     }
-    }
   };
 
   const currentRatio = ratioConfig[aspectRatio] || ratioConfig["1:1"];
