@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,11 +15,14 @@ import {
   Mic,
   Sparkles,
   Loader2,
+  Coins,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePricing } from "@/hooks/use-pricing";
+import { buildPricingSnapshot } from "@/lib/pricing-engine";
 
 // ─── Official Gemini Voices ───
 interface GeminiVoice {

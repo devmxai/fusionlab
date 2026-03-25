@@ -1114,11 +1114,18 @@ const StudioPage = () => {
 
             <Button
               onClick={handleGenerate}
-              disabled={loading || !selectedTool || (isImageOnlyTool && refImages.length === 0) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
-              size="icon"
-              className="shrink-0 w-9 h-9 rounded-lg bg-primary text-primary-foreground"
+              disabled={loading || !selectedTool || insufficientCredits || (isImageOnlyTool && refImages.length === 0) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
+              className={`shrink-0 rounded-lg text-primary-foreground gap-1.5 px-3 h-9 text-xs font-bold ${
+                insufficientCredits ? "bg-destructive" : "bg-primary"
+              }`}
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-3.5 h-3.5" />
+              {estimatedCost > 0 ? (
+                <span className="flex items-center gap-1">
+                  {estimatedCost}
+                  <Coins className="w-3 h-3" />
+                </span>
+              ) : null}
             </Button>
           </div>
         </div>
