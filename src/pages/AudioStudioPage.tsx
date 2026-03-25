@@ -15,7 +15,6 @@ import {
   Mic,
   Sparkles,
   Loader2,
-  Coins,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
