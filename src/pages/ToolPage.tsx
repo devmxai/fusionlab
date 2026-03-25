@@ -548,15 +548,17 @@ const ToolPage = () => {
             <Button
               onClick={handleGenerate}
               disabled={loading || insufficientCredits}
-              className="shrink-0 h-9 rounded-lg bg-primary text-primary-foreground px-3 gap-1.5"
+              className={`shrink-0 h-10 rounded-xl text-primary-foreground px-4 gap-2 text-xs font-bold shadow-md ${
+                insufficientCredits ? "bg-destructive hover:bg-destructive/90" : "bg-primary hover:bg-primary/90"
+              }`}
             >
+              <Sparkles className="w-4 h-4" />
               {estimatedCost > 0 && (
-                <span className="flex items-center gap-0.5 text-[10px] font-bold opacity-90">
-                  <Coins className="w-3 h-3" />
+                <span className="flex items-center gap-1 text-[11px] font-bold">
                   {estimatedCost}
+                  <Coins className="w-3.5 h-3.5 opacity-80" />
                 </span>
               )}
-              <Send className="w-4 h-4" />
             </Button>
           </div>
         </div>

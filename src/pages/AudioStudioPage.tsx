@@ -527,19 +527,19 @@ const AudioStudioPage = () => {
             <Button
               onClick={handleGenerate}
               disabled={loading || !text.trim() || insufficientCredits}
-              className={`flex-1 gap-2 ${insufficientCredits ? "bg-destructive" : ""}`}
+              className={`flex-1 gap-2 h-11 rounded-xl text-sm font-bold shadow-md ${insufficientCredits ? "bg-destructive hover:bg-destructive/90" : ""}`}
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Send className="w-4 h-4" />
+                <Sparkles className="w-4 h-4" />
               )}
               {loading ? "جاري التوليد..." : (
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5">
                   توليد الصوت
                   {estimatedCost > 0 && (
-                    <span className="flex items-center gap-0.5 text-xs opacity-90">
-                      - {estimatedCost} <Coins className="w-3 h-3" />
+                    <span className="flex items-center gap-1 text-xs font-bold opacity-90">
+                      {estimatedCost} <Coins className="w-3.5 h-3.5" />
                     </span>
                   )}
                 </span>
