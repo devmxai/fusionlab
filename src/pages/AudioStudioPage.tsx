@@ -175,14 +175,39 @@ const AudioStudioPage = () => {
       navigate("/auth");
       return;
     }
-    if (credits <= 0) {
-      toast.error("لا يوجد رصيد كافٍ");
+    if (insufficientCredits || credits <= 0) {
+      toast.error(`رصيدك ${credits} كريدت — التكلفة ${estimatedCost} كريدت`);
       navigate("/pricing");
       return;
     }
 
     setLoading(true);
+    const idempotencyKey = `tts_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const costToReserve = estimatedCost;
+    const snapshot = price ? buildPricingSnapshot(pricingParams, price) : {};
+    let reservationId: string | null = null;
+    
     try {
+      // Reserve credits
+      const { data: reserveResult, error: reserveError } = await supabase.rpc("reserve_credits", {
+        p_amount: costToReserve,
+        p_tool_id: "gemini-tts",
+        p_model: "gemini-tts",
+        p_idempotency_key: idempotencyKey,
+        p_pricing_snapshot: snapshot as any,
+      });
+
+      if (reserveError) throw new Error(reserveError.message);
+      const resData = reserveResult as any;
+      if (!resData?.success) {
+        if (resData?.error === "insufficient_credits") {
+          toast.error(`رصيدك ${resData.balance} كريدت — التكلفة ${costToReserve} كريدت`);
+          navigate("/pricing");
+          return;
+        }
+        throw new Error(resData?.error || "فشل حجز الرصيد");
+      }
+      reservationId = resData.reservation_id;
       // Always use Iraqi dialect as default
       const dialectHint = "لهجة عراقية عامية طبيعية";
 
