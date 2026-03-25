@@ -59,6 +59,24 @@ const ToolPage = () => {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [settingsOpen]);
 
+  const isVideoTool = tool?.category === "فيديو";
+
+  // Dynamic pricing (must be before early return)
+  const pricingParams = useMemo(() => {
+    if (!tool) return null;
+    return {
+      model: tool.model,
+      resolution: resolution || null,
+      quality: null,
+      durationSeconds: null,
+      hasAudio: null,
+    };
+  }, [tool, resolution]);
+
+  const { price } = usePricing(pricingParams);
+  const estimatedCost = price?.credits ?? 0;
+  const insufficientCredits = estimatedCost > 0 && credits < estimatedCost;
+
   if (!tool) {
     return (
       <div className="h-screen bg-background flex items-center justify-center" dir="rtl">
@@ -66,8 +84,6 @@ const ToolPage = () => {
       </div>
     );
   }
-
-  const isVideoTool = tool.category === "فيديو";
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
