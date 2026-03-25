@@ -56,7 +56,7 @@ const AdminPage = () => {
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
     else if (!loading && user && !isAdmin) navigate("/");
-  }, [user, isAdmin, loading]);
+  }, [user, isAdmin, loading, navigate]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -147,7 +147,15 @@ const AdminPage = () => {
     fetchData();
   };
 
-  if (loading || !isAdmin) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
+        <p className="text-muted-foreground text-sm">جاري تحميل صلاحيات الأدمن...</p>
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) return null;
 
   const filteredUsers = users.filter((u) =>
     !searchQuery || u.email?.toLowerCase().includes(searchQuery.toLowerCase()) || u.full_name?.includes(searchQuery)
