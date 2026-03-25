@@ -185,7 +185,7 @@ const GenerationQueueSidebar = ({ items, open = false, onOpen, onClose }: Genera
   return (
     <>
       <button
-        onClick={onOpen}
+        onClick={handleOpen}
         className="p-2 rounded-full hover:bg-secondary transition-colors relative"
       >
         <Layers className="w-5 h-5 text-muted-foreground" />
