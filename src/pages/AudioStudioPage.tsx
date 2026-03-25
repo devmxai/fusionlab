@@ -15,7 +15,6 @@ import {
   Mic,
   Sparkles,
   Loader2,
-  Coins,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -538,9 +537,7 @@ const AudioStudioPage = () => {
                 <span className="flex items-center gap-1.5">
                   توليد الصوت
                   {estimatedCost > 0 && (
-                    <span className="flex items-center gap-1 text-xs font-bold opacity-90">
-                      {estimatedCost} <Coins className="w-3.5 h-3.5" />
-                    </span>
+                    <span className="text-xs font-bold opacity-90">{estimatedCost}</span>
                   )}
                 </span>
               )}
