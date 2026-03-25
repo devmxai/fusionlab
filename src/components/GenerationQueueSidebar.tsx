@@ -84,7 +84,10 @@ const GenerationQueueSidebar = ({ items, open = false, onOpen, onClose }: Genera
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="absolute inset-0 bg-black/50 backdrop-blur-[6px]"
-            onClick={handleClose}
+            onClick={() => {
+              if (Date.now() - openedAt < 250) return;
+              handleClose();
+            }}
           />
 
           <motion.aside
