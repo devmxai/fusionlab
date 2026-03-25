@@ -1,5 +1,6 @@
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Layers, X, ChevronRight, Image, Video, Loader2 } from "lucide-react";
+import { Layers, ChevronLeft, Image, Video, Loader2 } from "lucide-react";
 
 export interface QueueItem {
   id: string;
@@ -18,6 +19,21 @@ interface GenerationQueueSidebarProps {
 
 const GenerationQueueSidebar = ({ items, open, onOpen, onClose }: GenerationQueueSidebarProps) => {
   const activeCount = items.filter((i) => i.status === "generating" || i.status === "pending").length;
+
+  // Lock body scroll when sidebar is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [open]);
 
   const statusLabel = (s: QueueItem["status"]) => {
     switch (s) {
@@ -49,7 +65,7 @@ const GenerationQueueSidebar = ({ items, open, onOpen, onClose }: GenerationQueu
           <motion.span
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute -top-0.5 -left-0.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center"
+            className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center"
           >
             {activeCount}
           </motion.span>
@@ -76,7 +92,7 @@ const GenerationQueueSidebar = ({ items, open, onOpen, onClose }: GenerationQueu
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 320 }}
-              className="fixed top-0 left-0 z-50 h-full w-[300px] flex flex-col overflow-hidden"
+              className="fixed top-0 left-0 z-50 h-full w-[300px] max-w-[85vw] flex flex-col overflow-hidden"
               style={{
                 background: "linear-gradient(180deg, hsl(240 15% 8% / 0.95) 0%, hsl(240 12% 6% / 0.98) 100%)",
                 backdropFilter: "blur(40px)",
@@ -91,7 +107,7 @@ const GenerationQueueSidebar = ({ items, open, onOpen, onClose }: GenerationQueu
                   onClick={onClose}
                   className="p-1.5 rounded-full bg-secondary/40 hover:bg-secondary/70 transition-colors"
                 >
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  <ChevronLeft className="w-4 h-4 text-muted-foreground" />
                 </button>
                 <span className="text-[11px] font-bold text-muted-foreground tracking-wide">قيد التوليد</span>
               </div>
