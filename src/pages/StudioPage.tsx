@@ -146,7 +146,23 @@ const StudioPage = () => {
     if (c.qualities?.length) setQuality(c.qualities[0]);
   };
 
-  if (!categoryName || categoryTools.length === 0) {
+  const tool = selectedTool || categoryTools[0] || null;
+  const isVideoTool = category === "video";
+  const isImageOnlyTool = category === "remove-bg" || category === "upscale";
+  const isUpscaleTool = category === "upscale";
+  const isRemixTool = category === "remix";
+  const isAvatarTool = category === "avatar";
+  const isAvatarAudioModel = isAvatarTool && !!tool && (tool.inputType === "avatar");
+  const isAvatarAnimateModel = isAvatarTool && !!tool && (tool.inputType === "animate");
+  const isFluxKontext = !!tool && tool.isFluxKontextApi === true;
+  const hasFrameMode = !!(caps?.frameMode || tool?.frameMode);
+  const frameMode = caps?.frameMode || tool?.frameMode;
+
+  // Remix image limits from capabilities
+  const remixMaxImages = isRemixTool ? (caps?.maxImages ?? 3) : 0;
+  const remixMinImages = isRemixTool ? (caps?.minImages ?? 0) : 0;
+
+  if (!categoryName || categoryTools.length === 0 || !tool) {
     return (
       <div className="h-screen bg-background flex flex-col items-center justify-center gap-3" dir="rtl">
         <Sparkles className="w-10 h-10 text-primary opacity-40" />
@@ -157,22 +173,6 @@ const StudioPage = () => {
       </div>
     );
   }
-
-  const tool = selectedTool || categoryTools[0];
-  const isVideoTool = category === "video";
-  const isImageOnlyTool = category === "remove-bg" || category === "upscale";
-  const isUpscaleTool = category === "upscale";
-  const isRemixTool = category === "remix";
-  const isAvatarTool = category === "avatar";
-  const isAvatarAudioModel = isAvatarTool && (tool.inputType === "avatar"); // image + audio + prompt
-  const isAvatarAnimateModel = isAvatarTool && (tool.inputType === "animate"); // image + video
-  const isFluxKontext = tool.isFluxKontextApi === true;
-  const hasFrameMode = !!(caps?.frameMode || tool.frameMode);
-  const frameMode = caps?.frameMode || tool.frameMode;
-
-  // Remix image limits from capabilities
-  const remixMaxImages = isRemixTool ? (caps?.maxImages ?? 3) : 0;
-  const remixMinImages = isRemixTool ? (caps?.minImages ?? 0) : 0;
 
   const maxImages = isRemixTool
     ? remixMaxImages
