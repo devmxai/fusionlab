@@ -92,23 +92,27 @@ const GenerationQueueSidebar = ({ items, open, onOpen, onClose }: GenerationQueu
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 320 }}
-              className="fixed top-0 left-0 z-50 h-full w-[300px] max-w-[85vw] flex flex-col overflow-hidden"
+              className="fixed top-0 left-0 z-50 h-full w-[300px] flex flex-col overflow-y-auto overflow-x-hidden touch-auto"
               style={{
-                background: "linear-gradient(180deg, hsl(240 15% 8% / 0.95) 0%, hsl(240 12% 6% / 0.98) 100%)",
+                background: "linear-gradient(180deg, hsl(240 15% 8% / 0.97) 0%, hsl(240 12% 5% / 0.99) 100%)",
                 backdropFilter: "blur(40px)",
                 borderRight: "1px solid hsl(var(--border) / 0.3)",
-                borderTopRightRadius: "20px",
-                borderBottomRightRadius: "20px",
+                borderTopRightRadius: "24px",
+                borderBottomRightRadius: "24px",
+                WebkitOverflowScrolling: "touch",
               }}
+              onTouchMove={(e) => e.stopPropagation()}
+              onWheel={(e) => e.stopPropagation()}
             >
+              <button
+                onClick={onClose}
+                className="absolute top-4 right-4 z-10 p-1.5 rounded-full bg-secondary/40 hover:bg-secondary/70 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+              </button>
+
               {/* Header */}
-              <div className="flex items-center justify-between px-5 pt-5 pb-2">
-                <button
-                  onClick={onClose}
-                  className="p-1.5 rounded-full bg-secondary/40 hover:bg-secondary/70 transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4 text-muted-foreground" />
-                </button>
+              <div className="px-5 pt-5 pb-2">
                 <span className="text-[11px] font-bold text-muted-foreground tracking-wide">قيد التوليد</span>
               </div>
 
