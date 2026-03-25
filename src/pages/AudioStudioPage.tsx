@@ -21,7 +21,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePricing } from "@/hooks/use-pricing";
-import { buildPricingSnapshot } from "@/lib/pricing-engine";
 
 // ─── Official Gemini Voices ───
 interface GeminiVoice {
