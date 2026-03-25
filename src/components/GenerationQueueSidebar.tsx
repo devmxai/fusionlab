@@ -68,7 +68,7 @@ const GenerationQueueSidebar = ({ items, open = false, onOpen, onClose }: Genera
 
   const sidebarLayer = (
     <AnimatePresence>
-      {open && (
+      {isOpen && (
         <motion.div
           key="queue-sidebar-layer"
           className="fixed inset-0 z-50"
@@ -82,7 +82,7 @@ const GenerationQueueSidebar = ({ items, open = false, onOpen, onClose }: Genera
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="absolute inset-0 bg-black/50 backdrop-blur-[6px]"
-            onClick={onClose}
+            onClick={handleClose}
           />
 
           <motion.aside
