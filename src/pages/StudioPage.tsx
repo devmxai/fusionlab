@@ -240,6 +240,22 @@ const StudioPage = () => {
 
   const { user, credits, refreshCredits } = useAuth();
 
+  // Dynamic pricing
+  const pricingParams = useMemo(() => {
+    if (!selectedTool) return null;
+    return {
+      model: tool.model,
+      resolution: resolution || null,
+      quality: quality || null,
+      durationSeconds: videoDuration ? parseInt(videoDuration) : null,
+      hasAudio: false, // TODO: add audio toggle for models that support it
+    };
+  }, [selectedTool, tool?.model, resolution, quality, videoDuration]);
+
+  const { price } = usePricing(pricingParams);
+  const estimatedCost = price?.credits ?? 0;
+  const insufficientCredits = estimatedCost > 0 && credits < estimatedCost;
+
   const handleGenerate = async () => {
     if (isImageOnlyTool && refImages.length === 0) {
       toast.error("يجب رفع صورة أولاً");
