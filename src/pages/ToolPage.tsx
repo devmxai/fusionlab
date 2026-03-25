@@ -125,7 +125,6 @@ const ToolPage = () => {
       reader.readAsDataURL(file);
     });
 
-  const { user, credits, refreshCredits } = useAuth();
 
   const handleGenerate = async () => {
     if (!prompt.trim() && refImages.length === 0) {
