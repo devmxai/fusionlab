@@ -123,6 +123,19 @@ const AudioStudioPage = () => {
   const { user, credits, refreshCredits } = useAuth();
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // Dynamic pricing for TTS
+  const pricingParams = useMemo(() => ({
+    model: "gemini-tts",
+    resolution: null,
+    quality: null,
+    durationSeconds: null,
+    hasAudio: null,
+  }), []);
+
+  const { price } = usePricing(pricingParams);
+  const estimatedCost = price?.credits ?? 2; // fallback to 2 until pricing is set
+  const insufficientCredits = credits < estimatedCost;
+
   // ─── State ───
   const [styleInstruction, setStyleInstruction] = useState("");
   const [text, setText] = useState("");
