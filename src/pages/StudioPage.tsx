@@ -120,6 +120,21 @@ const StudioPage = () => {
     return getModelCapabilities(selectedTool.model);
   }, [selectedTool]);
 
+  // Dynamic pricing based on selected model + options
+  const pricingParams = useMemo(() => {
+    if (!selectedTool) return null;
+    const t = selectedTool;
+    return {
+      model: t.model,
+      resolution: resolution || null,
+      quality: quality || null,
+      durationSeconds: videoDuration ? parseInt(videoDuration) : null,
+      hasAudio: false,
+    };
+  }, [selectedTool, resolution, quality, videoDuration]);
+
+  const { price } = usePricing(pricingParams);
+
   // Reset settings when model changes
   const handleSelectModel = (t: AITool) => {
     setSelectedTool(t);
