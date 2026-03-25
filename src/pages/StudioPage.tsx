@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import CircularProgress from "@/components/CircularProgress";
 import ImageViewer from "@/components/ImageViewer";
 import { usePricing } from "@/hooks/use-pricing";
-import { buildPricingSnapshot } from "@/lib/pricing-engine";
+
 
 type AspectRatio = "1:1" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
 type Resolution = string;
