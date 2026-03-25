@@ -110,6 +110,22 @@ const ToolPage = () => {
 
   const { user, credits, refreshCredits } = useAuth();
 
+  // Dynamic pricing
+  const pricingParams = useMemo(() => {
+    if (!tool) return null;
+    return {
+      model: tool.model,
+      resolution: resolution || null,
+      quality: null,
+      durationSeconds: null,
+      hasAudio: null,
+    };
+  }, [tool, resolution]);
+
+  const { price } = usePricing(pricingParams);
+  const estimatedCost = price?.credits ?? 0;
+  const insufficientCredits = estimatedCost > 0 && credits < estimatedCost;
+
   const handleGenerate = async () => {
     if (!prompt.trim() && refImages.length === 0) {
       toast.error("اكتب وصفاً أو ارفع صورة");
@@ -120,8 +136,8 @@ const ToolPage = () => {
       navigate("/auth");
       return;
     }
-    if (credits <= 0) {
-      toast.error("لا يوجد رصيد كافٍ. قم بترقية اشتراكك");
+    if (insufficientCredits || credits <= 0) {
+      toast.error(`رصيدك ${credits} كريدت — التكلفة ${estimatedCost} كريدت`);
       navigate("/pricing");
       return;
     }
@@ -131,7 +147,34 @@ const ToolPage = () => {
     setProgress(5);
     setResultUrls([]);
 
+    const idempotencyKey = `gen_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const costToReserve = estimatedCost || 1;
+    const snapshot = price ? buildPricingSnapshot(pricingParams!, price) : {};
+    let reservationId: string | null = null;
+
     try {
+      // ── Step 1: Reserve credits ──
+      const { data: reserveResult, error: reserveError } = await supabase.rpc("reserve_credits", {
+        p_amount: costToReserve,
+        p_tool_id: tool.id,
+        p_model: tool.model,
+        p_idempotency_key: idempotencyKey,
+        p_pricing_snapshot: snapshot as any,
+      });
+      if (reserveError) throw new Error(reserveError.message);
+      const resData = reserveResult as any;
+      if (!resData?.success) {
+        if (resData?.error === "insufficient_credits") {
+          toast.error(`رصيدك ${resData.balance} كريدت — التكلفة ${costToReserve} كريدت`);
+          navigate("/pricing");
+          return;
+        }
+        throw new Error(resData?.error || "فشل حجز الرصيد");
+      }
+      reservationId = resData.reservation_id;
+      setProgress(8);
+
+      // ── Step 2: Upload files + create task ──
       let imageUrls: string[] | undefined;
       if (refImages.length > 0) {
         setStatus("جاري رفع الصور...");
@@ -187,26 +230,13 @@ const ToolPage = () => {
         toast.success("تم التوليد بنجاح!");
         setProgress(100);
 
-        // Deduct 1 credit
-        const { data: currentCredits } = await supabase
-          .from("user_credits")
-          .select("balance, total_spent")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (currentCredits) {
-          await supabase.from("user_credits").update({
-            balance: Math.max(0, currentCredits.balance - 1),
-            total_spent: (currentCredits.total_spent || 0) + 1,
-            updated_at: new Date().toISOString(),
-          }).eq("user_id", user.id);
-
-          await supabase.from("credit_transactions").insert({
-            user_id: user.id,
-            amount: 1,
-            action: "spent" as any,
-            description: `توليد بـ ${tool.title}`,
+        // ── Step 3: Settle credits ──
+        if (reservationId) {
+          await supabase.rpc("settle_credits", {
+            p_reservation_id: reservationId,
+            p_task_id: taskId,
           });
+          reservationId = null;
         }
 
         // Save to generations
@@ -219,16 +249,27 @@ const ToolPage = () => {
             prompt,
             file_url: fileUrl,
             file_type: isVideoTool ? "video" : "image",
-            metadata: { aspectRatio, resolution, model: tool.model } as any,
+            metadata: { aspectRatio, resolution, model: tool.model, cost: costToReserve } as any,
           });
         }
 
         await refreshCredits();
+      } else {
+        throw new Error("لم يتم إرجاع نتيجة من التوليد");
       }
     } catch (err: unknown) {
+      // ── Release reserved credits on failure ──
+      if (reservationId) {
+        try {
+          await supabase.rpc("release_credits", { p_reservation_id: reservationId });
+        } catch (releaseErr) {
+          console.error("Failed to release credits:", releaseErr);
+        }
+      }
       toast.error(err instanceof Error ? err.message : "حدث خطأ");
       setStatus("");
       setProgress(0);
+      await refreshCredits();
     } finally {
       setLoading(false);
     }

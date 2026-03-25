@@ -236,8 +236,8 @@ const AudioStudioPage = () => {
       if (data?.audioBase64) {
         // Cleanup previous URL
         if (audioUrl) URL.revokeObjectURL(audioUrl);
-        const url = base64ToAudioUrl(data.audioBase64, data.mimeType || "audio/mp3");
-        setAudioUrl(url);
+        const localUrl = base64ToAudioUrl(data.audioBase64, data.mimeType || "audio/wav");
+        setAudioUrl(localUrl);
         toast.success("تم توليد الصوت بنجاح!");
 
         // Settle credits (confirm the charge)
@@ -248,14 +248,31 @@ const AudioStudioPage = () => {
           reservationId = null;
         }
 
-        // Save to generations  
-        // TODO: Upload audio to storage instead of blob URL
+        // Upload audio to persistent storage
+        const ext = (data.mimeType || "audio/wav").includes("wav") ? "wav" : "mp3";
+        const fileName = `tts_${user.id}_${Date.now()}.${ext}`;
+        const byteChars = atob(data.audioBase64);
+        const byteArray = new Uint8Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
+        const audioBlob = new Blob([byteArray], { type: data.mimeType || "audio/wav" });
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("generations")
+          .upload(`audio/${fileName}`, audioBlob, { contentType: data.mimeType || "audio/wav", upsert: false });
+
+        let permanentUrl = localUrl;
+        if (!uploadError && uploadData?.path) {
+          const { data: publicData } = supabase.storage.from("generations").getPublicUrl(uploadData.path);
+          permanentUrl = publicData?.publicUrl || localUrl;
+        }
+
+        // Save to generations with permanent URL
         await supabase.from("generations").insert({
           user_id: user.id,
           tool_id: "gemini-tts",
           tool_name: `Gemini TTS - ${selectedVoice.label}`,
           prompt: text.slice(0, 200),
-          file_url: url,
+          file_url: permanentUrl,
           file_type: "audio",
           metadata: { voice: selectedVoice.name, styleInstruction, speakingRate, pitch, stability, cost: costToReserve } as any,
         });
