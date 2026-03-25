@@ -4,11 +4,16 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type, x-internal-caller, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const KIE_BASE = "https://api.kie.ai/api/v1";
 const KIE_UPLOAD_BASE = "https://kieai.redpandaai.co";
+
+// Actions that consume credits MUST only be called from internal edge functions
+const BILLABLE_ACTIONS = new Set(["create", "veo-create", "flux-kontext-create"]);
+// Non-billable actions (upload, status, credits) remain accessible to authenticated users
+const INTERNAL_SECRET = "x-internal-caller";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -58,6 +63,19 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const { action } = body;
+
+    // ── SECURITY: Block direct client calls to billable actions ──
+    if (BILLABLE_ACTIONS.has(action)) {
+      const internalCaller = req.headers.get(INTERNAL_SECRET);
+      const expectedSecret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (!internalCaller || internalCaller !== expectedSecret) {
+        console.warn(`BLOCKED direct billable call: action=${action}, user=${user.id}`);
+        return jsonRes({
+          error: "Direct provider calls are not allowed. Use start-generation endpoint.",
+          code: "DIRECT_CALL_BLOCKED",
+        }, 403);
+      }
+    }
 
     // ─── Upload file (base64) ───
     if (action === "upload") {
@@ -109,7 +127,6 @@ serve(async (req) => {
         headers: { Authorization: `Bearer ${KIE_API_KEY}` },
       });
       const data = await response.json();
-      console.log("Veo status response:", JSON.stringify(data));
       if (data?.code === 200 && data?.data) {
         const veoData = data.data;
         const successFlag = veoData.successFlag ?? veoData.response?.successFlag;
@@ -161,7 +178,6 @@ serve(async (req) => {
         headers: { Authorization: `Bearer ${KIE_API_KEY}` },
       });
       const data = await response.json();
-      console.log("Flux Kontext status response:", JSON.stringify(data));
       if (data?.code === 200 && data?.data) {
         const fkData = data.data;
         const successFlag = fkData.successFlag ?? fkData.response?.successFlag;

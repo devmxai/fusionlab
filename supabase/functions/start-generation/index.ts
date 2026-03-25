@@ -27,6 +27,7 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -47,11 +48,16 @@ serve(async (req) => {
       durationSeconds,
       hasAudio,
       idempotencyKey,
+      // TTS-specific fields
+      ttsParams,
     } = body;
 
-    if (!toolId || !model || !input) {
-      return jsonRes({ success: false, error: "missing_fields", message: "Missing required fields: toolId, model, input" });
+    if (!toolId || !model) {
+      return jsonRes({ success: false, error: "missing_fields", message: "Missing required fields: toolId, model" });
     }
+
+    // Determine generation type for entitlement checks
+    const generationType = apiType === "tts" ? "audio" : "default";
 
     // ── 2. Validate entitlement + calculate price + reserve credits (atomic) ──
     const { data: reserveResult, error: reserveError } = await supabase.rpc(
@@ -64,6 +70,7 @@ serve(async (req) => {
         p_duration_seconds: durationSeconds || null,
         p_has_audio: hasAudio ?? null,
         p_idempotency_key: idempotencyKey || null,
+        p_generation_type: generationType,
       }
     );
 
@@ -86,8 +93,63 @@ serve(async (req) => {
     const reservationId = resData.reservation_id as string;
     const creditsCharged = resData.credits_charged as number;
 
-    // ── 3. Call KIE.AI provider via internal kie-ai function ──
+    // Internal caller header for downstream provider functions
+    const internalHeaders = {
+      "Content-Type": "application/json",
+      Authorization: authHeader,
+      "x-internal-caller": serviceRoleKey,
+    };
+
+    // ── 3. Route to appropriate provider ──
     try {
+      // ─── TTS Route ───
+      if (apiType === "tts" && ttsParams) {
+        const ttsResponse = await fetch(
+          `${supabaseUrl}/functions/v1/gemini-tts`,
+          {
+            method: "POST",
+            headers: internalHeaders,
+            body: JSON.stringify({
+              action: "synthesize",
+              ...ttsParams,
+            }),
+          }
+        );
+
+        const ttsData = await ttsResponse.json();
+
+        if (!ttsResponse.ok || ttsData?.error) {
+          console.error("TTS provider error:", JSON.stringify(ttsData));
+          await supabase.rpc("release_credits", { p_reservation_id: reservationId });
+          return jsonRes({
+            success: false,
+            error: "provider_error",
+            message: ttsData?.error || "TTS generation failed",
+          });
+        }
+
+        // TTS returns audio directly (no taskId polling needed)
+        console.log("TTS generation completed:", JSON.stringify({ reservationId, creditsCharged, model }));
+
+        return jsonRes({
+          success: true,
+          reservationId,
+          creditsCharged,
+          apiType: "tts",
+          plan: resData.plan,
+          // Pass audio data back to client
+          audioBase64: ttsData.audioBase64,
+          mimeType: ttsData.mimeType,
+          voiceName: ttsData.voiceName,
+        });
+      }
+
+      // ─── KIE.AI Routes ───
+      if (!input) {
+        await supabase.rpc("release_credits", { p_reservation_id: reservationId });
+        return jsonRes({ success: false, error: "missing_fields", message: "Missing input for non-TTS generation" });
+      }
+
       let kieAction: string;
       if (apiType === "veo") kieAction = "veo-create";
       else if (apiType === "flux-kontext") kieAction = "flux-kontext-create";
@@ -102,10 +164,7 @@ serve(async (req) => {
         `${supabaseUrl}/functions/v1/kie-ai`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: authHeader,
-          },
+          headers: internalHeaders,
           body: JSON.stringify(kieBody),
         }
       );
@@ -113,7 +172,6 @@ serve(async (req) => {
       const kieData = await kieResponse.json();
 
       if (!kieResponse.ok || (kieData?.code !== 200 && !kieData?.data?.taskId)) {
-        // Provider failed → release credits
         console.error("KIE.AI provider error:", JSON.stringify(kieData));
         await supabase.rpc("release_credits", { p_reservation_id: reservationId });
         return jsonRes({
@@ -145,7 +203,6 @@ serve(async (req) => {
         plan: resData.plan,
       });
     } catch (providerErr) {
-      // Release credits on provider error
       try {
         await supabase.rpc("release_credits", { p_reservation_id: reservationId });
       } catch (releaseErr) {
