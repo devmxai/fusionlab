@@ -240,29 +240,16 @@ const AudioStudioPage = () => {
         setAudioUrl(url);
         toast.success("تم توليد الصوت بنجاح!");
 
-        // Deduct credit
-        const { data: currentCredits } = await supabase
-          .from("user_credits")
-          .select("balance, total_spent")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (currentCredits) {
-          await supabase.from("user_credits").update({
-            balance: Math.max(0, currentCredits.balance - 1),
-            total_spent: (currentCredits.total_spent || 0) + 1,
-            updated_at: new Date().toISOString(),
-          }).eq("user_id", user.id);
-
-          await supabase.from("credit_transactions").insert({
-            user_id: user.id,
-            amount: 1,
-            action: "spent" as const,
-            description: `توليد صوت بـ Gemini TTS - ${selectedVoice.label}`,
+        // Settle credits (confirm the charge)
+        if (reservationId) {
+          await supabase.rpc("settle_credits", {
+            p_reservation_id: reservationId,
           });
+          reservationId = null;
         }
 
-        // Save to generations
+        // Save to generations  
+        // TODO: Upload audio to storage instead of blob URL
         await supabase.from("generations").insert({
           user_id: user.id,
           tool_id: "gemini-tts",
@@ -270,13 +257,24 @@ const AudioStudioPage = () => {
           prompt: text.slice(0, 200),
           file_url: url,
           file_type: "audio",
-          metadata: { voice: selectedVoice.name, styleInstruction, speakingRate, pitch, stability } as any,
+          metadata: { voice: selectedVoice.name, styleInstruction, speakingRate, pitch, stability, cost: costToReserve } as any,
         });
 
         await refreshCredits();
+      } else {
+        throw new Error("لم يتم توليد صوت");
       }
     } catch (err: unknown) {
+      // Release reserved credits on failure
+      if (reservationId) {
+        try {
+          await supabase.rpc("release_credits", { p_reservation_id: reservationId });
+        } catch (releaseErr) {
+          console.error("Failed to release credits:", releaseErr);
+        }
+      }
       toast.error(err instanceof Error ? err.message : "حدث خطأ");
+      await refreshCredits();
     } finally {
       setLoading(false);
     }
