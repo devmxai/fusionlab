@@ -126,22 +126,6 @@ const ToolPage = () => {
 
   const { user, credits, refreshCredits } = useAuth();
 
-  // Dynamic pricing
-  const pricingParams = useMemo(() => {
-    if (!tool) return null;
-    return {
-      model: tool.model,
-      resolution: resolution || null,
-      quality: null,
-      durationSeconds: null,
-      hasAudio: null,
-    };
-  }, [tool, resolution]);
-
-  const { price } = usePricing(pricingParams);
-  const estimatedCost = price?.credits ?? 0;
-  const insufficientCredits = estimatedCost > 0 && credits < estimatedCost;
-
   const handleGenerate = async () => {
     if (!prompt.trim() && refImages.length === 0) {
       toast.error("اكتب وصفاً أو ارفع صورة");
