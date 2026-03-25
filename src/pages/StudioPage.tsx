@@ -68,6 +68,7 @@ const StudioPage = () => {
   const avatarVideoInputRef = useRef<HTMLInputElement>(null);
   const [remixUploadSlot, setRemixUploadSlot] = useState<number>(-1);
 
+  const { user, credits, refreshCredits } = useAuth();
   const categoryName = category ? categorySlugMap[category] : undefined;
 
   const categoryTools = useMemo(
