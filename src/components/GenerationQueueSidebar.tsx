@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Layers, ChevronLeft, Image, Video, Loader2 } from "lucide-react";
@@ -13,16 +13,28 @@ export interface QueueItem {
 
 interface GenerationQueueSidebarProps {
   items: QueueItem[];
-  open: boolean;
-  onOpen: () => void;
-  onClose: () => void;
+  open?: boolean;
+  onOpen?: () => void;
+  onClose?: () => void;
 }
 
-const GenerationQueueSidebar = ({ items, open, onOpen, onClose }: GenerationQueueSidebarProps) => {
+const GenerationQueueSidebar = ({ items, open = false, onOpen, onClose }: GenerationQueueSidebarProps) => {
+  const [localOpen, setLocalOpen] = useState(false);
+  const isOpen = open || localOpen;
   const activeCount = items.filter((i) => i.status === "generating" || i.status === "pending").length;
 
+  const handleOpen = () => {
+    setLocalOpen(true);
+    onOpen?.();
+  };
+
+  const handleClose = () => {
+    setLocalOpen(false);
+    onClose?.();
+  };
+
   useEffect(() => {
-    if (open) {
+    if (isOpen) {
       document.body.style.overflow = "hidden";
       document.documentElement.style.overflow = "hidden";
     } else {
@@ -34,7 +46,7 @@ const GenerationQueueSidebar = ({ items, open, onOpen, onClose }: GenerationQueu
       document.body.style.overflow = "";
       document.documentElement.style.overflow = "";
     };
-  }, [open]);
+  }, [isOpen]);
 
   const statusLabel = (s: QueueItem["status"]) => {
     switch (s) {
