@@ -32,58 +32,87 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [credits, setCredits] = useState(0);
 
   const checkAdmin = async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
       .eq("role", "admin")
       .maybeSingle();
-    setIsAdmin(!!data);
+
+    if (error) {
+      console.error("checkAdmin error:", error.message);
+      setIsAdmin(false);
+      return false;
+    }
+
+    const admin = !!data;
+    setIsAdmin(admin);
+    return admin;
   };
 
-  const refreshCredits = async () => {
-    if (!user) return;
-    const { data } = await supabase
+  const refreshCredits = async (targetUserId?: string) => {
+    const uid = targetUserId ?? user?.id;
+    if (!uid) {
+      setCredits(0);
+      return;
+    }
+
+    const { data, error } = await supabase
       .from("user_credits")
       .select("balance")
-      .eq("user_id", user.id)
+      .eq("user_id", uid)
       .maybeSingle();
+
+    if (error) {
+      console.error("refreshCredits error:", error.message);
+      return;
+    }
+
     setCredits(data?.balance ?? 0);
   };
 
   useEffect(() => {
-    let initialSessionHandled = false;
+    let isMounted = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await checkAdmin(session.user.id);
+    const applySession = async (nextSession: Session | null) => {
+      if (!isMounted) return;
+
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+
+      if (nextSession?.user) {
+        await Promise.all([
+          checkAdmin(nextSession.user.id),
+          refreshCredits(nextSession.user.id),
+        ]);
       } else {
         setIsAdmin(false);
         setCredits(0);
       }
-      if (initialSessionHandled) {
-        setLoading(false);
-      }
+
+      if (isMounted) setLoading(false);
+    };
+
+    setLoading(true);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      void applySession(nextSession);
     });
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await checkAdmin(session.user.id);
-      }
-      initialSessionHandled = true;
-      setLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        void applySession(session);
+      })
+      .catch((err) => {
+        console.error("getSession error:", err);
+        if (isMounted) setLoading(false);
+      });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
-
-  useEffect(() => {
-    if (user) refreshCredits();
-  }, [user]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
