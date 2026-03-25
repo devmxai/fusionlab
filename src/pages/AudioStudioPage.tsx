@@ -239,14 +239,6 @@ const AudioStudioPage = () => {
         setAudioUrl(localUrl);
         toast.success("تم توليد الصوت بنجاح!");
 
-        // Settle credits (confirm the charge)
-        if (reservationId) {
-          await supabase.rpc("settle_credits", {
-            p_reservation_id: reservationId,
-          });
-          reservationId = null;
-        }
-
         // Upload audio to persistent storage
         const ext = (data.mimeType || "audio/wav").includes("wav") ? "wav" : "mp3";
         const fileName = `tts_${user.id}_${Date.now()}.${ext}`;
@@ -265,16 +257,22 @@ const AudioStudioPage = () => {
           permanentUrl = publicData?.publicUrl || localUrl;
         }
 
-        // Save to generations with permanent URL
-        await supabase.from("generations").insert({
-          user_id: user.id,
-          tool_id: "gemini-tts",
-          tool_name: `Gemini TTS - ${selectedVoice.label}`,
-          prompt: text.slice(0, 200),
-          file_url: permanentUrl,
-          file_type: "audio",
-          metadata: { voice: selectedVoice.name, styleInstruction, speakingRate, pitch, stability, cost: costToReserve } as any,
-        });
+        // Settle credits + save generation via complete-generation
+        if (reservationId) {
+          await supabase.functions.invoke("complete-generation", {
+            body: {
+              reservationId,
+              status: "success",
+              toolId: "gemini-tts",
+              toolName: `Gemini TTS - ${selectedVoice.label}`,
+              prompt: text.slice(0, 200),
+              fileUrl: permanentUrl,
+              fileType: "audio",
+              metadata: { voice: selectedVoice.name, styleInstruction, speakingRate, pitch, stability },
+            },
+          });
+          reservationId = null;
+        }
 
         await refreshCredits();
       } else {
