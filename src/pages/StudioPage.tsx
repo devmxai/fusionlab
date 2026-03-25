@@ -1115,17 +1115,17 @@ const StudioPage = () => {
             <Button
               onClick={handleGenerate}
               disabled={loading || !selectedTool || insufficientCredits || (isImageOnlyTool && refImages.length === 0) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
-              className={`shrink-0 rounded-lg text-primary-foreground gap-1.5 px-3 h-9 text-xs font-bold ${
-                insufficientCredits ? "bg-destructive" : "bg-primary"
+              className={`shrink-0 rounded-xl text-primary-foreground gap-2 px-4 h-10 text-xs font-bold shadow-md ${
+                insufficientCredits ? "bg-destructive hover:bg-destructive/90" : "bg-primary hover:bg-primary/90"
               }`}
             >
-              <Send className="w-3.5 h-3.5" />
-              {estimatedCost > 0 ? (
-                <span className="flex items-center gap-1">
+              <Sparkles className="w-4 h-4" />
+              {estimatedCost > 0 && (
+                <span className="flex items-center gap-1 text-[11px] font-bold">
                   {estimatedCost}
-                  <Coins className="w-3 h-3" />
+                  <Coins className="w-3.5 h-3.5 opacity-80" />
                 </span>
-              ) : null}
+              )}
             </Button>
           </div>
         </div>
