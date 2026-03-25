@@ -146,34 +146,10 @@ const ToolPage = () => {
     setProgress(5);
     setResultUrls([]);
 
-    const idempotencyKey = `gen_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const costToReserve = estimatedCost || 1;
-    const snapshot = price ? buildPricingSnapshot(pricingParams!, price) : {};
     let reservationId: string | null = null;
 
     try {
-      // ── Step 1: Reserve credits ──
-      const { data: reserveResult, error: reserveError } = await supabase.rpc("reserve_credits", {
-        p_amount: costToReserve,
-        p_tool_id: tool.id,
-        p_model: tool.model,
-        p_idempotency_key: idempotencyKey,
-        p_pricing_snapshot: snapshot as any,
-      });
-      if (reserveError) throw new Error(reserveError.message);
-      const resData = reserveResult as any;
-      if (!resData?.success) {
-        if (resData?.error === "insufficient_credits") {
-          toast.error(`رصيدك ${resData.balance} كريدت — التكلفة ${costToReserve} كريدت`);
-          navigate("/pricing");
-          return;
-        }
-        throw new Error(resData?.error || "فشل حجز الرصيد");
-      }
-      reservationId = resData.reservation_id;
-      setProgress(8);
-
-      // ── Step 2: Upload files + create task ──
+      // ── Step 1: Upload files ──
       let imageUrls: string[] | undefined;
       if (refImages.length > 0) {
         setStatus("جاري رفع الصور...");
@@ -183,25 +159,60 @@ const ToolPage = () => {
           const b64 = await fileToBase64(refImages[i].file);
           const url = await uploadFileBase64(b64, `ref_${Date.now()}_${i}.png`);
           imageUrls.push(url);
-          setProgress(10 + ((i + 1) / refImages.length) * 15);
+          setProgress(10 + ((i + 1) / refImages.length) * 10);
         }
       }
 
       const isVeo = tool.isVeoApi === true;
       const input = buildModelInput(tool.model, prompt, aspectRatio, resolution, imageUrls);
+      const apiType = isVeo ? "veo" : "standard";
 
-      setStatus("جاري إنشاء المهمة...");
-      setProgress(30);
+      // ── Step 2: Start generation (server: auth → entitlement → price → reserve → create task) ──
+      setStatus("جاري التحقق والإنشاء...");
+      setProgress(25);
 
-      let taskId: string;
-      if (isVeo) {
-        const veoResult = await createVeoTask(input);
-        taskId = veoResult.taskId;
-      } else {
-        const stdResult = await createTask({ model: tool.model, input });
-        taskId = stdResult.taskId;
+      const idempotencyKey = `gen_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+      const { data: startResult, error: startError } = await supabase.functions.invoke("start-generation", {
+        body: {
+          toolId: tool.id,
+          model: tool.model,
+          apiType,
+          input,
+          resolution: resolution || null,
+          quality: null,
+          durationSeconds: null,
+          hasAudio: null,
+          idempotencyKey,
+        },
+      });
+
+      if (startError) throw new Error(startError.message);
+      if (!startResult?.success) {
+        const err = startResult?.error;
+        if (err === "insufficient_credits") {
+          toast.error(`رصيدك ${startResult.balance} كريدت — المطلوب ${startResult.required} كريدت`);
+          navigate("/pricing");
+          return;
+        }
+        if (err === "entitlement_denied") {
+          const details = startResult.details;
+          if (details?.reason === "plan_upgrade_required") {
+            toast.error(`هذا النموذج يتطلب خطة ${details.required_plan} أو أعلى`);
+          } else if (details?.reason === "daily_limit_reached") {
+            toast.error(`وصلت للحد اليومي (${details.limit} توليدة)`);
+          } else {
+            toast.error("ليس لديك صلاحية لاستخدام هذا النموذج");
+          }
+          return;
+        }
+        throw new Error(startResult?.message || err || "فشل بدء التوليد");
       }
 
+      reservationId = startResult.reservationId;
+      const taskId = startResult.taskId;
+
+      // ── Step 3: Poll task status ──
       const result = await pollTask(taskId, (state, prog) => {
         const m: Record<string, string> = {
           waiting: "في الانتظار...",
@@ -221,7 +232,7 @@ const ToolPage = () => {
             state === "success" ? 100 : progress
           );
         }
-      }, 120, 3000, isVeo);
+      }, 120, 3000, false, apiType);
 
       if (result.resultJson) {
         const parsed = JSON.parse(result.resultJson);
@@ -229,29 +240,22 @@ const ToolPage = () => {
         toast.success("تم التوليد بنجاح!");
         setProgress(100);
 
-        // ── Step 3: Settle credits ──
-        if (reservationId) {
-          await supabase.rpc("settle_credits", {
-            p_reservation_id: reservationId,
-            p_task_id: taskId,
-          });
-          reservationId = null;
-        }
-
-        // Save to generations
+        // ── Step 4: Complete generation (server: settle + save) ──
         const fileUrl = parsed.resultUrls?.[0];
-        if (fileUrl) {
-          await supabase.from("generations").insert({
-            user_id: user.id,
-            tool_id: tool.id,
-            tool_name: tool.title,
+        await supabase.functions.invoke("complete-generation", {
+          body: {
+            reservationId,
+            status: "success",
+            taskId,
+            toolId: tool.id,
+            toolName: tool.title,
             prompt,
-            file_url: fileUrl,
-            file_type: isVideoTool ? "video" : "image",
-            metadata: { aspectRatio, resolution, model: tool.model, cost: costToReserve } as any,
-          });
-        }
-
+            fileUrl: fileUrl || "",
+            fileType: isVideoTool ? "video" : "image",
+            metadata: { aspectRatio, resolution, model: tool.model },
+          },
+        });
+        reservationId = null;
         await refreshCredits();
       } else {
         throw new Error("لم يتم إرجاع نتيجة من التوليد");
@@ -260,7 +264,9 @@ const ToolPage = () => {
       // ── Release reserved credits on failure ──
       if (reservationId) {
         try {
-          await supabase.rpc("release_credits", { p_reservation_id: reservationId });
+          await supabase.functions.invoke("complete-generation", {
+            body: { reservationId, status: "failed" },
+          });
         } catch (releaseErr) {
           console.error("Failed to release credits:", releaseErr);
         }

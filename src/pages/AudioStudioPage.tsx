@@ -282,7 +282,9 @@ const AudioStudioPage = () => {
       // Release reserved credits on failure
       if (reservationId) {
         try {
-          await supabase.rpc("release_credits", { p_reservation_id: reservationId });
+          await supabase.functions.invoke("complete-generation", {
+            body: { reservationId, status: "failed" },
+          });
         } catch (releaseErr) {
           console.error("Failed to release credits:", releaseErr);
         }
