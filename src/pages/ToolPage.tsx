@@ -548,9 +548,7 @@ const ToolPage = () => {
             <Button
               onClick={handleGenerate}
               disabled={loading || insufficientCredits}
-              className={`shrink-0 h-10 rounded-xl text-primary-foreground px-4 gap-2 text-xs font-bold shadow-md ${
-                insufficientCredits ? "bg-destructive hover:bg-destructive/90" : "bg-primary hover:bg-primary/90"
-              }`}
+              className="shrink-0 h-10 rounded-xl px-4 gap-2 text-xs font-bold shadow-md"
             >
               <Sparkles className="w-4 h-4" />
               {estimatedCost > 0 && (

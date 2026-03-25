@@ -1115,9 +1115,7 @@ const StudioPage = () => {
             <Button
               onClick={handleGenerate}
               disabled={loading || !selectedTool || insufficientCredits || (isImageOnlyTool && refImages.length === 0) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
-              className={`shrink-0 rounded-xl text-primary-foreground gap-2 px-4 h-10 text-xs font-bold shadow-md ${
-                insufficientCredits ? "bg-destructive hover:bg-destructive/90" : "bg-primary hover:bg-primary/90"
-              }`}
+              className="shrink-0 rounded-xl gap-2 px-4 h-10 text-xs font-bold shadow-md"
             >
               <Sparkles className="w-4 h-4" />
               {estimatedCost > 0 && (
