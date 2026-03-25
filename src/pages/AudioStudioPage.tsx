@@ -21,7 +21,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePricing } from "@/hooks/use-pricing";
-import { buildPricingSnapshot } from "@/lib/pricing-engine";
 
 // ─── Official Gemini Voices ───
 interface GeminiVoice {
@@ -182,31 +181,32 @@ const AudioStudioPage = () => {
 
     setLoading(true);
     const idempotencyKey = `tts_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const costToReserve = estimatedCost;
-    const snapshot = price ? buildPricingSnapshot(pricingParams, price) : {};
     let reservationId: string | null = null;
     
     try {
-      // Reserve credits
-      const { data: reserveResult, error: reserveError } = await supabase.rpc("reserve_credits", {
-        p_amount: costToReserve,
-        p_tool_id: "gemini-tts",
+      // ── Step 1: Server-side validate + reserve credits ──
+      const { data: reserveResult, error: reserveError } = await supabase.rpc("validate_and_reserve", {
         p_model: "gemini-tts",
+        p_tool_id: "gemini-tts",
         p_idempotency_key: idempotencyKey,
-        p_pricing_snapshot: snapshot as any,
       });
 
       if (reserveError) throw new Error(reserveError.message);
       const resData = reserveResult as any;
       if (!resData?.success) {
         if (resData?.error === "insufficient_credits") {
-          toast.error(`رصيدك ${resData.balance} كريدت — التكلفة ${costToReserve} كريدت`);
+          toast.error(`رصيدك ${resData.balance} كريدت — المطلوب ${resData.required} كريدت`);
           navigate("/pricing");
+          return;
+        }
+        if (resData?.error === "entitlement_denied") {
+          toast.error("ليس لديك صلاحية لاستخدام هذه الأداة");
           return;
         }
         throw new Error(resData?.error || "فشل حجز الرصيد");
       }
       reservationId = resData.reservation_id;
+
       // Always use Iraqi dialect as default
       const dialectHint = "لهجة عراقية عامية طبيعية";
 
@@ -239,14 +239,6 @@ const AudioStudioPage = () => {
         setAudioUrl(localUrl);
         toast.success("تم توليد الصوت بنجاح!");
 
-        // Settle credits (confirm the charge)
-        if (reservationId) {
-          await supabase.rpc("settle_credits", {
-            p_reservation_id: reservationId,
-          });
-          reservationId = null;
-        }
-
         // Upload audio to persistent storage
         const ext = (data.mimeType || "audio/wav").includes("wav") ? "wav" : "mp3";
         const fileName = `tts_${user.id}_${Date.now()}.${ext}`;
@@ -265,16 +257,22 @@ const AudioStudioPage = () => {
           permanentUrl = publicData?.publicUrl || localUrl;
         }
 
-        // Save to generations with permanent URL
-        await supabase.from("generations").insert({
-          user_id: user.id,
-          tool_id: "gemini-tts",
-          tool_name: `Gemini TTS - ${selectedVoice.label}`,
-          prompt: text.slice(0, 200),
-          file_url: permanentUrl,
-          file_type: "audio",
-          metadata: { voice: selectedVoice.name, styleInstruction, speakingRate, pitch, stability, cost: costToReserve } as any,
-        });
+        // Settle credits + save generation via complete-generation
+        if (reservationId) {
+          await supabase.functions.invoke("complete-generation", {
+            body: {
+              reservationId,
+              status: "success",
+              toolId: "gemini-tts",
+              toolName: `Gemini TTS - ${selectedVoice.label}`,
+              prompt: text.slice(0, 200),
+              fileUrl: permanentUrl,
+              fileType: "audio",
+              metadata: { voice: selectedVoice.name, styleInstruction, speakingRate, pitch, stability },
+            },
+          });
+          reservationId = null;
+        }
 
         await refreshCredits();
       } else {
@@ -284,7 +282,9 @@ const AudioStudioPage = () => {
       // Release reserved credits on failure
       if (reservationId) {
         try {
-          await supabase.rpc("release_credits", { p_reservation_id: reservationId });
+          await supabase.functions.invoke("complete-generation", {
+            body: { reservationId, status: "failed" },
+          });
         } catch (releaseErr) {
           console.error("Failed to release credits:", releaseErr);
         }
