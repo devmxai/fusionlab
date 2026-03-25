@@ -184,72 +184,67 @@ const AudioStudioPage = () => {
     let reservationId: string | null = null;
     
     try {
-      // ── Step 1: Server-side validate + reserve credits ──
-      const { data: reserveResult, error: reserveError } = await supabase.rpc("validate_and_reserve", {
-        p_model: "gemini-tts",
-        p_tool_id: "gemini-tts",
-        p_idempotency_key: idempotencyKey,
-      });
-
-      if (reserveError) throw new Error(reserveError.message);
-      const resData = reserveResult as any;
-      if (!resData?.success) {
-        if (resData?.error === "insufficient_credits") {
-          toast.error(`رصيدك ${resData.balance} كريدت — المطلوب ${resData.required} كريدت`);
-          navigate("/pricing");
-          return;
-        }
-        if (resData?.error === "entitlement_denied") {
-          toast.error("ليس لديك صلاحية لاستخدام هذه الأداة");
-          return;
-        }
-        throw new Error(resData?.error || "فشل حجز الرصيد");
-      }
-      reservationId = resData.reservation_id;
-
       // Always use Iraqi dialect as default
       const dialectHint = "لهجة عراقية عامية طبيعية";
-
       // Convert emojis to tags before sending
       const textForBackend = emojisToTags(text);
 
-      const { data, error } = await supabase.functions.invoke("gemini-tts", {
+      // ── Step 1: Start generation (server: auth → entitlement → price → reserve → TTS) ──
+      const { data: startResult, error: startError } = await supabase.functions.invoke("start-generation", {
         body: {
-          action: "synthesize",
-          prebuiltModel: GEMINI_FLASH_TTS_MODEL,
-          text: textForBackend,
-          voiceName: selectedVoice.name,
-          styleInstruction: styleInstruction.trim(),
-          speakingRate,
-          pitch,
-          stability,
-          dialectHint,
-          emotionHint: styleInstruction.trim() ? "طبيعي وبشري" : "",
-          toneHint: styleInstruction.trim() ? "واضح وقريب من المستمع" : "",
+          toolId: "gemini-tts",
+          model: "gemini-tts",
+          apiType: "tts",
+          idempotencyKey,
+          ttsParams: {
+            text: textForBackend,
+            voiceName: selectedVoice.name,
+            styleInstruction: styleInstruction.trim(),
+            speakingRate,
+            pitch,
+            stability,
+            dialectHint,
+            emotionHint: styleInstruction.trim() ? "طبيعي وبشري" : "",
+            toneHint: styleInstruction.trim() ? "واضح وقريب من المستمع" : "",
+          },
         },
       });
 
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
+      if (startError) throw new Error(startError.message);
+      if (!startResult?.success) {
+        const err = startResult?.error;
+        if (err === "insufficient_credits") {
+          toast.error(`رصيدك ${startResult.balance} كريدت — المطلوب ${startResult.required} كريدت`);
+          navigate("/pricing");
+          return;
+        }
+        if (err === "entitlement_denied") {
+          toast.error("ليس لديك صلاحية لاستخدام هذه الأداة");
+          return;
+        }
+        throw new Error(startResult?.message || err || "فشل بدء التوليد");
+      }
 
-      if (data?.audioBase64) {
+      reservationId = startResult.reservationId;
+
+      if (startResult?.audioBase64) {
         // Cleanup previous URL
         if (audioUrl) URL.revokeObjectURL(audioUrl);
-        const localUrl = base64ToAudioUrl(data.audioBase64, data.mimeType || "audio/wav");
+        const localUrl = base64ToAudioUrl(startResult.audioBase64, startResult.mimeType || "audio/wav");
         setAudioUrl(localUrl);
         toast.success("تم توليد الصوت بنجاح!");
 
         // Upload audio to persistent storage
-        const ext = (data.mimeType || "audio/wav").includes("wav") ? "wav" : "mp3";
+        const ext = (startResult.mimeType || "audio/wav").includes("wav") ? "wav" : "mp3";
         const fileName = `tts_${user.id}_${Date.now()}.${ext}`;
-        const byteChars = atob(data.audioBase64);
+        const byteChars = atob(startResult.audioBase64);
         const byteArray = new Uint8Array(byteChars.length);
         for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
-        const audioBlob = new Blob([byteArray], { type: data.mimeType || "audio/wav" });
+        const audioBlob = new Blob([byteArray], { type: startResult.mimeType || "audio/wav" });
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("generations")
-          .upload(`audio/${fileName}`, audioBlob, { contentType: data.mimeType || "audio/wav", upsert: false });
+          .upload(`audio/${fileName}`, audioBlob, { contentType: startResult.mimeType || "audio/wav", upsert: false });
 
         let permanentUrl = localUrl;
         if (!uploadError && uploadData?.path) {
