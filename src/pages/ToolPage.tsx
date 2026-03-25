@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { tools, buildModelInput } from "@/data/tools";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Image as ImageIcon, Send, X, Settings2, Sparkles, Coins } from "lucide-react";
+import { ArrowRight, Image as ImageIcon, X, Settings2, Sparkles, Coins } from "lucide-react";
 import { createTask, createVeoTask, pollTask, uploadFileBase64 } from "@/lib/kie-ai";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
