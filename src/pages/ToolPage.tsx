@@ -553,12 +553,10 @@ const ToolPage = () => {
               }`}
             >
               <Sparkles className="w-4 h-4" />
-              {estimatedCost > 0 && (
-                <span className="flex items-center gap-1 text-[11px] font-bold">
-                  {estimatedCost}
-                  <Coins className="w-3.5 h-3.5 opacity-80" />
-                </span>
-              )}
+              <span className="flex items-center gap-1 text-[11px] font-bold">
+                {estimatedCost > 0 ? estimatedCost : "—"}
+                <Coins className="w-3.5 h-3.5 opacity-80" />
+              </span>
             </Button>
           </div>
         </div>
