@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
+      credit_reservations: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          idempotency_key: string | null
+          metadata: Json | null
+          model: string
+          pricing_snapshot: Json | null
+          released_at: string | null
+          settled_at: string | null
+          status: string
+          task_id: string | null
+          tool_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          idempotency_key?: string | null
+          metadata?: Json | null
+          model: string
+          pricing_snapshot?: Json | null
+          released_at?: string | null
+          settled_at?: string | null
+          status?: string
+          task_id?: string | null
+          tool_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          idempotency_key?: string | null
+          metadata?: Json | null
+          model?: string
+          pricing_snapshot?: Json | null
+          released_at?: string | null
+          settled_at?: string | null
+          status?: string
+          task_id?: string | null
+          tool_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       credit_transactions: {
         Row: {
           action: Database["public"]["Enums"]["credit_action"]
@@ -80,6 +158,66 @@ export type Database = {
           tool_id?: string
           tool_name?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      pricing_rules: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          duration_seconds: number | null
+          generation_type: string
+          has_audio: boolean | null
+          id: string
+          model: string
+          price_credits: number
+          price_unit: string
+          provider: string
+          quality: string | null
+          resolution: string | null
+          source_note: string | null
+          source_url: string | null
+          status: string
+          updated_at: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          duration_seconds?: number | null
+          generation_type?: string
+          has_audio?: boolean | null
+          id?: string
+          model: string
+          price_credits: number
+          price_unit?: string
+          provider: string
+          quality?: string | null
+          resolution?: string | null
+          source_note?: string | null
+          source_url?: string | null
+          status?: string
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          duration_seconds?: number | null
+          generation_type?: string
+          has_audio?: boolean | null
+          id?: string
+          model?: string
+          price_credits?: number
+          price_unit?: string
+          provider?: string
+          quality?: string | null
+          resolution?: string | null
+          source_note?: string | null
+          source_url?: string | null
+          status?: string
+          updated_at?: string
+          verified_at?: string | null
         }
         Relationships: []
       }
@@ -336,12 +474,43 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_activate_subscription: {
+        Args: { p_days?: number; p_plan_id: string; p_target_user_id: string }
+        Returns: Json
+      }
+      admin_grant_credits: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_target_user_id: string
+        }
+        Returns: Json
+      }
+      admin_handle_trial: {
+        Args: { p_approve: boolean; p_trial_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      release_credits: { Args: { p_reservation_id: string }; Returns: Json }
+      reserve_credits: {
+        Args: {
+          p_amount: number
+          p_idempotency_key: string
+          p_model: string
+          p_pricing_snapshot?: Json
+          p_tool_id: string
+        }
+        Returns: Json
+      }
+      settle_credits: {
+        Args: { p_reservation_id: string; p_task_id?: string }
+        Returns: Json
       }
     }
     Enums: {
