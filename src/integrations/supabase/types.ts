@@ -556,15 +556,32 @@ export type Database = {
         Args: { p_approve: boolean; p_trial_id: string }
         Returns: Json
       }
-      check_entitlement: {
-        Args: {
-          p_duration_seconds?: number
-          p_model: string
-          p_resolution?: string
-          p_user_id: string
-        }
+      check_entitlement:
+        | {
+            Args: {
+              p_duration_seconds?: number
+              p_model: string
+              p_resolution?: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_duration_seconds?: number
+              p_generation_type?: string
+              p_model: string
+              p_quality?: string
+              p_resolution?: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
+      cleanup_stale_reservations: {
+        Args: { p_older_than_hours?: number }
         Returns: Json
       }
+      enforce_subscription_expiry: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -572,6 +589,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      reconciliation_check: { Args: never; Returns: Json }
       release_credits: { Args: { p_reservation_id: string }; Returns: Json }
       reserve_credits: {
         Args: {
@@ -597,18 +615,32 @@ export type Database = {
         Args: { p_reservation_id: string; p_task_id?: string }
         Returns: Json
       }
-      validate_and_reserve: {
-        Args: {
-          p_duration_seconds?: number
-          p_has_audio?: boolean
-          p_idempotency_key?: string
-          p_model: string
-          p_quality?: string
-          p_resolution?: string
-          p_tool_id: string
-        }
-        Returns: Json
-      }
+      validate_and_reserve:
+        | {
+            Args: {
+              p_duration_seconds?: number
+              p_has_audio?: boolean
+              p_idempotency_key?: string
+              p_model: string
+              p_quality?: string
+              p_resolution?: string
+              p_tool_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_duration_seconds?: number
+              p_generation_type?: string
+              p_has_audio?: boolean
+              p_idempotency_key?: string
+              p_model: string
+              p_quality?: string
+              p_resolution?: string
+              p_tool_id: string
+            }
+            Returns: Json
+          }
     }
     Enums: {
       app_role: "admin" | "user"

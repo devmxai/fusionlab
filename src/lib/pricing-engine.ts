@@ -49,7 +49,7 @@ export async function fetchPricingRules(): Promise<PricingRule[]> {
   const { data, error } = await supabase
     .from("pricing_rules")
     .select("id, model, resolution, quality, duration_seconds, has_audio, price_credits, price_unit, status, display_name")
-    .in("status", ["active", "pending_review"]);
+    .eq("status", "active");
 
   if (error) {
     console.error("Failed to fetch pricing rules:", error);

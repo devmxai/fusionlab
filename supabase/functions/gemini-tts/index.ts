@@ -4,12 +4,11 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type, x-internal-caller, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const GEMINI_API = "https://generativelanguage.googleapis.com/v1beta/models";
 const MODEL = "gemini-2.5-flash-preview-tts";
-// All 24 official Gemini TTS voices (from Google Cloud documentation)
 const OFFICIAL_GEMINI_FLASH_TTS_VOICES = new Set([
   "Achernar", "Achird", "Algenib", "Alnilam", "Aoede",
   "Charon", "Elara", "Fenrir", "Gacrux", "Iapetus",
@@ -17,6 +16,10 @@ const OFFICIAL_GEMINI_FLASH_TTS_VOICES = new Set([
   "Puck", "Rasalgethi", "Sadachbia", "Sadaltager", "Schedar",
   "Sulafat", "Umbriel", "Vindemiatrix", "Zephyr", "Zubenelgenubi",
 ]);
+
+// Billable actions require internal caller validation
+const BILLABLE_ACTIONS = new Set(["synthesize"]);
+const INTERNAL_SECRET = "x-internal-caller";
 
 function pcmToWav(rawB64: string, rawMime: string): { audioBase64: string; mimeType: string } {
   const rateMatch = rawMime.match(/rate=(\d+)/);
@@ -77,11 +80,8 @@ function validateModelLock(body: Record<string, unknown>): string | null {
 
 function validateOfficialVoice(voiceName: string): string | null {
   if (!OFFICIAL_GEMINI_FLASH_TTS_VOICES.has(voiceName)) {
-    return `Unsupported voice '${voiceName}'. Allowed voices: ${Array.from(
-      OFFICIAL_GEMINI_FLASH_TTS_VOICES
-    ).join(", ")}`;
+    return `Unsupported voice '${voiceName}'`;
   }
-
   return null;
 }
 
@@ -93,7 +93,7 @@ const TAG_EFFECTS: Record<string, string> = {
   "long pause": "نفّذ وقفة طويلة مع سكون واضح",
   "whispering": "حوّل الأداء إلى همس واضح وناعم",
   "shouting": "ارفع شدة الصوت إلى صراخ مضبوط بدون تشويه",
-  "sarcasm": "أدِّ الجملة بسخرية خفيفة ومسموعة",
+  "sarcasm": "أدِّ الجملة بسخرية خفيفة ومسموعة",
   "laughing": "أضف ضحكة طبيعية قصيرة ومسموعة",
   "sigh": "أضف تنهيدة قصيرة طبيعية",
   "fast": "زد سرعة الإلقاء بشكل ملحوظ",
@@ -161,6 +161,135 @@ function extractTagDirectives(inputText: string): { spokenText: string; directiv
   return { spokenText, directives };
 }
 
+async function handleTTSRequest(
+  body: Record<string, unknown>,
+  GOOGLE_API_KEY: string,
+  corsHeaders: Record<string, string>,
+): Promise<Response> {
+  const {
+    text,
+    voiceName = "Kore",
+    speakingRate = 1.0,
+    pitch = 0,
+    stability = 0.7,
+    dialectHint = "",
+    emotionHint = "",
+    toneHint = "",
+    styleInstruction = "",
+  } = body as Record<string, any>;
+
+  const voiceValidationError = validateOfficialVoice(voiceName);
+  if (voiceValidationError) {
+    return new Response(
+      JSON.stringify({ error: voiceValidationError, model: MODEL }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  if (!text?.trim()) {
+    return new Response(
+      JSON.stringify({ error: "Text is required" }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const { spokenText, directives: tagDirectives } = extractTagDirectives(text);
+
+  if (!spokenText) {
+    return new Response(
+      JSON.stringify({ error: "Text contains tags only. Please add spoken text." }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const directionParts: string[] = [];
+  directionParts.push("تحدث بشكل طبيعي تماماً كمتحدث عربي أصلي مع تعبيرات عاطفية واقعية ووقفات طبيعية.");
+  directionParts.push("تحدث باللغة العربية فقط بنطق عربي أصيل وطبيعي.");
+  directionParts.push("لا تنطق علامات التحكم حرفياً؛ نفّذها كتعليمات أداء فقط.");
+
+  if (dialectHint) {
+    directionParts.push(`اللهجة المطلوبة: ${dialectHint}.`);
+  } else {
+    directionParts.push("تحدث بلهجة عراقية عامية طبيعية.");
+  }
+
+  if (emotionHint) directionParts.push(`المشاعر: ${emotionHint}.`);
+  if (toneHint) directionParts.push(`النبرة: ${toneHint}.`);
+  if (styleInstruction) directionParts.push(`أسلوب الأداء: ${styleInstruction}`);
+  if (stability < 0.5) directionParts.push("اسمح بتنوع صوتي أكثر وتعبير أقوى.");
+  if (stability > 0.8) directionParts.push("حافظ على نبرة صوت ثابتة ومتسقة.");
+
+  if (tagDirectives.length) {
+    directionParts.push("التزم بتوجيهات الأداء المحلية التالية بدقة وبشكل مسموع دون نطق أسماء العلامات:");
+    directionParts.push(...tagDirectives);
+  }
+
+  const fullPrompt = directionParts.join("\n") + "\n\n---\n\n" + spokenText;
+  const contents = [{ parts: [{ text: fullPrompt }] }];
+
+  const requestBody = {
+    contents,
+    generationConfig: {
+      responseModalities: ["AUDIO"],
+      speechConfig: {
+        voiceConfig: {
+          prebuiltVoiceConfig: { voiceName },
+        },
+      },
+    },
+  };
+
+  console.log("TTS request:", JSON.stringify({ model: MODEL, voiceName, textLength: text.length }));
+
+  const response = await fetch(
+    `${GEMINI_API}/${MODEL}:generateContent?key=${GOOGLE_API_KEY}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Gemini TTS error:", response.status, errorText);
+    return new Response(
+      JSON.stringify({ error: `Gemini API error: ${response.status}`, details: errorText }),
+      { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const data = await response.json();
+  const candidate = data.candidates?.[0];
+  const audioPart = candidate?.content?.parts?.find(
+    (p: { inlineData?: { mimeType: string } }) => p.inlineData?.mimeType?.startsWith("audio/")
+  );
+
+  if (!audioPart?.inlineData) {
+    console.error("No audio in response:", JSON.stringify(data));
+    return new Response(
+      JSON.stringify({ error: "No audio generated", details: data }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const rawMime = audioPart.inlineData.mimeType as string;
+  const rawB64 = audioPart.inlineData.data as string;
+
+  if (rawMime.startsWith("audio/L16") || rawMime.startsWith("audio/pcm")) {
+    const wavResult = pcmToWav(rawB64, rawMime);
+    return new Response(
+      JSON.stringify({ ...wavResult, model: MODEL, voiceName }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  return new Response(
+    JSON.stringify({ audioBase64: rawB64, mimeType: rawMime, model: MODEL, voiceName }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -207,159 +336,28 @@ serve(async (req) => {
       );
     }
 
-    // ─── Generate TTS ───
-    if (action === "synthesize") {
-      const {
-        text,
-        voiceName = "Kore",
-        languageCode = "ar-001",
-        speakingRate = 1.0,
-        pitch = 0,
-        stability = 0.7,
-        dialectHint = "",
-        emotionHint = "",
-        toneHint = "",
-        styleInstruction = "",
-      } = body;
-
-      const voiceValidationError = validateOfficialVoice(voiceName);
-      if (voiceValidationError) {
+    // ── SECURITY: Block direct client calls to billable actions ──
+    if (BILLABLE_ACTIONS.has(action)) {
+      const internalCaller = req.headers.get(INTERNAL_SECRET);
+      const expectedSecret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (!internalCaller || internalCaller !== expectedSecret) {
+        console.warn(`BLOCKED direct TTS billable call: action=${action}, user=${user.id}`);
         return new Response(
-          JSON.stringify({ error: voiceValidationError, model: MODEL }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({
+            error: "Direct TTS calls are not allowed. Use start-generation endpoint.",
+            code: "DIRECT_CALL_BLOCKED",
+          }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-
-      if (!text?.trim()) {
-        return new Response(
-          JSON.stringify({ error: "Text is required" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      const { spokenText, directives: tagDirectives } = extractTagDirectives(text);
-
-      if (!spokenText) {
-        return new Response(
-          JSON.stringify({ error: "Text contains tags only. Please add spoken text." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      // ─── Build style prompt ENTIRELY in Arabic to keep native pronunciation ───
-      const directionParts: string[] = [];
-
-      // Core instructions in Arabic
-      directionParts.push("تحدث بشكل طبيعي تماماً كمتحدث عربي أصلي مع تعبيرات عاطفية واقعية ووقفات طبيعية.");
-      directionParts.push("تحدث باللغة العربية فقط بنطق عربي أصيل وطبيعي.");
-      directionParts.push("لا تنطق علامات التحكم حرفياً؛ نفّذها كتعليمات أداء فقط.");
-
-      // Dialect — always default to Iraqi
-      if (dialectHint) {
-        directionParts.push(`اللهجة المطلوبة: ${dialectHint}.`);
-      } else {
-        directionParts.push("تحدث بلهجة عراقية عامية طبيعية.");
-      }
-
-      // Emotion
-      if (emotionHint) {
-        directionParts.push(`المشاعر: ${emotionHint}.`);
-      }
-
-      // Tone
-      if (toneHint) {
-        directionParts.push(`النبرة: ${toneHint}.`);
-      }
-
-      // User style instruction
-      if (styleInstruction) {
-        directionParts.push(`أسلوب الأداء: ${styleInstruction}`);
-      }
-
-      // Stability modifiers
-      if (stability < 0.5) directionParts.push("اسمح بتنوع صوتي أكثر وتعبير أقوى.");
-      if (stability > 0.8) directionParts.push("حافظ على نبرة صوت ثابتة ومتسقة.");
-
-      if (tagDirectives.length) {
-        directionParts.push("التزم بتوجيهات الأداء المحلية التالية بدقة وبشكل مسموع دون نطق أسماء العلامات:");
-        directionParts.push(...tagDirectives);
-      }
-
-      // Construct the final prompt: style direction + interpreted tags + clean spoken text
-      const fullPrompt = directionParts.join("\n") + "\n\n---\n\n" + spokenText;
-      const contents = [{ parts: [{ text: fullPrompt }] }];
-
-      const requestBody = {
-        contents,
-        generationConfig: {
-          responseModalities: ["AUDIO"],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: {
-                voiceName,
-              },
-            },
-          },
-        },
-      };
-
-      console.log("TTS request:", JSON.stringify({ model: MODEL, voiceName, languageCode, speakingRate, textLength: text.length }));
-
-      const response = await fetch(
-        `${GEMINI_API}/${MODEL}:generateContent?key=${GOOGLE_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestBody),
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Gemini TTS error:", response.status, errorText);
-        return new Response(
-          JSON.stringify({ error: `Gemini API error: ${response.status}`, details: errorText }),
-          { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      const data = await response.json();
-      console.log("TTS response keys:", Object.keys(data));
-
-      // Extract audio from response
-      const candidate = data.candidates?.[0];
-      const audioPart = candidate?.content?.parts?.find(
-        (p: { inlineData?: { mimeType: string } }) => p.inlineData?.mimeType?.startsWith("audio/")
-      );
-
-      if (!audioPart?.inlineData) {
-        console.error("No audio in response:", JSON.stringify(data));
-        return new Response(
-          JSON.stringify({ error: "No audio generated", details: data }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      const rawMime = audioPart.inlineData.mimeType as string;
-      const rawB64 = audioPart.inlineData.data as string;
-      console.log("Audio mimeType:", rawMime, "base64 length:", rawB64.length);
-
-      // If PCM (audio/L16), convert to WAV for browser playback
-      if (rawMime.startsWith("audio/L16") || rawMime.startsWith("audio/pcm")) {
-        const wavResult = pcmToWav(rawB64, rawMime);
-        return new Response(
-          JSON.stringify({ ...wavResult, model: MODEL, voiceName }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({ audioBase64: rawB64, mimeType: rawMime, model: MODEL, voiceName }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
 
-    // ─── Preview (short text) ───
+    // ─── Generate TTS (billable - internal only) ───
+    if (action === "synthesize") {
+      return await handleTTSRequest(body, GOOGLE_API_KEY, corsHeaders);
+    }
+
+    // ─── Preview (free - allowed from client) ───
     if (action === "preview") {
       const {
         voiceName = "Kore",
@@ -379,7 +377,6 @@ serve(async (req) => {
         );
       }
 
-      // Build preview prompt with same style + tag logic as synthesize
       const previewRawText = previewText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟";
       const { spokenText: previewSpokenText, directives: previewTagDirectives } = extractTagDirectives(previewRawText);
 
