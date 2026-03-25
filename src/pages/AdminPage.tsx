@@ -56,7 +56,7 @@ const AdminPage = () => {
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
     else if (!loading && user && !isAdmin) navigate("/");
-  }, [user, isAdmin, loading]);
+  }, [user, isAdmin, loading, navigate]);
 
   useEffect(() => {
     if (!isAdmin) return;
