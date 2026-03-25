@@ -161,6 +161,72 @@ export type Database = {
         }
         Relationships: []
       }
+      model_access: {
+        Row: {
+          category: string | null
+          created_at: string
+          display_name: string | null
+          is_active: boolean
+          min_plan: string
+          model: string
+          provider: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          display_name?: string | null
+          is_active?: boolean
+          min_plan?: string
+          model: string
+          provider?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          display_name?: string | null
+          is_active?: boolean
+          min_plan?: string
+          model?: string
+          provider?: string | null
+        }
+        Relationships: []
+      }
+      plan_entitlements: {
+        Row: {
+          created_at: string
+          daily_generation_limit: number | null
+          features: Json
+          id: string
+          max_image_resolution: string | null
+          max_video_duration_seconds: number | null
+          max_video_resolution: string | null
+          plan_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          daily_generation_limit?: number | null
+          features?: Json
+          id?: string
+          max_image_resolution?: string | null
+          max_video_duration_seconds?: number | null
+          max_video_resolution?: string | null
+          plan_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          daily_generation_limit?: number | null
+          features?: Json
+          id?: string
+          max_image_resolution?: string | null
+          max_video_duration_seconds?: number | null
+          max_video_resolution?: string | null
+          plan_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pricing_rules: {
         Row: {
           created_at: string
@@ -490,6 +556,15 @@ export type Database = {
         Args: { p_approve: boolean; p_trial_id: string }
         Returns: Json
       }
+      check_entitlement: {
+        Args: {
+          p_duration_seconds?: number
+          p_model: string
+          p_resolution?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -508,8 +583,30 @@ export type Database = {
         }
         Returns: Json
       }
+      server_calculate_price: {
+        Args: {
+          p_duration_seconds?: number
+          p_has_audio?: boolean
+          p_model: string
+          p_quality?: string
+          p_resolution?: string
+        }
+        Returns: Json
+      }
       settle_credits: {
         Args: { p_reservation_id: string; p_task_id?: string }
+        Returns: Json
+      }
+      validate_and_reserve: {
+        Args: {
+          p_duration_seconds?: number
+          p_has_audio?: boolean
+          p_idempotency_key?: string
+          p_model: string
+          p_quality?: string
+          p_resolution?: string
+          p_tool_id: string
+        }
         Returns: Json
       }
     }

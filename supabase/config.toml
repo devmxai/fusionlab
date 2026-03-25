@@ -2,3 +2,9 @@ project_id = "ghukfpduzviybgewsisk"
 
 [functions.kie-ai]
 verify_jwt = false
+
+[functions.start-generation]
+verify_jwt = false
+
+[functions.complete-generation]
+verify_jwt = false

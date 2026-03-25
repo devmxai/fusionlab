@@ -4,8 +4,7 @@ import { tools, buildModelInput, AITool } from "@/data/tools";
 import { getModelCapabilities } from "@/data/model-capabilities";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Image as ImageIcon, Send, X, Sparkles, ChevronDown, Upload, Plus, Music, Video } from "lucide-react";
-import { createTask, createVeoTask, createFluxKontextTask, pollTask } from "@/lib/kie-ai";
-import { uploadFileBase64 } from "@/lib/kie-ai";
+import { pollTask, uploadFileBase64 } from "@/lib/kie-ai";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -13,7 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import CircularProgress from "@/components/CircularProgress";
 import ImageViewer from "@/components/ImageViewer";
 import { usePricing } from "@/hooks/use-pricing";
-import { buildPricingSnapshot } from "@/lib/pricing-engine";
+
 
 type AspectRatio = "1:1" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
 type Resolution = string;
@@ -294,36 +293,10 @@ const StudioPage = () => {
     setProgress(5);
     setResultUrls([]);
 
-    // ── Step 1: Reserve credits server-side ──
-    const idempotencyKey = `gen_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const costToReserve = estimatedCost || 1;
-    const snapshot = price ? buildPricingSnapshot(pricingParams!, price) : {};
-
     let reservationId: string | null = null;
 
     try {
-      const { data: reserveResult, error: reserveError } = await supabase.rpc("reserve_credits", {
-        p_amount: costToReserve,
-        p_tool_id: tool.id,
-        p_model: tool.model,
-        p_idempotency_key: idempotencyKey,
-        p_pricing_snapshot: snapshot as any,
-      });
-
-      if (reserveError) throw new Error(reserveError.message);
-      const resData = reserveResult as any;
-      if (!resData?.success) {
-        if (resData?.error === "insufficient_credits") {
-          toast.error(`رصيدك ${resData.balance} كريدت — التكلفة ${costToReserve} كريدت`);
-          navigate("/pricing");
-          return;
-        }
-        throw new Error(resData?.error || "فشل حجز الرصيد");
-      }
-      reservationId = resData.reservation_id;
-      setProgress(8);
-
-      // ── Step 2: Upload files + create task ──
+      // ── Step 1: Upload files ──
       let imageUrls: string[] | undefined;
 
       if (hasFrameMode && (firstFrame || lastFrame)) {
@@ -340,7 +313,7 @@ const StudioPage = () => {
           const url = await uploadFileBase64(b64, `last_frame_${Date.now()}.png`);
           imageUrls.push(url);
         }
-        setProgress(25);
+        setProgress(20);
       } else if (refImages.length > 0) {
         setStatus("جاري رفع الصور...");
         setProgress(10);
@@ -349,7 +322,7 @@ const StudioPage = () => {
           const b64 = await fileToBase64(refImages[i].file);
           const url = await uploadFileBase64(b64, `ref_${Date.now()}_${i}.png`);
           imageUrls.push(url);
-          setProgress(10 + ((i + 1) / refImages.length) * 15);
+          setProgress(10 + ((i + 1) / refImages.length) * 10);
         }
       }
 
@@ -369,15 +342,16 @@ const StudioPage = () => {
         const audioB64 = await fileToBase64(avatarAudio.file);
         const ext = avatarAudio.file.name.split(".").pop() || "mp3";
         avatarAudioUrl = await uploadFileBase64(audioB64, `avatar_audio_${Date.now()}.${ext}`);
-        setProgress(25);
+        setProgress(22);
       }
       if (isAvatarAnimateModel && avatarVideo) {
         const videoB64 = await fileToBase64(avatarVideo.file);
         const ext = avatarVideo.file.name.split(".").pop() || "mp4";
         avatarVideoUrl = await uploadFileBase64(videoB64, `avatar_video_${Date.now()}.${ext}`);
-        setProgress(25);
+        setProgress(22);
       }
 
+      // ── Step 2: Build model input ──
       const extraParams: Record<string, unknown> = {
         upscale_factor: upscaleFactor,
         duration: videoDuration,
@@ -388,26 +362,56 @@ const StudioPage = () => {
         ...(imageUrls?.[0] && isAvatarTool && { image_url: imageUrls[0] }),
       };
       const input = buildModelInput(tool.model, prompt, aspectRatio, resolution, imageUrls, extraParams);
-      const isVeo = tool.isVeoApi === true;
-      setStatus("جاري إنشاء المهمة...");
-      setProgress(30);
+      const apiType = isFluxKontext ? "flux-kontext" : (tool.isVeoApi ? "veo" : "standard");
 
-      let taskId: string;
-      let apiType: "standard" | "veo" | "flux-kontext" = "standard";
+      // ── Step 3: Start generation (server: auth → entitlement → price → reserve → create task) ──
+      setStatus("جاري التحقق والإنشاء...");
+      setProgress(25);
 
-      if (isFluxKontext) {
-        apiType = "flux-kontext";
-        const fkResult = await createFluxKontextTask(input);
-        taskId = fkResult.taskId;
-      } else if (isVeo) {
-        apiType = "veo";
-        const veoResult = await createVeoTask(input);
-        taskId = veoResult.taskId;
-      } else {
-        const stdResult = await createTask({ model: tool.model, input });
-        taskId = stdResult.taskId;
+      const idempotencyKey = `gen_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+      const { data: startResult, error: startError } = await supabase.functions.invoke("start-generation", {
+        body: {
+          toolId: tool.id,
+          model: tool.model,
+          apiType,
+          input,
+          resolution: resolution || null,
+          quality: quality || null,
+          durationSeconds: videoDuration ? parseInt(videoDuration) : null,
+          hasAudio: false,
+          idempotencyKey,
+        },
+      });
+
+      if (startError) throw new Error(startError.message);
+      if (!startResult?.success) {
+        const err = startResult?.error;
+        if (err === "insufficient_credits") {
+          toast.error(`رصيدك ${startResult.balance} كريدت — المطلوب ${startResult.required} كريدت`);
+          navigate("/pricing");
+          return;
+        }
+        if (err === "entitlement_denied") {
+          const details = startResult.details;
+          if (details?.reason === "plan_upgrade_required") {
+            toast.error(`هذا النموذج يتطلب خطة ${details.required_plan} أو أعلى`);
+          } else if (details?.reason === "daily_limit_reached") {
+            toast.error(`وصلت للحد اليومي (${details.limit} توليدة)`);
+          } else if (details?.reason === "duration_exceeded") {
+            toast.error(`المدة تتجاوز الحد الأقصى لخطتك (${details.max_duration}ث)`);
+          } else {
+            toast.error("ليس لديك صلاحية لاستخدام هذا النموذج");
+          }
+          return;
+        }
+        throw new Error(startResult?.message || err || "فشل بدء التوليد");
       }
 
+      reservationId = startResult.reservationId;
+      const taskId = startResult.taskId;
+
+      // ── Step 4: Poll task status ──
       const result = await pollTask(taskId, (state, prog) => {
         const m: Record<string, string> = {
           waiting: "في الانتظار...",
@@ -435,29 +439,22 @@ const StudioPage = () => {
         toast.success("تم التوليد بنجاح!");
         setProgress(100);
 
-        // ── Step 3: Settle credits (confirm the charge) ──
-        if (reservationId) {
-          await supabase.rpc("settle_credits", {
-            p_reservation_id: reservationId,
-            p_task_id: taskId,
-          });
-          reservationId = null; // prevent release in catch
-        }
-
-        // Save generation record
+        // ── Step 5: Complete generation (server: settle + save) ──
         const fileUrl = parsed.resultUrls?.[0];
-        if (fileUrl) {
-          await supabase.from("generations").insert({
-            user_id: user.id,
-            tool_id: tool.id,
-            tool_name: tool.title,
+        await supabase.functions.invoke("complete-generation", {
+          body: {
+            reservationId,
+            status: "success",
+            taskId,
+            toolId: tool.id,
+            toolName: tool.title,
             prompt,
-            file_url: fileUrl,
-            file_type: (isVideoTool || isAvatarTool) ? "video" : "image",
-            metadata: { aspectRatio, resolution, model: tool.model, cost: costToReserve } as any,
-          });
-        }
-
+            fileUrl: fileUrl || "",
+            fileType: (isVideoTool || isAvatarTool) ? "video" : "image",
+            metadata: { aspectRatio, resolution, model: tool.model },
+          },
+        });
+        reservationId = null;
         await refreshCredits();
       } else {
         throw new Error("لم يتم إرجاع نتيجة من التوليد");
@@ -466,7 +463,9 @@ const StudioPage = () => {
       // ── Release reserved credits on failure ──
       if (reservationId) {
         try {
-          await supabase.rpc("release_credits", { p_reservation_id: reservationId });
+          await supabase.functions.invoke("complete-generation", {
+            body: { reservationId, status: "failed" },
+          });
         } catch (releaseErr) {
           console.error("Failed to release credits:", releaseErr);
         }
