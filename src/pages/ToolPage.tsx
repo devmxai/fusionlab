@@ -59,6 +59,7 @@ const ToolPage = () => {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [settingsOpen]);
 
+  const { user, credits, refreshCredits } = useAuth();
   const isVideoTool = tool?.category === "فيديو";
 
   // Dynamic pricing (must be before early return)
