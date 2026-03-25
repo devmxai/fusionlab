@@ -104,7 +104,7 @@ const GenerationQueueSidebar = ({ items, open = false, onOpen, onClose }: Genera
             onWheel={(e) => e.stopPropagation()}
           >
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="absolute top-4 right-4 z-10 p-1.5 rounded-full bg-secondary/40 hover:bg-secondary/70 transition-colors"
             >
               <ChevronLeft className="w-4 h-4 text-muted-foreground" />
