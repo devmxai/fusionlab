@@ -1120,10 +1120,9 @@ const StudioPage = () => {
               }`}
             >
               <Sparkles className="w-4 h-4" />
-              <span className="flex items-center gap-1 text-[11px] font-bold">
-                {estimatedCost > 0 ? estimatedCost : "—"}
-                <Coins className="w-3.5 h-3.5 opacity-80" />
-              </span>
+              {estimatedCost > 0 && (
+                <span className="text-[11px] font-bold">{estimatedCost}</span>
+              )}
             </Button>
           </div>
         </div>
