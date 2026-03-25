@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,11 +15,14 @@ import {
   Mic,
   Sparkles,
   Loader2,
+  Coins,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePricing } from "@/hooks/use-pricing";
+import { buildPricingSnapshot } from "@/lib/pricing-engine";
 
 // ─── Official Gemini Voices ───
 interface GeminiVoice {
@@ -120,6 +123,19 @@ const AudioStudioPage = () => {
   const { user, credits, refreshCredits } = useAuth();
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // Dynamic pricing for TTS
+  const pricingParams = useMemo(() => ({
+    model: "gemini-tts",
+    resolution: null,
+    quality: null,
+    durationSeconds: null,
+    hasAudio: null,
+  }), []);
+
+  const { price } = usePricing(pricingParams);
+  const estimatedCost = price?.credits ?? 2; // fallback to 2 until pricing is set
+  const insufficientCredits = credits < estimatedCost;
+
   // ─── State ───
   const [styleInstruction, setStyleInstruction] = useState("");
   const [text, setText] = useState("");
@@ -159,14 +175,39 @@ const AudioStudioPage = () => {
       navigate("/auth");
       return;
     }
-    if (credits <= 0) {
-      toast.error("لا يوجد رصيد كافٍ");
+    if (insufficientCredits || credits <= 0) {
+      toast.error(`رصيدك ${credits} كريدت — التكلفة ${estimatedCost} كريدت`);
       navigate("/pricing");
       return;
     }
 
     setLoading(true);
+    const idempotencyKey = `tts_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const costToReserve = estimatedCost;
+    const snapshot = price ? buildPricingSnapshot(pricingParams, price) : {};
+    let reservationId: string | null = null;
+    
     try {
+      // Reserve credits
+      const { data: reserveResult, error: reserveError } = await supabase.rpc("reserve_credits", {
+        p_amount: costToReserve,
+        p_tool_id: "gemini-tts",
+        p_model: "gemini-tts",
+        p_idempotency_key: idempotencyKey,
+        p_pricing_snapshot: snapshot as any,
+      });
+
+      if (reserveError) throw new Error(reserveError.message);
+      const resData = reserveResult as any;
+      if (!resData?.success) {
+        if (resData?.error === "insufficient_credits") {
+          toast.error(`رصيدك ${resData.balance} كريدت — التكلفة ${costToReserve} كريدت`);
+          navigate("/pricing");
+          return;
+        }
+        throw new Error(resData?.error || "فشل حجز الرصيد");
+      }
+      reservationId = resData.reservation_id;
       // Always use Iraqi dialect as default
       const dialectHint = "لهجة عراقية عامية طبيعية";
 
@@ -199,29 +240,16 @@ const AudioStudioPage = () => {
         setAudioUrl(url);
         toast.success("تم توليد الصوت بنجاح!");
 
-        // Deduct credit
-        const { data: currentCredits } = await supabase
-          .from("user_credits")
-          .select("balance, total_spent")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (currentCredits) {
-          await supabase.from("user_credits").update({
-            balance: Math.max(0, currentCredits.balance - 1),
-            total_spent: (currentCredits.total_spent || 0) + 1,
-            updated_at: new Date().toISOString(),
-          }).eq("user_id", user.id);
-
-          await supabase.from("credit_transactions").insert({
-            user_id: user.id,
-            amount: 1,
-            action: "spent" as const,
-            description: `توليد صوت بـ Gemini TTS - ${selectedVoice.label}`,
+        // Settle credits (confirm the charge)
+        if (reservationId) {
+          await supabase.rpc("settle_credits", {
+            p_reservation_id: reservationId,
           });
+          reservationId = null;
         }
 
-        // Save to generations
+        // Save to generations  
+        // TODO: Upload audio to storage instead of blob URL
         await supabase.from("generations").insert({
           user_id: user.id,
           tool_id: "gemini-tts",
@@ -229,13 +257,24 @@ const AudioStudioPage = () => {
           prompt: text.slice(0, 200),
           file_url: url,
           file_type: "audio",
-          metadata: { voice: selectedVoice.name, styleInstruction, speakingRate, pitch, stability } as any,
+          metadata: { voice: selectedVoice.name, styleInstruction, speakingRate, pitch, stability, cost: costToReserve } as any,
         });
 
         await refreshCredits();
+      } else {
+        throw new Error("لم يتم توليد صوت");
       }
     } catch (err: unknown) {
+      // Release reserved credits on failure
+      if (reservationId) {
+        try {
+          await supabase.rpc("release_credits", { p_reservation_id: reservationId });
+        } catch (releaseErr) {
+          console.error("Failed to release credits:", releaseErr);
+        }
+      }
       toast.error(err instanceof Error ? err.message : "حدث خطأ");
+      await refreshCredits();
     } finally {
       setLoading(false);
     }
@@ -470,15 +509,24 @@ const AudioStudioPage = () => {
           <div className="flex gap-2">
             <Button
               onClick={handleGenerate}
-              disabled={loading || !text.trim()}
-              className="flex-1 gap-2"
+              disabled={loading || !text.trim() || insufficientCredits}
+              className={`flex-1 gap-2 ${insufficientCredits ? "bg-destructive" : ""}`}
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Send className="w-4 h-4" />
               )}
-              {loading ? "جاري التوليد..." : "توليد الصوت"}
+              {loading ? "جاري التوليد..." : (
+                <span className="flex items-center gap-1">
+                  توليد الصوت
+                  {estimatedCost > 0 && (
+                    <span className="flex items-center gap-0.5 text-xs opacity-90">
+                      - {estimatedCost} <Coins className="w-3 h-3" />
+                    </span>
+                  )}
+                </span>
+              )}
             </Button>
 
             <Button variant="outline" onClick={handleDownload} disabled={!audioUrl} className="gap-2">

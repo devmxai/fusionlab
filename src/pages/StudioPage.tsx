@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { tools, buildModelInput, AITool } from "@/data/tools";
 import { getModelCapabilities } from "@/data/model-capabilities";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Image as ImageIcon, Send, X, Sparkles, ChevronDown, Upload, Plus, Music, Video } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, Send, X, Sparkles, ChevronDown, Upload, Plus, Music, Video, Coins } from "lucide-react";
 import { createTask, createVeoTask, createFluxKontextTask, pollTask } from "@/lib/kie-ai";
 import { uploadFileBase64 } from "@/lib/kie-ai";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import CircularProgress from "@/components/CircularProgress";
 import ImageViewer from "@/components/ImageViewer";
+import { usePricing } from "@/hooks/use-pricing";
+import { buildPricingSnapshot } from "@/lib/pricing-engine";
 
 type AspectRatio = "1:1" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
 type Resolution = string;
@@ -66,6 +68,7 @@ const StudioPage = () => {
   const avatarVideoInputRef = useRef<HTMLInputElement>(null);
   const [remixUploadSlot, setRemixUploadSlot] = useState<number>(-1);
 
+  const { user, credits, refreshCredits } = useAuth();
   const categoryName = category ? categorySlugMap[category] : undefined;
 
   const categoryTools = useMemo(
@@ -117,6 +120,21 @@ const StudioPage = () => {
     return getModelCapabilities(selectedTool.model);
   }, [selectedTool]);
 
+  // Dynamic pricing based on selected model + options
+  const pricingParams = useMemo(() => {
+    if (!selectedTool) return null;
+    const t = selectedTool;
+    return {
+      model: t.model,
+      resolution: resolution || null,
+      quality: quality || null,
+      durationSeconds: videoDuration ? parseInt(videoDuration) : null,
+      hasAudio: false,
+    };
+  }, [selectedTool, resolution, quality, videoDuration]);
+
+  const { price } = usePricing(pricingParams);
+
   // Reset settings when model changes
   const handleSelectModel = (t: AITool) => {
     setSelectedTool(t);
@@ -144,7 +162,23 @@ const StudioPage = () => {
     if (c.qualities?.length) setQuality(c.qualities[0]);
   };
 
-  if (!categoryName || categoryTools.length === 0) {
+  const tool = selectedTool || categoryTools[0] || null;
+  const isVideoTool = category === "video";
+  const isImageOnlyTool = category === "remove-bg" || category === "upscale";
+  const isUpscaleTool = category === "upscale";
+  const isRemixTool = category === "remix";
+  const isAvatarTool = category === "avatar";
+  const isAvatarAudioModel = isAvatarTool && !!tool && (tool.inputType === "avatar");
+  const isAvatarAnimateModel = isAvatarTool && !!tool && (tool.inputType === "animate");
+  const isFluxKontext = !!tool && tool.isFluxKontextApi === true;
+  const hasFrameMode = !!(caps?.frameMode || tool?.frameMode);
+  const frameMode = caps?.frameMode || tool?.frameMode;
+
+  // Remix image limits from capabilities
+  const remixMaxImages = isRemixTool ? (caps?.maxImages ?? 3) : 0;
+  const remixMinImages = isRemixTool ? (caps?.minImages ?? 0) : 0;
+
+  if (!categoryName || categoryTools.length === 0 || !tool) {
     return (
       <div className="h-screen bg-background flex flex-col items-center justify-center gap-3" dir="rtl">
         <Sparkles className="w-10 h-10 text-primary opacity-40" />
@@ -155,22 +189,6 @@ const StudioPage = () => {
       </div>
     );
   }
-
-  const tool = selectedTool || categoryTools[0];
-  const isVideoTool = category === "video";
-  const isImageOnlyTool = category === "remove-bg" || category === "upscale";
-  const isUpscaleTool = category === "upscale";
-  const isRemixTool = category === "remix";
-  const isAvatarTool = category === "avatar";
-  const isAvatarAudioModel = isAvatarTool && (tool.inputType === "avatar"); // image + audio + prompt
-  const isAvatarAnimateModel = isAvatarTool && (tool.inputType === "animate"); // image + video
-  const isFluxKontext = tool.isFluxKontextApi === true;
-  const hasFrameMode = !!(caps?.frameMode || tool.frameMode);
-  const frameMode = caps?.frameMode || tool.frameMode;
-
-  // Remix image limits from capabilities
-  const remixMaxImages = isRemixTool ? (caps?.maxImages ?? 3) : 0;
-  const remixMinImages = isRemixTool ? (caps?.minImages ?? 0) : 0;
 
   const maxImages = isRemixTool
     ? remixMaxImages
@@ -236,7 +254,8 @@ const StudioPage = () => {
       reader.readAsDataURL(file);
     });
 
-  const { user, credits, refreshCredits } = useAuth();
+  const estimatedCost = price?.credits ?? 0;
+  const insufficientCredits = estimatedCost > 0 && credits < estimatedCost;
 
   const handleGenerate = async () => {
     if (isImageOnlyTool && refImages.length === 0) {
@@ -264,8 +283,8 @@ const StudioPage = () => {
       navigate("/auth");
       return;
     }
-    if (credits <= 0) {
-      toast.error("لا يوجد رصيد كافٍ. قم بترقية اشتراكك");
+    if (insufficientCredits || credits <= 0) {
+      toast.error(`رصيدك ${credits} كريدت — التكلفة ${estimatedCost} كريدت`);
       navigate("/pricing");
       return;
     }
@@ -275,7 +294,36 @@ const StudioPage = () => {
     setProgress(5);
     setResultUrls([]);
 
+    // ── Step 1: Reserve credits server-side ──
+    const idempotencyKey = `gen_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const costToReserve = estimatedCost || 1;
+    const snapshot = price ? buildPricingSnapshot(pricingParams!, price) : {};
+
+    let reservationId: string | null = null;
+
     try {
+      const { data: reserveResult, error: reserveError } = await supabase.rpc("reserve_credits", {
+        p_amount: costToReserve,
+        p_tool_id: tool.id,
+        p_model: tool.model,
+        p_idempotency_key: idempotencyKey,
+        p_pricing_snapshot: snapshot as any,
+      });
+
+      if (reserveError) throw new Error(reserveError.message);
+      const resData = reserveResult as any;
+      if (!resData?.success) {
+        if (resData?.error === "insufficient_credits") {
+          toast.error(`رصيدك ${resData.balance} كريدت — التكلفة ${costToReserve} كريدت`);
+          navigate("/pricing");
+          return;
+        }
+        throw new Error(resData?.error || "فشل حجز الرصيد");
+      }
+      reservationId = resData.reservation_id;
+      setProgress(8);
+
+      // ── Step 2: Upload files + create task ──
       let imageUrls: string[] | undefined;
 
       if (hasFrameMode && (firstFrame || lastFrame)) {
@@ -387,27 +435,16 @@ const StudioPage = () => {
         toast.success("تم التوليد بنجاح!");
         setProgress(100);
 
-        const { data: currentCredits } = await supabase
-          .from("user_credits")
-          .select("balance, total_spent")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (currentCredits) {
-          await supabase.from("user_credits").update({
-            balance: Math.max(0, currentCredits.balance - 1),
-            total_spent: (currentCredits.total_spent || 0) + 1,
-            updated_at: new Date().toISOString(),
-          }).eq("user_id", user.id);
-
-          await supabase.from("credit_transactions").insert({
-            user_id: user.id,
-            amount: 1,
-            action: "spent" as any,
-            description: `توليد بـ ${tool.title}`,
+        // ── Step 3: Settle credits (confirm the charge) ──
+        if (reservationId) {
+          await supabase.rpc("settle_credits", {
+            p_reservation_id: reservationId,
+            p_task_id: taskId,
           });
+          reservationId = null; // prevent release in catch
         }
 
+        // Save generation record
         const fileUrl = parsed.resultUrls?.[0];
         if (fileUrl) {
           await supabase.from("generations").insert({
@@ -417,16 +454,27 @@ const StudioPage = () => {
             prompt,
             file_url: fileUrl,
             file_type: (isVideoTool || isAvatarTool) ? "video" : "image",
-            metadata: { aspectRatio, resolution, model: tool.model } as any,
+            metadata: { aspectRatio, resolution, model: tool.model, cost: costToReserve } as any,
           });
         }
 
         await refreshCredits();
+      } else {
+        throw new Error("لم يتم إرجاع نتيجة من التوليد");
       }
     } catch (err: unknown) {
+      // ── Release reserved credits on failure ──
+      if (reservationId) {
+        try {
+          await supabase.rpc("release_credits", { p_reservation_id: reservationId });
+        } catch (releaseErr) {
+          console.error("Failed to release credits:", releaseErr);
+        }
+      }
       toast.error(err instanceof Error ? err.message : "حدث خطأ");
       setStatus("");
       setProgress(0);
+      await refreshCredits();
     } finally {
       setLoading(false);
     }
@@ -1066,11 +1114,18 @@ const StudioPage = () => {
 
             <Button
               onClick={handleGenerate}
-              disabled={loading || !selectedTool || (isImageOnlyTool && refImages.length === 0) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
-              size="icon"
-              className="shrink-0 w-9 h-9 rounded-lg bg-primary text-primary-foreground"
+              disabled={loading || !selectedTool || insufficientCredits || (isImageOnlyTool && refImages.length === 0) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
+              className={`shrink-0 rounded-lg text-primary-foreground gap-1.5 px-3 h-9 text-xs font-bold ${
+                insufficientCredits ? "bg-destructive" : "bg-primary"
+              }`}
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-3.5 h-3.5" />
+              {estimatedCost > 0 ? (
+                <span className="flex items-center gap-1">
+                  {estimatedCost}
+                  <Coins className="w-3 h-3" />
+                </span>
+              ) : null}
             </Button>
           </div>
         </div>
