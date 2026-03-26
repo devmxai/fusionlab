@@ -48,16 +48,8 @@ interface ToolCardProps {
   index?: number;
 }
 
-const ShimmerCard = () => (
-  <div className="rounded-xl overflow-hidden bg-card border border-border/50">
-    <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
-      <div className="absolute inset-0 shimmer-effect" />
-    </div>
-  </div>
-);
-
 const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
-  const [loaded, setLoaded] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const [cardOverride, setCardOverride] = useState<{ image_url: string | null; title: string | null; description: string | null } | null>(null);
   const navigate = useNavigate();
 
@@ -77,20 +69,23 @@ const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
       viewport={{ once: true, margin: "-20px" }}
       transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.15), ease: "easeOut" }}
     >
-      {!loaded && <ShimmerCard />}
       <div
         onClick={() => navigate(`/tool/${tool.id}`)}
-        className={`group cursor-pointer rounded-xl overflow-hidden bg-card hover:bg-card-hover transition-all duration-300 border border-border/50 hover:border-primary/30 hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)] ${
-          !loaded ? "hidden" : ""
-        }`}
+        className="group cursor-pointer rounded-xl overflow-hidden bg-card hover:bg-card-hover transition-all duration-300 border border-border/50 hover:border-primary/30 hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)]"
       >
-        <div className="relative aspect-[3/4] overflow-hidden">
+        <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
+          {/* Shimmer placeholder — visible until image loads */}
+          {!imgLoaded && (
+            <div className="absolute inset-0 bg-secondary">
+              <div className="absolute inset-0 shimmer-effect" />
+            </div>
+          )}
           <img
             src={imgSrc}
             alt={title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
             loading={index < 6 ? "eager" : "lazy"}
-            onLoad={() => setLoaded(true)}
+            onLoad={() => setImgLoaded(true)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
           <div className="absolute bottom-0 right-0 left-0 p-3">
@@ -108,5 +103,4 @@ const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
   );
 };
 
-export { ShimmerCard };
 export default ToolCard;
