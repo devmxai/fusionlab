@@ -64,10 +64,10 @@ const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 8 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-20px" }}
-      transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.15), ease: "easeOut" }}
+      viewport={{ once: true, margin: "-10px" }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
     >
       <div
         onClick={() => navigate(`/tool/${tool.id}`)}
