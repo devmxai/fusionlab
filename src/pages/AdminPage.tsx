@@ -523,7 +523,7 @@ const AdminPage = () => {
               <select value={selectedPlanId} onChange={(e) => setSelectedPlanId(e.target.value)}
                 className="w-full h-9 rounded-lg bg-secondary border border-border/50 px-3 text-xs text-foreground">
                 {plans.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name_ar} - ${p.price}/شهر</option>
+                  <option key={p.id} value={p.id}>{p.name_ar} - {p.price.toLocaleString("ar")} د.ع/شهر</option>
                 ))}
               </select>
               <Input type="number" value={subDays} onChange={(e) => setSubDays(e.target.value)} placeholder="عدد الأيام" className="text-sm bg-secondary" />
