@@ -338,25 +338,7 @@ const AdminPage = () => {
             <div className="space-y-3">
               <h2 className="text-lg font-bold text-foreground">خطط الاشتراك</h2>
               {plans.map((p) => (
-                <div key={p.id} className="bg-card rounded-xl border border-border/50 p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <p className="text-sm font-bold text-foreground">{p.name_ar}</p>
-                      <p className="text-[10px] text-muted-foreground" dir="ltr">{p.name} • {p.type}</p>
-                    </div>
-                    <div className="text-left">
-                      <p className="text-lg font-extrabold text-primary">${p.price}</p>
-                      <p className="text-[10px] text-muted-foreground">/شهر</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                    <Coins className="w-3 h-3" />
-                    <span>{p.credits_per_month} كريدت/شهر</span>
-                    <span className={`mr-auto text-[9px] font-bold px-2 py-0.5 rounded-full ${p.is_active ? "bg-green-500/15 text-green-400" : "bg-secondary text-muted-foreground"}`}>
-                      {p.is_active ? "مفعّل" : "معطّل"}
-                    </span>
-                  </div>
-                </div>
+                <PlanCard key={p.id} plan={p} onSaved={fetchData} />
               ))}
             </div>
           )}
