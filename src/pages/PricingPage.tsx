@@ -44,10 +44,31 @@ const PricingPage = () => {
     }
   }, [user]);
 
-  const requestTrial = async () => {
+  const requirePhoneVerification = (action: "trial" | "subscribe") => {
     if (!user) { navigate("/auth"); return; }
+    if (!phoneVerified) {
+      setPendingAction(action);
+      setShowPhoneVerify(true);
+      return false;
+    }
+    return true;
+  };
+
+  const handlePhoneVerified = (phoneNumber: string) => {
+    setPhoneVerified(true);
+    toast.success("تم التحقق من رقمك بنجاح!");
+    // Execute pending action
+    if (pendingAction === "trial") {
+      doRequestTrial();
+    } else if (pendingAction === "subscribe") {
+      toast.info("تواصل مع الإدارة لتفعيل اشتراكك");
+    }
+    setPendingAction(null);
+  };
+
+  const doRequestTrial = async () => {
     setLoadingTrial(true);
-    const { error } = await supabase.from("trial_requests").insert({ user_id: user.id, message: "طلب فترة تجريبية" });
+    const { error } = await supabase.from("trial_requests").insert({ user_id: user!.id, message: "طلب فترة تجريبية" });
     if (error) {
       toast.error("حدث خطأ في الطلب");
     } else {
@@ -55,6 +76,12 @@ const PricingPage = () => {
       toast.success("تم إرسال طلب التجربة! سيتم مراجعته من الإدارة.");
     }
     setLoadingTrial(false);
+  };
+
+  const requestTrial = async () => {
+    if (!user) { navigate("/auth"); return; }
+    if (!requirePhoneVerification("trial")) return;
+    await doRequestTrial();
   };
 
   return (
