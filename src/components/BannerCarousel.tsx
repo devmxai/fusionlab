@@ -25,7 +25,7 @@ const BannerImage = ({ src, alt, className }: { src: string; alt: string; classN
       <img
         src={src}
         alt={alt}
-        className={`${className || ""} transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
+        className={`${className || ""} transition-opacity duration-200 ${loaded ? "opacity-100" : "opacity-0"}`}
         onLoad={() => setLoaded(true)}
       />
     </div>

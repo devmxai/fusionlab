@@ -83,7 +83,7 @@ const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
           <img
             src={imgSrc}
             alt={title}
-            className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+            className={`w-full h-full object-cover transition-opacity duration-200 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
             loading={index < 6 ? "eager" : "lazy"}
             onLoad={() => setImgLoaded(true)}
           />
