@@ -308,32 +308,73 @@ const AdminPage = () => {
         </div>
       </aside>
 
-      {/* ── Mobile Header ── */}
+      {/* ── Mobile Header + Sidebar ── */}
       <div className="flex-1 flex flex-col min-h-screen">
         <header className="md:hidden sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/30 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground">
-              <ArrowRight className="w-5 h-5" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground">
+                <ArrowRight className="w-5 h-5" />
+              </button>
+              <Shield className="w-4 h-4 text-primary" />
+              <h1 className="text-base font-bold text-foreground">لوحة التحكم</h1>
+            </div>
+            <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg hover:bg-secondary transition-colors">
+              <BarChart3 className="w-5 h-5 text-muted-foreground" />
             </button>
-            <Shield className="w-4 h-4 text-primary" />
-            <h1 className="text-base font-bold text-foreground">لوحة التحكم</h1>
           </div>
         </header>
 
-        {/* Mobile Tabs */}
-        <div className="md:hidden border-b border-border/30 overflow-x-auto scrollbar-hide">
-          <div className="flex px-4">
-            {tabs.map((t) => (
-              <button key={t.id} onClick={() => setTab(t.id)}
-                className={`flex items-center gap-1.5 px-3 py-2.5 text-[10px] font-semibold border-b-2 transition-colors whitespace-nowrap ${
-                  tab === t.id ? "border-primary text-primary" : "border-transparent text-muted-foreground"
-                }`}>
-                <t.icon className="w-3.5 h-3.5" />
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Mobile Sidebar Drawer */}
+        <AnimatePresence>
+          {sidebarOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm md:hidden"
+                onClick={() => setSidebarOpen(false)}
+              />
+              <motion.aside
+                initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="fixed top-0 right-0 bottom-0 z-50 w-64 bg-card border-l border-border/30 flex flex-col md:hidden"
+              >
+                <div className="p-4 border-b border-border/30 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-primary" />
+                    <h2 className="text-sm font-bold text-foreground">الأقسام</h2>
+                  </div>
+                  <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-lg hover:bg-secondary">
+                    <X className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </div>
+                <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
+                  {tabs.map((t) => (
+                    <button key={t.id} onClick={() => { setTab(t.id); setSidebarOpen(false); }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors ${
+                        tab === t.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                      }`}>
+                      <t.icon className="w-4 h-4" />
+                      {t.label}
+                      {t.id === "trials" && stats.pendingTrials > 0 && (
+                        <span className="mr-auto w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-[9px] flex items-center justify-center">{stats.pendingTrials}</span>
+                      )}
+                      {t.id === "pricing" && stats.pendingPricing > 0 && (
+                        <span className="mr-auto w-5 h-5 rounded-full bg-amber-500 text-white text-[9px] flex items-center justify-center">{stats.pendingPricing}</span>
+                      )}
+                    </button>
+                  ))}
+                </nav>
+                <div className="p-3 border-t border-border/30">
+                  <button onClick={() => navigate("/")} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                    <ArrowRight className="w-4 h-4" />
+                    العودة للموقع
+                  </button>
+                </div>
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* ── Content ── */}
         <div className="flex-1 p-4 md:p-6 max-w-5xl">
