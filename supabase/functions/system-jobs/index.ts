@@ -22,6 +22,17 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+    // ── Security: Only allow internal/cron calls ──
+    const authHeader = req.headers.get("Authorization");
+    const internalCaller = req.headers.get("x-internal-caller");
+    const isCronCall = authHeader === `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`;
+    const isInternalCall = internalCaller === serviceRoleKey;
+
+    if (!isCronCall && !isInternalCall) {
+      console.warn("system-jobs: Unauthorized access attempt blocked");
+      return jsonRes({ error: "Unauthorized. System jobs are not publicly accessible." }, 403);
+    }
+
     // Use service role for system operations
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
