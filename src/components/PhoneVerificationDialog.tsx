@@ -13,7 +13,7 @@ interface PhoneVerificationDialogProps {
   onVerified: (phoneNumber: string) => void;
 }
 
-const PHONE_LENGTH = 11; // 07xxxxxxxxx
+const PHONE_LENGTH = 10; // 7xxxxxxxxx (without leading 0)
 
 const PhoneVerificationDialog = ({ open, onOpenChange, onVerified }: PhoneVerificationDialogProps) => {
   const [step, setStep] = useState<"phone" | "otp" | "success">("phone");
