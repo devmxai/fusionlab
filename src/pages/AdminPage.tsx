@@ -569,6 +569,9 @@ const AdminPage = () => {
               ))}
             </div>
           )}
+
+          {/* Content CMS */}
+          {tab === "content" && <ContentTab />}
         </div>
       </div>
 
