@@ -8,8 +8,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Users, Crown, Coins, Clock, Shield, Check, X,
   Search, BarChart3, FileText, CreditCard, Tag, History, Settings,
-  ChevronDown, AlertCircle, RefreshCw, Eye, Pencil, Save
+  ChevronDown, AlertCircle, RefreshCw, Eye, Pencil, Save, PanelTop
 } from "lucide-react";
+import ContentTab from "@/components/admin/ContentTab";
 import { toast } from "sonner";
 
 /* ── Editable Plan Card ── */
@@ -95,7 +96,7 @@ const PlanCard = ({ plan, onSaved }: { plan: any; onSaved: () => void }) => {
   );
 };
 
-type Tab = "dashboard" | "users" | "subscriptions" | "plans" | "pricing" | "ledger" | "trials" | "audit" | "generations";
+type Tab = "dashboard" | "users" | "subscriptions" | "plans" | "pricing" | "ledger" | "trials" | "audit" | "generations" | "content";
 
 const tabs: { id: Tab; label: string; icon: any }[] = [
   { id: "dashboard", label: "لوحة التحكم", icon: BarChart3 },
@@ -107,6 +108,7 @@ const tabs: { id: Tab; label: string; icon: any }[] = [
   { id: "trials", label: "التجارب", icon: Clock },
   { id: "generations", label: "التوليدات", icon: RefreshCw },
   { id: "audit", label: "سجل العمليات", icon: History },
+  { id: "content", label: "المحتوى", icon: PanelTop },
 ];
 
 const AdminPage = () => {
@@ -567,6 +569,9 @@ const AdminPage = () => {
               ))}
             </div>
           )}
+
+          {/* Content CMS */}
+          {tab === "content" && <ContentTab />}
         </div>
       </div>
 

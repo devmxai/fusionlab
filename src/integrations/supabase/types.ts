@@ -164,6 +164,45 @@ export type Database = {
         }
         Relationships: []
       }
+      homepage_banners: {
+        Row: {
+          created_at: string | null
+          cta_link: string | null
+          cta_text: string | null
+          id: string
+          image_url: string
+          is_active: boolean | null
+          sort_order: number | null
+          subtitle: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          cta_link?: string | null
+          cta_text?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          cta_link?: string | null
+          cta_text?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       model_access: {
         Row: {
           category: string | null
@@ -191,6 +230,45 @@ export type Database = {
           min_plan?: string
           model?: string
           provider?: string | null
+        }
+        Relationships: []
+      }
+      model_cards: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_visible: boolean | null
+          sort_order: number | null
+          title: string | null
+          tool_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_visible?: boolean | null
+          sort_order?: number | null
+          title?: string | null
+          tool_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_visible?: boolean | null
+          sort_order?: number | null
+          title?: string | null
+          tool_id?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -358,6 +436,8 @@ export type Database = {
           created_at: string | null
           id: string
           image_url: string
+          is_published: boolean | null
+          prompt: string | null
           sort_order: number | null
           title: string | null
           uploaded_by: string | null
@@ -366,6 +446,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           image_url: string
+          is_published?: boolean | null
+          prompt?: string | null
           sort_order?: number | null
           title?: string | null
           uploaded_by?: string | null
@@ -374,6 +456,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           image_url?: string
+          is_published?: boolean | null
+          prompt?: string | null
           sort_order?: number | null
           title?: string | null
           uploaded_by?: string | null
@@ -384,6 +468,8 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_published: boolean | null
+          prompt: string | null
           sort_order: number | null
           thumbnail_url: string | null
           title: string | null
@@ -393,6 +479,8 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          is_published?: boolean | null
+          prompt?: string | null
           sort_order?: number | null
           thumbnail_url?: string | null
           title?: string | null
@@ -402,6 +490,8 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          is_published?: boolean | null
+          prompt?: string | null
           sort_order?: number | null
           thumbnail_url?: string | null
           title?: string | null
