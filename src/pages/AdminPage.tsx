@@ -8,9 +8,92 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Users, Crown, Coins, Clock, Shield, Check, X,
   Search, BarChart3, FileText, CreditCard, Tag, History, Settings,
-  ChevronDown, AlertCircle, RefreshCw, Eye
+  ChevronDown, AlertCircle, RefreshCw, Eye, Pencil, Save
 } from "lucide-react";
 import { toast } from "sonner";
+
+/* ── Editable Plan Card ── */
+const PlanCard = ({ plan, onSaved }: { plan: any; onSaved: () => void }) => {
+  const [editing, setEditing] = useState(false);
+  const [nameAr, setNameAr] = useState(plan.name_ar);
+  const [nameEn, setNameEn] = useState(plan.name);
+  const [price, setPrice] = useState(String(plan.price));
+  const [credits, setCredits] = useState(String(plan.credits_per_month));
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    const { error } = await supabase.from("subscription_plans").update({
+      name_ar: nameAr,
+      name: nameEn,
+      price: parseFloat(price) || 0,
+      credits_per_month: parseInt(credits) || 0,
+    }).eq("id", plan.id);
+    setSaving(false);
+    if (error) { toast.error("فشل الحفظ: " + error.message); return; }
+    toast.success("تم تحديث الخطة");
+    setEditing(false);
+    onSaved();
+  };
+
+  if (editing) {
+    return (
+      <div className="bg-card rounded-xl border border-primary/30 p-4 space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-[10px] text-muted-foreground mb-1 block">الاسم (عربي)</label>
+            <Input value={nameAr} onChange={(e) => setNameAr(e.target.value)} className="text-xs h-8" />
+          </div>
+          <div>
+            <label className="text-[10px] text-muted-foreground mb-1 block">الاسم (إنجليزي)</label>
+            <Input value={nameEn} onChange={(e) => setNameEn(e.target.value)} className="text-xs h-8" dir="ltr" />
+          </div>
+          <div>
+            <label className="text-[10px] text-muted-foreground mb-1 block">السعر (د.ع/شهر)</label>
+            <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="text-xs h-8" dir="ltr" />
+          </div>
+          <div>
+            <label className="text-[10px] text-muted-foreground mb-1 block">كريدت/شهر</label>
+            <Input type="number" value={credits} onChange={(e) => setCredits(e.target.value)} className="text-xs h-8" dir="ltr" />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" className="text-xs gap-1" onClick={save} disabled={saving}>
+            <Save className="w-3 h-3" />{saving ? "جاري الحفظ..." : "حفظ"}
+          </Button>
+          <Button size="sm" variant="outline" className="text-xs" onClick={() => setEditing(false)}>إلغاء</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-card rounded-xl border border-border/50 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <p className="text-sm font-bold text-foreground">{plan.name_ar}</p>
+          <p className="text-[10px] text-muted-foreground" dir="ltr">{plan.name} • {plan.type}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-left">
+            <p className="text-lg font-extrabold text-primary">{Number(plan.price).toLocaleString("ar")} <span className="text-xs font-normal">د.ع</span></p>
+            <p className="text-[10px] text-muted-foreground">/شهر</p>
+          </div>
+          <button onClick={() => setEditing(true)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors" title="تعديل">
+            <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+          </button>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+        <Coins className="w-3 h-3" />
+        <span>{plan.credits_per_month} كريدت/شهر</span>
+        <span className={`mr-auto text-[9px] font-bold px-2 py-0.5 rounded-full ${plan.is_active ? "bg-green-500/15 text-green-400" : "bg-secondary text-muted-foreground"}`}>
+          {plan.is_active ? "مفعّل" : "معطّل"}
+        </span>
+      </div>
+    </div>
+  );
+};
 
 type Tab = "dashboard" | "users" | "subscriptions" | "plans" | "pricing" | "ledger" | "trials" | "audit" | "generations";
 
