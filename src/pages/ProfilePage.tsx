@@ -5,8 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
-import { ArrowLeft, Coins, Crown, Clock, LogOut, Shield, Sparkles, User, Mail, Lock, RefreshCw, Settings } from "lucide-react";
+import { ArrowLeft, Coins, Crown, Clock, LogOut, Shield, Sparkles, User, Mail, Lock, Phone, Settings } from "lucide-react";
 import { toast } from "sonner";
+import PhoneVerificationDialog from "@/components/PhoneVerificationDialog";
 
 import avatar1 from "@/assets/avatars/avatar-1.png";
 import avatar2 from "@/assets/avatars/avatar-2.png";
