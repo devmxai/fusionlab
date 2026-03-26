@@ -293,3 +293,4 @@ const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }
 );
 
 export default Index;
+
