@@ -37,6 +37,10 @@ const PricingPage = () => {
       supabase.from("trial_requests").select("id").eq("user_id", user.id).eq("status", "pending").then(({ data }) => {
         if (data && data.length > 0) setTrialRequested(true);
       });
+      // Check if phone already verified
+      supabase.from("profiles").select("phone_verified").eq("id", user.id).maybeSingle().then(({ data }) => {
+        if (data?.phone_verified) setPhoneVerified(true);
+      });
     }
   }, [user]);
 
