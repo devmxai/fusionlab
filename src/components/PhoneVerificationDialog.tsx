@@ -53,8 +53,8 @@ const PhoneVerificationDialog = ({ open, onOpenChange, onVerified }: PhoneVerifi
   const phoneDisplay = phone + "0".repeat(Math.max(0, PHONE_LENGTH - phone.length));
 
   const sendOtp = async () => {
-    if (phone.length !== PHONE_LENGTH || !phone.startsWith("07")) {
-      toast.error("أدخل رقم عراقي صحيح يبدأ بـ 07");
+    if (phone.length !== PHONE_LENGTH || !phone.startsWith("7")) {
+      toast.error("أدخل رقم عراقي صحيح يبدأ بـ 7");
       return;
     }
     setLoading(true);
