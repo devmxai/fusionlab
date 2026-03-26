@@ -41,15 +41,27 @@ interface CardEntry {
   display_section: string;
   sort_order: number;
   is_visible: boolean;
+  image_url: string | null;
+  title: string | null;
+  description: string | null;
+}
+
+interface CardOverride {
+  image_url: string | null;
+  title: string | null;
+  description: string | null;
 }
 
 const copyPrompt = (prompt: string | null) => {
   if (!prompt) return;
-  navigator.clipboard.writeText(prompt).then(() => {
-    toast.success("تم نسخ البرومبت ✨", { duration: 2000 });
-  }).catch(() => {
-    toast.error("فشل النسخ");
-  });
+  navigator.clipboard
+    .writeText(prompt)
+    .then(() => {
+      toast.success("تم نسخ البرومبت ✨", { duration: 2000 });
+    })
+    .catch(() => {
+      toast.error("فشل النسخ");
+    });
 };
 
 const SECTION_ICONS: Record<string, React.ReactNode> = {
@@ -77,7 +89,9 @@ const SectionSkeleton = ({ count = 5 }: { count?: number }) => (
       <div className="h-4 w-20 rounded bg-secondary shimmer-effect" />
     </div>
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-      {Array.from({ length: count }).map((_, i) => <CardSkeleton key={i} />)}
+      {Array.from({ length: count }).map((_, i) => (
+        <CardSkeleton key={i} />
+      ))}
     </div>
   </section>
 );
@@ -88,6 +102,7 @@ const Index = () => {
   const [trendingVideos, setTrendingVideos] = useState<TrendingVideo[]>([]);
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [sectionTools, setSectionTools] = useState<Record<string, AITool[]>>({});
+  const [cardOverrides, setCardOverrides] = useState<Record<string, CardOverride>>({});
   const [dataLoaded, setDataLoaded] = useState(false);
 
   useEffect(() => {
@@ -95,24 +110,39 @@ const Index = () => {
       supabase.from("trending_images").select("*").eq("is_published", true).order("sort_order"),
       supabase.from("trending_videos").select("*").eq("is_published", true).order("sort_order"),
       supabase.from("model_card_tabs").select("*").eq("is_visible", true).order("sort_order"),
-      supabase.from("model_cards").select("tool_id, display_section, sort_order, is_visible").eq("is_visible", true).order("sort_order"),
+      supabase
+        .from("model_cards")
+        .select("tool_id, display_section, sort_order, is_visible, image_url, title, description")
+        .eq("is_visible", true)
+        .order("sort_order"),
     ]).then(([imgRes, vidRes, tabsRes, cardsRes]) => {
       setTrendingImages((imgRes.data as TrendingImage[]) || []);
       setTrendingVideos((vidRes.data as TrendingVideo[]) || []);
       setTabs((tabsRes.data as Tab[]) || []);
 
       const map: Record<string, AITool[]> = {};
+      const overrides: Record<string, CardOverride> = {};
+
       if (cardsRes.data) {
         for (const card of cardsRes.data as CardEntry[]) {
           const section = card.display_section || "images";
-          const tool = tools.find(t => t.id === card.tool_id);
+          const tool = tools.find((t) => t.id === card.tool_id);
+
           if (tool) {
             if (!map[section]) map[section] = [];
             map[section].push(tool);
           }
+
+          overrides[card.tool_id] = {
+            image_url: card.image_url ?? null,
+            title: card.title ?? null,
+            description: card.description ?? null,
+          };
         }
       }
+
       setSectionTools(map);
+      setCardOverrides(overrides);
       setDataLoaded(true);
     });
   }, []);
@@ -135,7 +165,6 @@ const Index = () => {
         <main className="px-3 sm:px-6 lg:px-8 pb-8 space-y-10">
           {showCategorized ? (
             <>
-              {/* Loading skeletons */}
               {!dataLoaded && (
                 <>
                   <SectionSkeleton count={5} />
@@ -143,10 +172,11 @@ const Index = () => {
                   <SectionSkeleton count={4} />
                 </>
               )}
-              {/* Dynamic sections from tabs */}
-              {tabs.map(tab => {
+
+              {tabs.map((tab) => {
                 const tabTools = sectionTools[tab.slug];
                 if (!tabTools || tabTools.length === 0) return null;
+
                 return (
                   <section key={tab.slug}>
                     <SectionHeader
@@ -154,13 +184,14 @@ const Index = () => {
                       title={tab.label}
                     />
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-                      {tabTools.map((tool, i) => <ToolCard key={`${tab.slug}-${tool.id}`} tool={tool} index={i} />)}
+                      {tabTools.map((tool, i) => (
+                        <ToolCard key={`${tab.slug}-${tool.id}`} tool={tool} index={i} override={cardOverrides[tool.id]} />
+                      ))}
                     </div>
                   </section>
                 );
               })}
 
-              {/* Trending Images */}
               {trendingImages.length > 0 && (
                 <section>
                   <SectionHeader icon={<TrendingUp className="w-4 h-4 text-pink-500" />} title="ترند الصور" />
@@ -190,7 +221,6 @@ const Index = () => {
                 </section>
               )}
 
-              {/* Trending Videos */}
               {trendingVideos.length > 0 && (
                 <section>
                   <SectionHeader icon={<TrendingUp className="w-4 h-4 text-purple-500" />} title="ترند الفيديو" />
@@ -208,8 +238,15 @@ const Index = () => {
                         {vid.thumbnail_url ? (
                           <img src={vid.thumbnail_url} alt={vid.title || ""} className="w-full block" loading="lazy" />
                         ) : (
-                          <video src={vid.video_url} muted preload="metadata" className="w-full block"
-                            onLoadedData={(e) => { e.currentTarget.currentTime = 0.5; }} />
+                          <video
+                            src={vid.video_url}
+                            muted
+                            preload="metadata"
+                            className="w-full block"
+                            onLoadedData={(e) => {
+                              e.currentTarget.currentTime = 0.5;
+                            }}
+                          />
                         )}
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="w-10 h-10 rounded-full bg-background/50 backdrop-blur-sm flex items-center justify-center group-hover:bg-primary/30 transition-colors">
@@ -235,7 +272,7 @@ const Index = () => {
               <h2 className="text-base font-bold text-foreground mb-3">🛠️ الأدوات</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                 {filteredTools.map((tool, i) => (
-                  <ToolCard key={tool.id} tool={tool} index={i} />
+                  <ToolCard key={tool.id} tool={tool} index={i} override={cardOverrides[tool.id]} />
                 ))}
               </div>
             </section>
@@ -248,32 +285,40 @@ const Index = () => {
           <div>
             <h4 className="text-xs font-bold text-foreground mb-4 tracking-wider uppercase">Products</h4>
             <ul className="space-y-2.5">
-              {["Image Generation", "Video Generation", "Audio Studio", "Background Removal", "Upscaler"].map(item => (
-                <li key={item}><span className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">{item}</span></li>
+              {["Image Generation", "Video Generation", "Audio Studio", "Background Removal", "Upscaler"].map((item) => (
+                <li key={item}>
+                  <span className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">{item}</span>
+                </li>
               ))}
             </ul>
           </div>
           <div>
             <h4 className="text-xs font-bold text-foreground mb-4 tracking-wider uppercase">Use Cases</h4>
             <ul className="space-y-2.5">
-              {["Marketing", "Social Media", "E-Commerce", "Entertainment", "Education"].map(item => (
-                <li key={item}><span className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">{item}</span></li>
+              {["Marketing", "Social Media", "E-Commerce", "Entertainment", "Education"].map((item) => (
+                <li key={item}>
+                  <span className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">{item}</span>
+                </li>
               ))}
             </ul>
           </div>
           <div>
             <h4 className="text-xs font-bold text-foreground mb-4 tracking-wider uppercase">Models</h4>
             <ul className="space-y-2.5">
-              {["Kling", "Veo", "Seedance", "Nano Banana", "Z Image"].map(item => (
-                <li key={item}><span className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">{item}</span></li>
+              {["Kling", "Veo", "Seedance", "Nano Banana", "Z Image"].map((item) => (
+                <li key={item}>
+                  <span className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">{item}</span>
+                </li>
               ))}
             </ul>
           </div>
           <div>
             <h4 className="text-xs font-bold text-foreground mb-4 tracking-wider uppercase">About</h4>
             <ul className="space-y-2.5">
-              {["Company", "Pricing", "Terms of Service", "Privacy Policy", "Contact"].map(item => (
-                <li key={item}><span className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">{item}</span></li>
+              {["Company", "Pricing", "Terms of Service", "Privacy Policy", "Contact"].map((item) => (
+                <li key={item}>
+                  <span className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">{item}</span>
+                </li>
               ))}
             </ul>
           </div>
@@ -294,4 +339,3 @@ const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }
 );
 
 export default Index;
-
