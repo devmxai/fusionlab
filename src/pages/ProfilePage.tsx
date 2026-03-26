@@ -192,17 +192,20 @@ const ProfilePage = () => {
             <p className="text-xs text-muted-foreground">لا توجد عمليات</p>
           ) : (
             <div className="space-y-2">
-              {transactions.map((tx) => (
-                <div key={tx.id} className="flex items-center justify-between text-xs">
-                  <div>
-                    <span className="font-medium text-foreground">{actionLabels[tx.action] || tx.action}</span>
-                    {tx.description && <span className="text-muted-foreground mr-1">• {tx.description}</span>}
+              {transactions.map((tx) => {
+                const isDebit = tx.action === "spent";
+                const displayAmount = isDebit ? `-${tx.amount}` : `+${tx.amount}`;
+                const colorClass = isDebit ? "text-destructive font-bold" : "text-green-400 font-bold";
+                return (
+                  <div key={tx.id} className="flex items-center justify-between text-xs">
+                    <div>
+                      <span className="font-medium text-foreground">{actionLabels[tx.action] || tx.action}</span>
+                      {tx.description && <span className="text-muted-foreground mr-1">• {tx.description}</span>}
+                    </div>
+                    <span className={colorClass}>{displayAmount}</span>
                   </div>
-                  <span className={tx.amount > 0 ? "text-green-400 font-bold" : "text-destructive font-bold"}>
-                    {tx.amount > 0 ? `+${tx.amount}` : tx.amount}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </motion.div>
