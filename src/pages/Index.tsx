@@ -6,7 +6,7 @@ import BannerCarousel from "@/components/BannerCarousel";
 import ToolCard from "@/components/ToolCard";
 import { supabase } from "@/integrations/supabase/client";
 import { tools, AITool } from "@/data/tools";
-import { Flame, ImageIcon, Video, TrendingUp, Copy } from "lucide-react";
+import { Flame, ImageIcon, Video, TrendingUp, Copy, Layers } from "lucide-react";
 import { toast } from "sonner";
 
 interface TrendingImage {
@@ -28,6 +28,21 @@ interface TrendingVideo {
   is_published: boolean | null;
 }
 
+interface Tab {
+  id: string;
+  slug: string;
+  label: string;
+  sort_order: number;
+  is_visible: boolean;
+}
+
+interface CardEntry {
+  tool_id: string;
+  display_section: string;
+  sort_order: number;
+  is_visible: boolean;
+}
+
 const copyPrompt = (prompt: string | null) => {
   if (!prompt) return;
   navigator.clipboard.writeText(prompt).then(() => {
@@ -37,28 +52,41 @@ const copyPrompt = (prompt: string | null) => {
   });
 };
 
+const SECTION_ICONS: Record<string, React.ReactNode> = {
+  latest: <Flame className="w-4 h-4 text-orange-500" />,
+  images: <ImageIcon className="w-4 h-4 text-primary" />,
+  videos: <Video className="w-4 h-4 text-primary" />,
+};
+
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("الكل");
   const [trendingImages, setTrendingImages] = useState<TrendingImage[]>([]);
   const [trendingVideos, setTrendingVideos] = useState<TrendingVideo[]>([]);
-  const [sectionTools, setSectionTools] = useState<Record<string, AITool[]>>({ latest: [], images: [], videos: [] });
+  const [tabs, setTabs] = useState<Tab[]>([]);
+  const [sectionTools, setSectionTools] = useState<Record<string, AITool[]>>({});
 
   useEffect(() => {
-    supabase.from("trending_images").select("*").eq("is_published", true).order("sort_order").then(({ data }) => {
-      setTrendingImages((data as TrendingImage[]) || []);
-    });
-    supabase.from("trending_videos").select("*").eq("is_published", true).order("sort_order").then(({ data }) => {
-      setTrendingVideos((data as TrendingVideo[]) || []);
-    });
-    // Fetch model_cards to build section→tools mapping
-    supabase.from("model_cards").select("tool_id, display_section, sort_order, is_visible").eq("is_visible", true).order("sort_order").then(({ data }) => {
-      const map: Record<string, AITool[]> = { latest: [], images: [], videos: [] };
-      if (data) {
-        for (const card of data as any[]) {
+    // Fetch all data in parallel
+    Promise.all([
+      supabase.from("trending_images").select("*").eq("is_published", true).order("sort_order"),
+      supabase.from("trending_videos").select("*").eq("is_published", true).order("sort_order"),
+      supabase.from("model_card_tabs").select("*").eq("is_visible", true).order("sort_order"),
+      supabase.from("model_cards").select("tool_id, display_section, sort_order, is_visible").eq("is_visible", true).order("sort_order"),
+    ]).then(([imgRes, vidRes, tabsRes, cardsRes]) => {
+      setTrendingImages((imgRes.data as TrendingImage[]) || []);
+      setTrendingVideos((vidRes.data as TrendingVideo[]) || []);
+      setTabs((tabsRes.data as Tab[]) || []);
+
+      // Build section→tools map
+      const map: Record<string, AITool[]> = {};
+      if (cardsRes.data) {
+        for (const card of cardsRes.data as CardEntry[]) {
           const section = card.display_section || "images";
           const tool = tools.find(t => t.id === card.tool_id);
-          if (tool && map[section]) map[section].push(tool);
-          else if (tool) { map[section] = [tool]; }
+          if (tool) {
+            if (!map[section]) map[section] = [];
+            map[section].push(tool);
+          }
         }
       }
       setSectionTools(map);
@@ -81,35 +109,22 @@ const Index = () => {
       <main className="px-4 pb-8 max-w-7xl mx-auto space-y-10">
         {showCategorized ? (
           <>
-            {/* Latest Models */}
-            {sectionTools.latest.length > 0 && (
-            <section>
-              <SectionHeader icon={<Flame className="w-4 h-4 text-orange-500" />} title="الأحدث" />
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {sectionTools.latest.map((tool, i) => <ToolCard key={tool.id} tool={tool} index={i} />)}
-              </div>
-            </section>
-            )}
-
-            {/* Image Models */}
-            {sectionTools.images.length > 0 && (
-            <section>
-              <SectionHeader icon={<ImageIcon className="w-4 h-4 text-primary" />} title="نماذج الصور" />
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {sectionTools.images.map((tool, i) => <ToolCard key={tool.id} tool={tool} index={i} />)}
-              </div>
-            </section>
-            )}
-
-            {/* Video Models */}
-            {sectionTools.videos.length > 0 && (
-            <section>
-              <SectionHeader icon={<Video className="w-4 h-4 text-primary" />} title="نماذج الفيديو" />
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {sectionTools.videos.map((tool, i) => <ToolCard key={tool.id} tool={tool} index={i} />)}
-              </div>
-            </section>
-            )}
+            {/* Dynamic sections from tabs */}
+            {tabs.map(tab => {
+              const tabTools = sectionTools[tab.slug];
+              if (!tabTools || tabTools.length === 0) return null;
+              return (
+                <section key={tab.slug}>
+                  <SectionHeader
+                    icon={SECTION_ICONS[tab.slug] || <Layers className="w-4 h-4 text-primary" />}
+                    title={tab.label}
+                  />
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {tabTools.map((tool, i) => <ToolCard key={tool.id} tool={tool} index={i} />)}
+                  </div>
+                </section>
+              );
+            })}
 
             {/* Trending Images */}
             {trendingImages.length > 0 && (
@@ -126,13 +141,7 @@ const Index = () => {
                       className="break-inside-avoid mb-[6px] rounded-xl overflow-hidden border border-border/30 group cursor-pointer relative"
                       onClick={() => copyPrompt(img.prompt)}
                     >
-                      <img
-                        src={img.image_url}
-                        alt=""
-                        className="w-full block transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                      {/* Copy hint overlay */}
+                      <img src={img.image_url} alt="" className="w-full block transition-transform duration-500 group-hover:scale-105" loading="lazy" />
                       {img.prompt && (
                         <div className="absolute inset-0 bg-background/0 group-hover:bg-background/40 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
                           <div className="px-3 py-1.5 rounded-full bg-card/90 backdrop-blur-sm flex items-center gap-1.5 shadow-lg">
@@ -173,7 +182,6 @@ const Index = () => {
                           <Video className="w-5 h-5 text-foreground" />
                         </div>
                       </div>
-                      {/* Copy hint */}
                       {vid.prompt && (
                         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           <div className="px-3 py-1 rounded-full bg-card/90 backdrop-blur-sm flex items-center gap-1 shadow-lg">
@@ -189,7 +197,6 @@ const Index = () => {
             )}
           </>
         ) : (
-          /* Filtered view */
           <section>
             <h2 className="text-base font-bold text-foreground mb-3">🛠️ الأدوات</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -201,7 +208,6 @@ const Index = () => {
         )}
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-border/20 mt-12 bg-secondary/10">
         <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-2 sm:grid-cols-4 gap-8" dir="ltr">
           <div>

@@ -27,7 +27,6 @@ const BannerCarousel = () => {
       .then(({ data }) => setBanners((data as Banner[]) || []));
   }, []);
 
-  // Auto-rotate for mobile (single card view)
   useEffect(() => {
     if (banners.length <= 1) return;
     intervalRef.current = setInterval(() => {
@@ -38,11 +37,18 @@ const BannerCarousel = () => {
 
   if (banners.length === 0) return null;
 
+  // Desktop grid columns based on banner count
+  const desktopCols =
+    banners.length === 1 ? "md:grid-cols-1" :
+    banners.length === 2 ? "md:grid-cols-2" :
+    banners.length === 3 ? "md:grid-cols-3" :
+    "md:grid-cols-4";
+
   return (
-    <div className="px-4 py-3">
-      {/* Desktop: show up to 3 banners side by side */}
-      <div className="hidden md:grid md:grid-cols-3 gap-3">
-        {banners.slice(0, 3).map((banner) => (
+    <div className="px-4 py-3 max-w-7xl mx-auto">
+      {/* Desktop: side-by-side grid */}
+      <div className={`hidden md:grid ${desktopCols} gap-3`}>
+        {banners.slice(0, 4).map((banner) => (
           <a
             key={banner.id}
             href={banner.cta_link || "#"}
@@ -103,8 +109,6 @@ const BannerCarousel = () => {
             </div>
           </div>
         ))}
-
-        {/* Dots */}
         {banners.length > 1 && (
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
             {banners.map((_, i) => (
