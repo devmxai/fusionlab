@@ -314,6 +314,39 @@ export type Database = {
         }
         Relationships: []
       }
+      phone_verifications: {
+        Row: {
+          attempts: number | null
+          created_at: string | null
+          expires_at: string
+          id: string
+          otp_code: string
+          phone_number: string
+          user_id: string
+          verified: boolean | null
+        }
+        Insert: {
+          attempts?: number | null
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          otp_code: string
+          phone_number: string
+          user_id: string
+          verified?: boolean | null
+        }
+        Update: {
+          attempts?: number | null
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          otp_code?: string
+          phone_number?: string
+          user_id?: string
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
       plan_entitlements: {
         Row: {
           created_at: string
@@ -417,6 +450,8 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          phone_number: string | null
+          phone_verified: boolean | null
           updated_at: string
         }
         Insert: {
@@ -425,6 +460,8 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          phone_number?: string | null
+          phone_verified?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -433,6 +470,8 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          phone_number?: string | null
+          phone_verified?: boolean | null
           updated_at?: string
         }
         Relationships: []

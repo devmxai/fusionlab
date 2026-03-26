@@ -5,8 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
-import { ArrowLeft, Coins, Crown, Clock, LogOut, Shield, Sparkles, User, Mail, Lock, RefreshCw, Settings } from "lucide-react";
+import { ArrowLeft, Coins, Crown, Clock, LogOut, Shield, Sparkles, User, Mail, Lock, Phone, Settings } from "lucide-react";
 import { toast } from "sonner";
+import PhoneVerificationDialog from "@/components/PhoneVerificationDialog";
 
 import avatar1 from "@/assets/avatars/avatar-1.png";
 import avatar2 from "@/assets/avatars/avatar-2.png";
@@ -42,12 +43,25 @@ const ProfilePage = () => {
   const [editEmail, setEditEmail] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [saving, setSaving] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [showPhoneVerify, setShowPhoneVerify] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     setEditName(user.user_metadata?.full_name || "");
     setEditEmail(user.email || "");
     const fetchData = async () => {
+      // Fetch phone info
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("phone_number, phone_verified")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (profile) {
+        setPhoneNumber(profile.phone_number);
+        setPhoneVerified(profile.phone_verified || false);
+      }
       const { data: sub } = await supabase
         .from("user_subscriptions")
         .select("*, subscription_plans(*)")
@@ -150,6 +164,23 @@ const ProfilePage = () => {
               <Button size="sm" onClick={handleUpdatePassword} disabled={saving} className="text-[10px] h-9 px-3">حفظ</Button>
             </div>
           </div>
+
+          {/* Phone */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" /> رقم الهاتف</label>
+            {phoneNumber && phoneVerified ? (
+              <div className="flex items-center gap-2 bg-secondary/30 border border-border/30 rounded-md px-3 h-9">
+                <span className="text-base leading-none">🇮🇶</span>
+                <span className="text-xs font-mono text-foreground" dir="ltr">{phoneNumber}</span>
+                <span className="text-[9px] text-green-500 font-bold mr-auto">✓ موثق</span>
+              </div>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => setShowPhoneVerify(true)} className="text-[10px] h-9">
+                <Phone className="w-3 h-3 ml-1" />
+                {phoneNumber ? "إعادة التحقق" : "إضافة رقم الهاتف"}
+              </Button>
+            )}
+          </div>
         </motion.div>
 
         {/* Credits */}
@@ -220,6 +251,16 @@ const ProfilePage = () => {
           </Button>
         </motion.div>
       </motion.div>
+
+      <PhoneVerificationDialog
+        open={showPhoneVerify}
+        onOpenChange={setShowPhoneVerify}
+        onVerified={(ph) => {
+          setPhoneNumber(ph);
+          setPhoneVerified(true);
+          toast.success("تم التحقق من رقمك بنجاح!");
+        }}
+      />
     </div>
   );
 };

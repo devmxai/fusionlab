@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ArrowRight, Check, Crown, Sparkles, Send } from "lucide-react";
 import { toast } from "sonner";
+import PhoneVerificationDialog from "@/components/PhoneVerificationDialog";
 
 
 const tierColors: Record<string, string> = {
@@ -26,6 +27,9 @@ const PricingPage = () => {
   const [plans, setPlans] = useState<any[]>([]);
   const [trialRequested, setTrialRequested] = useState(false);
   const [loadingTrial, setLoadingTrial] = useState(false);
+  const [showPhoneVerify, setShowPhoneVerify] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"trial" | "subscribe" | null>(null);
 
   useEffect(() => {
     supabase.from("subscription_plans").select("*").eq("is_active", true).order("price").then(({ data }) => setPlans(data || []));
@@ -33,13 +37,38 @@ const PricingPage = () => {
       supabase.from("trial_requests").select("id").eq("user_id", user.id).eq("status", "pending").then(({ data }) => {
         if (data && data.length > 0) setTrialRequested(true);
       });
+      // Check if phone already verified
+      supabase.from("profiles").select("phone_verified").eq("id", user.id).maybeSingle().then(({ data }) => {
+        if (data?.phone_verified) setPhoneVerified(true);
+      });
     }
   }, [user]);
 
-  const requestTrial = async () => {
+  const requirePhoneVerification = (action: "trial" | "subscribe") => {
     if (!user) { navigate("/auth"); return; }
+    if (!phoneVerified) {
+      setPendingAction(action);
+      setShowPhoneVerify(true);
+      return false;
+    }
+    return true;
+  };
+
+  const handlePhoneVerified = (phoneNumber: string) => {
+    setPhoneVerified(true);
+    toast.success("تم التحقق من رقمك بنجاح!");
+    // Execute pending action
+    if (pendingAction === "trial") {
+      doRequestTrial();
+    } else if (pendingAction === "subscribe") {
+      toast.info("تواصل مع الإدارة لتفعيل اشتراكك");
+    }
+    setPendingAction(null);
+  };
+
+  const doRequestTrial = async () => {
     setLoadingTrial(true);
-    const { error } = await supabase.from("trial_requests").insert({ user_id: user.id, message: "طلب فترة تجريبية" });
+    const { error } = await supabase.from("trial_requests").insert({ user_id: user!.id, message: "طلب فترة تجريبية" });
     if (error) {
       toast.error("حدث خطأ في الطلب");
     } else {
@@ -47,6 +76,12 @@ const PricingPage = () => {
       toast.success("تم إرسال طلب التجربة! سيتم مراجعته من الإدارة.");
     }
     setLoadingTrial(false);
+  };
+
+  const requestTrial = async () => {
+    if (!user) { navigate("/auth"); return; }
+    if (!requirePhoneVerification("trial")) return;
+    await doRequestTrial();
   };
 
   return (
@@ -103,8 +138,9 @@ const PricingPage = () => {
             </ul>
 
             <Button className="w-full text-xs" variant={plan.type === "pro" ? "default" : "outline"} onClick={() => {
-              if (!user) navigate("/auth");
-              else toast.info("تواصل مع الإدارة لتفعيل اشتراكك");
+              if (!user) { navigate("/auth"); return; }
+              if (!requirePhoneVerification("subscribe")) return;
+              toast.info("تواصل مع الإدارة لتفعيل اشتراكك");
             }}>
               <Send className="w-3 h-3 ml-1" />
               اشترك الآن
@@ -133,6 +169,11 @@ const PricingPage = () => {
         </motion.div>
       </div>
 
+      <PhoneVerificationDialog
+        open={showPhoneVerify}
+        onOpenChange={setShowPhoneVerify}
+        onVerified={handlePhoneVerified}
+      />
     </div>
   );
 };
