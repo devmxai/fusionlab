@@ -22,7 +22,7 @@ serve(async (req) => {
     // ── Auth ──
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return jsonRes({ error: "Missing authorization" }, 401);
+      return jsonRes({ success: false, error: "Missing authorization" }, 401);
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -33,7 +33,7 @@ serve(async (req) => {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return jsonRes({ error: "Unauthorized" }, 401);
+      return jsonRes({ success: false, error: "Unauthorized" }, 401);
     }
 
     const body = await req.json();
@@ -50,19 +50,32 @@ serve(async (req) => {
     } = body;
 
     if (!reservationId || !status) {
-      return jsonRes({ success: false, error: "Missing required fields: reservationId, status" });
+      return jsonRes({ success: false, error: "Missing required fields: reservationId, status" }, 400);
     }
 
     if (status === "success") {
-      // ── Settle credits ──
-      const { error: settleError } = await supabase.rpc("settle_credits", {
+      // ── Settle credits via RPC ──
+      const { data: settleData, error: settleError } = await supabase.rpc("settle_credits", {
         p_reservation_id: reservationId,
         p_task_id: taskId || null,
       });
 
       if (settleError) {
-        console.error("Settle error:", settleError);
-        return jsonRes({ success: false, error: "settle_failed", message: settleError.message });
+        console.error("Settle RPC transport error:", settleError);
+        return jsonRes({ success: false, error: "settle_failed", message: settleError.message }, 500);
+      }
+
+      // ── Check business-level result from settle_credits ──
+      if (!settleData?.success) {
+        const bizError = settleData?.error || "unknown_settle_error";
+        console.error("Settle business failure:", JSON.stringify(settleData));
+
+        // If already processed, treat as idempotent success
+        if (bizError === "already_processed") {
+          console.log("Settle: already processed (idempotent), continuing...");
+        } else {
+          return jsonRes({ success: false, error: bizError, details: settleData }, 422);
+        }
       }
 
       // ── Save generation record ──
@@ -79,7 +92,13 @@ serve(async (req) => {
 
         if (insertError) {
           console.error("Generation insert error:", insertError);
-          // Don't fail the whole operation for this
+          // Settlement succeeded but record saving failed — this is a data integrity issue
+          return jsonRes({
+            success: false,
+            error: "generation_save_failed",
+            message: insertError.message,
+            settlement: "completed",
+          }, 500);
         }
       }
 
@@ -87,26 +106,39 @@ serve(async (req) => {
       return jsonRes({ success: true, action: "settled" });
 
     } else if (status === "failed") {
-      // ── Release credits ──
-      const { error: releaseError } = await supabase.rpc("release_credits", {
+      // ── Release credits via RPC ──
+      const { data: releaseData, error: releaseError } = await supabase.rpc("release_credits", {
         p_reservation_id: reservationId,
       });
 
       if (releaseError) {
-        console.error("Release error:", releaseError);
-        return jsonRes({ success: false, error: "release_failed", message: releaseError.message });
+        console.error("Release RPC transport error:", releaseError);
+        return jsonRes({ success: false, error: "release_failed", message: releaseError.message }, 500);
+      }
+
+      // ── Check business-level result from release_credits ──
+      if (!releaseData?.success) {
+        const bizError = releaseData?.error || "unknown_release_error";
+        console.error("Release business failure:", JSON.stringify(releaseData));
+
+        // If already processed, treat as idempotent success
+        if (bizError === "already_processed") {
+          console.log("Release: already processed (idempotent), continuing...");
+        } else {
+          return jsonRes({ success: false, error: bizError, details: releaseData }, 422);
+        }
       }
 
       console.log("Generation failed, credits released:", JSON.stringify({ reservationId }));
       return jsonRes({ success: true, action: "released" });
     }
 
-    return jsonRes({ success: false, error: "Invalid status. Use: success, failed" });
+    return jsonRes({ success: false, error: "Invalid status. Use: success, failed" }, 400);
   } catch (err) {
     console.error("complete-generation error:", err);
     return jsonRes({
       success: false,
       error: err instanceof Error ? err.message : "Unknown error",
-    });
+    }, 500);
   }
 });

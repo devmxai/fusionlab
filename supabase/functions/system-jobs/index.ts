@@ -22,13 +22,16 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // ── Security: Only allow internal/cron calls ──
+    // ── Security: ONLY allow calls that carry the SERVICE_ROLE_KEY ──
+    // Option A: pg_cron/pg_net sends it as Authorization: Bearer <service_role_key>
+    // Option B: Internal edge function sends it as x-internal-caller header
     const authHeader = req.headers.get("Authorization");
     const internalCaller = req.headers.get("x-internal-caller");
-    const isCronCall = authHeader === `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`;
+
+    const isServiceRoleAuth = authHeader === `Bearer ${serviceRoleKey}`;
     const isInternalCall = internalCaller === serviceRoleKey;
 
-    if (!isCronCall && !isInternalCall) {
+    if (!isServiceRoleAuth && !isInternalCall) {
       console.warn("system-jobs: Unauthorized access attempt blocked");
       return jsonRes({ error: "Unauthorized. System jobs are not publicly accessible." }, 403);
     }
