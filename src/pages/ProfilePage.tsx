@@ -164,6 +164,23 @@ const ProfilePage = () => {
               <Button size="sm" onClick={handleUpdatePassword} disabled={saving} className="text-[10px] h-9 px-3">حفظ</Button>
             </div>
           </div>
+
+          {/* Phone */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" /> رقم الهاتف</label>
+            {phoneNumber && phoneVerified ? (
+              <div className="flex items-center gap-2 bg-secondary/30 border border-border/30 rounded-md px-3 h-9">
+                <span className="text-base leading-none">🇮🇶</span>
+                <span className="text-xs font-mono text-foreground" dir="ltr">{phoneNumber}</span>
+                <span className="text-[9px] text-green-500 font-bold mr-auto">✓ موثق</span>
+              </div>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => setShowPhoneVerify(true)} className="text-[10px] h-9">
+                <Phone className="w-3 h-3 ml-1" />
+                {phoneNumber ? "إعادة التحقق" : "إضافة رقم الهاتف"}
+              </Button>
+            )}
+          </div>
         </motion.div>
 
         {/* Credits */}
