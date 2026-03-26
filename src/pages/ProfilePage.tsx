@@ -43,6 +43,9 @@ const ProfilePage = () => {
   const [editEmail, setEditEmail] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [saving, setSaving] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [showPhoneVerify, setShowPhoneVerify] = useState(false);
 
   useEffect(() => {
     if (!user) return;
