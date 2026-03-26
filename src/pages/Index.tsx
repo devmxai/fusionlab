@@ -115,6 +115,7 @@ const Index = () => {
       setSectionTools(map);
       setDataLoaded(true);
     });
+  }, []);
 
   const filteredTools =
     selectedCategory === "الكل"
@@ -293,3 +294,4 @@ const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }
 );
 
 export default Index;
+
