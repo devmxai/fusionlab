@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
     );
 
     if (action === "send_otp") {
-      if (!phone_number || !/^07\d{9}$/.test(phone_number)) {
+      if (!phone_number || !/^7\d{9}$/.test(phone_number)) {
         return new Response(
           JSON.stringify({ error: "invalid_phone", message: "رقم الهاتف غير صالح" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -95,8 +95,8 @@ Deno.serve(async (req) => {
         expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
       });
 
-      // Format phone for WhatsApp: 07xxxxxxxxx → 964xxxxxxxxx
-      const whatsappPhone = "964" + phone_number.substring(1);
+      // Format phone for WhatsApp: 7xxxxxxxxx → 9647xxxxxxxxx
+      const whatsappPhone = "964" + phone_number;
 
       // Send via WASender API
       const wasenderKey = Deno.env.get("WASENDER_API_KEY");

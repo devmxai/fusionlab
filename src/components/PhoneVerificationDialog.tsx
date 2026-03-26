@@ -13,7 +13,7 @@ interface PhoneVerificationDialogProps {
   onVerified: (phoneNumber: string) => void;
 }
 
-const PHONE_LENGTH = 11; // 07xxxxxxxxx
+const PHONE_LENGTH = 10; // 7xxxxxxxxx (without leading 0)
 
 const PhoneVerificationDialog = ({ open, onOpenChange, onVerified }: PhoneVerificationDialogProps) => {
   const [step, setStep] = useState<"phone" | "otp" | "success">("phone");
@@ -40,22 +40,21 @@ const PhoneVerificationDialog = ({ open, onOpenChange, onVerified }: PhoneVerifi
     }
   }, [open]);
 
-  const formatPhoneDisplay = (value: string) => {
-    // Show placeholder zeros that get replaced
-    const digits = value.replace(/\D/g, "");
-    return digits;
-  };
-
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/\D/g, "");
+    const raw = e.target.value.replace(/\D/g, "");
+    // Prevent leading zero
+    const val = raw.startsWith("0") ? raw.slice(1) : raw;
     if (val.length <= PHONE_LENGTH) {
       setPhone(val);
     }
   };
 
+  // Build display: typed digits + remaining zeros as placeholder
+  const phoneDisplay = phone + "0".repeat(Math.max(0, PHONE_LENGTH - phone.length));
+
   const sendOtp = async () => {
-    if (phone.length !== PHONE_LENGTH || !phone.startsWith("07")) {
-      toast.error("أدخل رقم عراقي صحيح يبدأ بـ 07");
+    if (phone.length !== PHONE_LENGTH || !phone.startsWith("7")) {
+      toast.error("أدخل رقم عراقي صحيح يبدأ بـ 7");
       return;
     }
     setLoading(true);
@@ -171,29 +170,42 @@ const PhoneVerificationDialog = ({ open, onOpenChange, onVerified }: PhoneVerifi
               {/* Phone Input */}
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-muted-foreground">رقم الهاتف</label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" dir="ltr">
                   <div className="flex items-center gap-1.5 bg-secondary/50 border border-border/30 rounded-lg px-3 h-11 shrink-0">
                     <span className="text-base leading-none">🇮🇶</span>
-                    <span className="text-xs font-mono font-bold text-muted-foreground" dir="ltr">+964</span>
+                    <span className="text-xs font-mono font-bold text-muted-foreground">+964</span>
                   </div>
                   <div className="relative flex-1">
-                    <Input
+                    <input
                       type="tel"
                       value={phone}
                       onChange={handlePhoneChange}
-                      placeholder="07XX XXX XXXX"
-                      className="text-sm font-mono bg-secondary/30 border-border/30 h-11 tracking-wider"
-                      dir="ltr"
-                      maxLength={11}
+                      className="w-full h-11 bg-transparent border-none outline-none text-sm font-mono tracking-[0.35em] text-transparent caret-primary z-10 relative px-3"
+                      maxLength={PHONE_LENGTH}
                       autoFocus
+                      autoComplete="tel"
                     />
-                    {phone.length > 0 && (
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
-                        {phone.length}/{PHONE_LENGTH}
+                    {/* Telegram-style overlay: typed digits + faded zeros */}
+                    <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
+                      <span className="font-mono text-sm tracking-[0.35em]">
+                        <span className="text-foreground font-bold">{phone}</span>
+                        <span className="text-muted-foreground/30">{"0".repeat(Math.max(0, PHONE_LENGTH - phone.length))}</span>
                       </span>
-                    )}
+                    </div>
+                    {/* Bottom border */}
+                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-border/30 rounded-full">
+                      <div 
+                        className="h-full bg-primary rounded-full transition-all duration-300"
+                        style={{ width: `${(phone.length / PHONE_LENGTH) * 100}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
+                {phone.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground text-left font-mono">
+                    {phone.length}/{PHONE_LENGTH}
+                  </p>
+                )}
               </div>
 
               <Button
