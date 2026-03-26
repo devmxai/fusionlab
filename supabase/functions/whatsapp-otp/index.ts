@@ -95,8 +95,8 @@ Deno.serve(async (req) => {
         expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
       });
 
-      // Format phone for WhatsApp: 07xxxxxxxxx → 964xxxxxxxxx
-      const whatsappPhone = "964" + phone_number.substring(1);
+      // Format phone for WhatsApp: 7xxxxxxxxx → 9647xxxxxxxxx
+      const whatsappPhone = "964" + phone_number;
 
       // Send via WASender API
       const wasenderKey = Deno.env.get("WASENDER_API_KEY");
