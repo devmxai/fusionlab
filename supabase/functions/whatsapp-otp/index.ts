@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
     );
 
     if (action === "send_otp") {
-      if (!phone_number || !/^07\d{9}$/.test(phone_number)) {
+      if (!phone_number || !/^7\d{9}$/.test(phone_number)) {
         return new Response(
           JSON.stringify({ error: "invalid_phone", message: "رقم الهاتف غير صالح" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
