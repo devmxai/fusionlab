@@ -13,8 +13,35 @@ interface Banner {
   is_active: boolean;
 }
 
+const BannerImage = ({ src, alt, className }: { src: string; alt: string; className?: string }) => {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="relative w-full h-full">
+      {!loaded && (
+        <div className="absolute inset-0 bg-secondary">
+          <div className="absolute inset-0 shimmer-effect" />
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={`${className || ""} transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
+        onLoad={() => setLoaded(true)}
+      />
+    </div>
+  );
+};
+
+const BannerSkeleton = () => (
+  <div className="px-3 sm:px-6 lg:px-8 py-3">
+    <div className="rounded-xl aspect-[2.2/1] max-h-40 md:max-h-none md:aspect-[3/1] bg-secondary overflow-hidden">
+      <div className="w-full h-full shimmer-effect" />
+    </div>
+  </div>
+);
+
 const BannerCarousel = () => {
-  const [banners, setBanners] = useState<Banner[]>([]);
+  const [banners, setBanners] = useState<Banner[] | null>(null);
   const [current, setCurrent] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -28,13 +55,14 @@ const BannerCarousel = () => {
   }, []);
 
   useEffect(() => {
-    if (banners.length <= 1) return;
+    if (!banners || banners.length <= 1) return;
     intervalRef.current = setInterval(() => {
       setCurrent((prev) => (prev + 1) % banners.length);
     }, 4000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [banners.length]);
+  }, [banners]);
 
+  if (banners === null) return <BannerSkeleton />;
   if (banners.length === 0) return null;
 
   const desktopCols =
@@ -53,7 +81,7 @@ const BannerCarousel = () => {
             href={banner.cta_link || "#"}
             className="relative overflow-hidden rounded-xl aspect-[2/1] group cursor-pointer border border-border/20 hover:border-primary/30 transition-all"
           >
-            <img src={banner.image_url} alt={banner.title || ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            <BannerImage src={banner.image_url} alt={banner.title || ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
             <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
             <div className="absolute bottom-0 right-0 left-0 p-4 text-right">
               {banner.title && <h3 className="text-sm font-extrabold text-foreground leading-tight drop-shadow-lg">{banner.title}</h3>}
@@ -73,7 +101,7 @@ const BannerCarousel = () => {
         {banners.map((banner, i) => (
           <div key={banner.id} className="absolute inset-0 transition-all duration-700 ease-in-out"
             style={{ opacity: current === i ? 1 : 0, transform: current === i ? "scale(1)" : "scale(1.03)" }}>
-            <img src={banner.image_url} alt={banner.title || ""} className="w-full h-full object-cover" />
+            <BannerImage src={banner.image_url} alt={banner.title || ""} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
             <div className="absolute inset-0 flex flex-col justify-end px-4 pb-6 text-right">
               {banner.title && <h3 className="text-base font-extrabold text-foreground leading-tight drop-shadow-lg">{banner.title}</h3>}
