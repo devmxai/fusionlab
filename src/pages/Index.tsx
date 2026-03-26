@@ -66,7 +66,6 @@ const Index = () => {
   const [sectionTools, setSectionTools] = useState<Record<string, AITool[]>>({});
 
   useEffect(() => {
-    // Fetch all data in parallel
     Promise.all([
       supabase.from("trending_images").select("*").eq("is_published", true).order("sort_order"),
       supabase.from("trending_videos").select("*").eq("is_published", true).order("sort_order"),
@@ -77,7 +76,6 @@ const Index = () => {
       setTrendingVideos((vidRes.data as TrendingVideo[]) || []);
       setTabs((tabsRes.data as Tab[]) || []);
 
-      // Build section→tools map
       const map: Record<string, AITool[]> = {};
       if (cardsRes.data) {
         for (const card of cardsRes.data as CardEntry[]) {
@@ -103,113 +101,116 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <HomeHeader />
-      <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
-      <BannerCarousel />
 
-      <main className="px-4 pb-8 max-w-7xl mx-auto space-y-10">
-        {showCategorized ? (
-          <>
-            {/* Dynamic sections from tabs */}
-            {tabs.map(tab => {
-              const tabTools = sectionTools[tab.slug];
-              if (!tabTools || tabTools.length === 0) return null;
-              return (
-                <section key={tab.slug}>
-                  <SectionHeader
-                    icon={SECTION_ICONS[tab.slug] || <Layers className="w-4 h-4 text-primary" />}
-                    title={tab.label}
-                  />
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {tabTools.map((tool, i) => <ToolCard key={tool.id} tool={tool} index={i} />)}
+      <div className="max-w-[1400px] mx-auto">
+        <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
+        <BannerCarousel />
+
+        <main className="px-3 sm:px-6 lg:px-8 pb-8 space-y-10">
+          {showCategorized ? (
+            <>
+              {/* Dynamic sections from tabs */}
+              {tabs.map(tab => {
+                const tabTools = sectionTools[tab.slug];
+                if (!tabTools || tabTools.length === 0) return null;
+                return (
+                  <section key={tab.slug}>
+                    <SectionHeader
+                      icon={SECTION_ICONS[tab.slug] || <Layers className="w-4 h-4 text-primary" />}
+                      title={tab.label}
+                    />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                      {tabTools.map((tool, i) => <ToolCard key={`${tab.slug}-${tool.id}`} tool={tool} index={i} />)}
+                    </div>
+                  </section>
+                );
+              })}
+
+              {/* Trending Images */}
+              {trendingImages.length > 0 && (
+                <section>
+                  <SectionHeader icon={<TrendingUp className="w-4 h-4 text-pink-500" />} title="ترند الصور" />
+                  <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3">
+                    {trendingImages.map((img, i) => (
+                      <motion.div
+                        key={img.id}
+                        initial={{ opacity: 0, y: 15 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-30px" }}
+                        transition={{ duration: 0.3, delay: i * 0.04 }}
+                        className="break-inside-avoid mb-3 rounded-xl overflow-hidden border border-border/30 group cursor-pointer relative"
+                        onClick={() => copyPrompt(img.prompt)}
+                      >
+                        <img src={img.image_url} alt="" className="w-full block transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                        {img.prompt && (
+                          <div className="absolute inset-0 bg-background/0 group-hover:bg-background/40 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <div className="px-3 py-1.5 rounded-full bg-card/90 backdrop-blur-sm flex items-center gap-1.5 shadow-lg">
+                              <Copy className="w-3 h-3 text-primary" />
+                              <span className="text-[10px] font-bold text-foreground">نسخ البرومبت</span>
+                            </div>
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
                   </div>
                 </section>
-              );
-            })}
+              )}
 
-            {/* Trending Images */}
-            {trendingImages.length > 0 && (
-              <section>
-                <SectionHeader icon={<TrendingUp className="w-4 h-4 text-pink-500" />} title="ترند الصور" />
-                <div className="columns-2 sm:columns-3 lg:columns-4 gap-[6px]">
-                  {trendingImages.map((img, i) => (
-                    <motion.div
-                      key={img.id}
-                      initial={{ opacity: 0, y: 15 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: "-30px" }}
-                      transition={{ duration: 0.3, delay: i * 0.04 }}
-                      className="break-inside-avoid mb-[6px] rounded-xl overflow-hidden border border-border/30 group cursor-pointer relative"
-                      onClick={() => copyPrompt(img.prompt)}
-                    >
-                      <img src={img.image_url} alt="" className="w-full block transition-transform duration-500 group-hover:scale-105" loading="lazy" />
-                      {img.prompt && (
-                        <div className="absolute inset-0 bg-background/0 group-hover:bg-background/40 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                          <div className="px-3 py-1.5 rounded-full bg-card/90 backdrop-blur-sm flex items-center gap-1.5 shadow-lg">
-                            <Copy className="w-3 h-3 text-primary" />
-                            <span className="text-[10px] font-bold text-foreground">نسخ البرومبت</span>
+              {/* Trending Videos */}
+              {trendingVideos.length > 0 && (
+                <section>
+                  <SectionHeader icon={<TrendingUp className="w-4 h-4 text-purple-500" />} title="ترند الفيديو" />
+                  <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3">
+                    {trendingVideos.map((vid, i) => (
+                      <motion.div
+                        key={vid.id}
+                        initial={{ opacity: 0, y: 15 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-30px" }}
+                        transition={{ duration: 0.3, delay: i * 0.04 }}
+                        className="break-inside-avoid mb-3 rounded-xl overflow-hidden border border-border/30 group cursor-pointer relative"
+                        onClick={() => copyPrompt(vid.prompt)}
+                      >
+                        {vid.thumbnail_url ? (
+                          <img src={vid.thumbnail_url} alt={vid.title || ""} className="w-full block" loading="lazy" />
+                        ) : (
+                          <video src={vid.video_url} muted preload="metadata" className="w-full block"
+                            onLoadedData={(e) => { e.currentTarget.currentTime = 0.5; }} />
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-full bg-background/50 backdrop-blur-sm flex items-center justify-center group-hover:bg-primary/30 transition-colors">
+                            <Video className="w-5 h-5 text-foreground" />
                           </div>
                         </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Trending Videos */}
-            {trendingVideos.length > 0 && (
-              <section>
-                <SectionHeader icon={<TrendingUp className="w-4 h-4 text-purple-500" />} title="ترند الفيديو" />
-                <div className="columns-2 sm:columns-3 lg:columns-4 gap-[6px]">
-                  {trendingVideos.map((vid, i) => (
-                    <motion.div
-                      key={vid.id}
-                      initial={{ opacity: 0, y: 15 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: "-30px" }}
-                      transition={{ duration: 0.3, delay: i * 0.04 }}
-                      className="break-inside-avoid mb-[6px] rounded-xl overflow-hidden border border-border/30 group cursor-pointer relative"
-                      onClick={() => copyPrompt(vid.prompt)}
-                    >
-                      {vid.thumbnail_url ? (
-                        <img src={vid.thumbnail_url} alt={vid.title || ""} className="w-full block" loading="lazy" />
-                      ) : (
-                        <video src={vid.video_url} muted preload="metadata" className="w-full block"
-                          onLoadedData={(e) => { e.currentTarget.currentTime = 0.5; }} />
-                      )}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-10 h-10 rounded-full bg-background/50 backdrop-blur-sm flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-                          <Video className="w-5 h-5 text-foreground" />
-                        </div>
-                      </div>
-                      {vid.prompt && (
-                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="px-3 py-1 rounded-full bg-card/90 backdrop-blur-sm flex items-center gap-1 shadow-lg">
-                            <Copy className="w-3 h-3 text-primary" />
-                            <span className="text-[9px] font-bold text-foreground">نسخ البرومبت</span>
+                        {vid.prompt && (
+                          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div className="px-3 py-1 rounded-full bg-card/90 backdrop-blur-sm flex items-center gap-1 shadow-lg">
+                              <Copy className="w-3 h-3 text-primary" />
+                              <span className="text-[9px] font-bold text-foreground">نسخ البرومبت</span>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
-              </section>
-            )}
-          </>
-        ) : (
-          <section>
-            <h2 className="text-base font-bold text-foreground mb-3">🛠️ الأدوات</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {filteredTools.map((tool, i) => (
-                <ToolCard key={tool.id} tool={tool} index={i} />
-              ))}
-            </div>
-          </section>
-        )}
-      </main>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          ) : (
+            <section>
+              <h2 className="text-base font-bold text-foreground mb-3">🛠️ الأدوات</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                {filteredTools.map((tool, i) => (
+                  <ToolCard key={tool.id} tool={tool} index={i} />
+                ))}
+              </div>
+            </section>
+          )}
+        </main>
+      </div>
 
       <footer className="border-t border-border/20 mt-12 bg-secondary/10">
-        <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-2 sm:grid-cols-4 gap-8" dir="ltr">
+        <div className="max-w-[1400px] mx-auto px-6 py-10 grid grid-cols-2 sm:grid-cols-4 gap-8" dir="ltr">
           <div>
             <h4 className="text-xs font-bold text-foreground mb-4 tracking-wider uppercase">Products</h4>
             <ul className="space-y-2.5">

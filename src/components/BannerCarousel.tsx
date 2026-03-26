@@ -37,7 +37,6 @@ const BannerCarousel = () => {
 
   if (banners.length === 0) return null;
 
-  // Desktop grid columns based on banner count
   const desktopCols =
     banners.length === 1 ? "md:grid-cols-1" :
     banners.length === 2 ? "md:grid-cols-2" :
@@ -45,8 +44,8 @@ const BannerCarousel = () => {
     "md:grid-cols-4";
 
   return (
-    <div className="px-4 py-3 max-w-7xl mx-auto">
-      {/* Desktop: side-by-side grid */}
+    <div className="px-3 sm:px-6 lg:px-8 py-3">
+      {/* Desktop */}
       <div className={`hidden md:grid ${desktopCols} gap-3`}>
         {banners.slice(0, 4).map((banner) => (
           <a
@@ -54,27 +53,14 @@ const BannerCarousel = () => {
             href={banner.cta_link || "#"}
             className="relative overflow-hidden rounded-xl aspect-[2/1] group cursor-pointer border border-border/20 hover:border-primary/30 transition-all"
           >
-            <img
-              src={banner.image_url}
-              alt={banner.title || ""}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
+            <img src={banner.image_url} alt={banner.title || ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
             <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
             <div className="absolute bottom-0 right-0 left-0 p-4 text-right">
-              {banner.title && (
-                <h3 className="text-sm font-extrabold text-foreground leading-tight drop-shadow-lg">
-                  {banner.title}
-                </h3>
-              )}
-              {banner.subtitle && (
-                <p className="text-[10px] text-muted-foreground font-medium mt-0.5 drop-shadow-md">
-                  {banner.subtitle}
-                </p>
-              )}
+              {banner.title && <h3 className="text-sm font-extrabold text-foreground leading-tight drop-shadow-lg">{banner.title}</h3>}
+              {banner.subtitle && <p className="text-[10px] text-muted-foreground font-medium mt-0.5 drop-shadow-md">{banner.subtitle}</p>}
               {banner.cta_text && (
                 <span className="inline-flex items-center gap-1 mt-2 px-3 py-1 rounded-full bg-primary/20 text-primary text-[10px] font-bold backdrop-blur-sm">
-                  <Sparkles className="w-3 h-3" />
-                  {banner.cta_text}
+                  <Sparkles className="w-3 h-3" />{banner.cta_text}
                 </span>
               )}
             </div>
@@ -82,43 +68,24 @@ const BannerCarousel = () => {
         ))}
       </div>
 
-      {/* Mobile: slider */}
+      {/* Mobile */}
       <div className="md:hidden relative overflow-hidden rounded-xl aspect-[2.2/1] max-h-40 banner-glow">
         {banners.map((banner, i) => (
-          <div
-            key={banner.id}
-            className="absolute inset-0 transition-all duration-700 ease-in-out"
-            style={{
-              opacity: current === i ? 1 : 0,
-              transform: current === i ? "scale(1)" : "scale(1.03)",
-            }}
-          >
+          <div key={banner.id} className="absolute inset-0 transition-all duration-700 ease-in-out"
+            style={{ opacity: current === i ? 1 : 0, transform: current === i ? "scale(1)" : "scale(1.03)" }}>
             <img src={banner.image_url} alt={banner.title || ""} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
             <div className="absolute inset-0 flex flex-col justify-end px-4 pb-6 text-right">
-              {banner.title && (
-                <h3 className="text-base font-extrabold text-foreground leading-tight drop-shadow-lg">
-                  {banner.title}
-                </h3>
-              )}
-              {banner.subtitle && (
-                <p className="text-[10px] text-muted-foreground font-medium mt-0.5 drop-shadow-md">
-                  {banner.subtitle}
-                </p>
-              )}
+              {banner.title && <h3 className="text-base font-extrabold text-foreground leading-tight drop-shadow-lg">{banner.title}</h3>}
+              {banner.subtitle && <p className="text-[10px] text-muted-foreground font-medium mt-0.5 drop-shadow-md">{banner.subtitle}</p>}
             </div>
           </div>
         ))}
         {banners.length > 1 && (
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
             {banners.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrent(i)}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  current === i ? "w-4 bg-primary" : "w-1.5 bg-muted-foreground/40"
-                }`}
-              />
+              <button key={i} onClick={() => setCurrent(i)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${current === i ? "w-4 bg-primary" : "w-1.5 bg-muted-foreground/40"}`} />
             ))}
           </div>
         )}
