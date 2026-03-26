@@ -5,18 +5,9 @@ import CategoryFilter from "@/components/CategoryFilter";
 import BannerCarousel from "@/components/BannerCarousel";
 import ToolCard from "@/components/ToolCard";
 import { supabase } from "@/integrations/supabase/client";
-import { tools } from "@/data/tools";
+import { tools, AITool } from "@/data/tools";
 import { Flame, ImageIcon, Video, TrendingUp, Copy } from "lucide-react";
 import { toast } from "sonner";
-
-// Define which tools appear in sections
-const latestToolIds = ["grok-video", "seedream-5-lite", "kling-3", "flux-2-pro"];
-const imageToolIds = ["z-image", "nano-banana", "nano-banana-pro", "seedream-5-lite"];
-const videoToolIds = ["veo31-fast", "veo31-quality", "kling-3", "kling-2-6", "seedance", "sora-2", "wan-2-6", "grok-video"];
-
-const latestTools = latestToolIds.map(id => tools.find(t => t.id === id)).filter(Boolean);
-const imageTools = imageToolIds.map(id => tools.find(t => t.id === id)).filter(Boolean);
-const videoTools = videoToolIds.map(id => tools.find(t => t.id === id)).filter(Boolean);
 
 interface TrendingImage {
   id: string;
@@ -50,6 +41,7 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("الكل");
   const [trendingImages, setTrendingImages] = useState<TrendingImage[]>([]);
   const [trendingVideos, setTrendingVideos] = useState<TrendingVideo[]>([]);
+  const [sectionTools, setSectionTools] = useState<Record<string, AITool[]>>({ latest: [], images: [], videos: [] });
 
   useEffect(() => {
     supabase.from("trending_images").select("*").eq("is_published", true).order("sort_order").then(({ data }) => {
@@ -57,6 +49,19 @@ const Index = () => {
     });
     supabase.from("trending_videos").select("*").eq("is_published", true).order("sort_order").then(({ data }) => {
       setTrendingVideos((data as TrendingVideo[]) || []);
+    });
+    // Fetch model_cards to build section→tools mapping
+    supabase.from("model_cards").select("tool_id, display_section, sort_order, is_visible").eq("is_visible", true).order("sort_order").then(({ data }) => {
+      const map: Record<string, AITool[]> = { latest: [], images: [], videos: [] };
+      if (data) {
+        for (const card of data as any[]) {
+          const section = card.display_section || "images";
+          const tool = tools.find(t => t.id === card.tool_id);
+          if (tool && map[section]) map[section].push(tool);
+          else if (tool) { map[section] = [tool]; }
+        }
+      }
+      setSectionTools(map);
     });
   }, []);
 
@@ -77,28 +82,34 @@ const Index = () => {
         {showCategorized ? (
           <>
             {/* Latest Models */}
+            {sectionTools.latest.length > 0 && (
             <section>
               <SectionHeader icon={<Flame className="w-4 h-4 text-orange-500" />} title="الأحدث" />
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {latestTools.map((tool, i) => tool && <ToolCard key={tool.id} tool={tool} index={i} />)}
+                {sectionTools.latest.map((tool, i) => <ToolCard key={tool.id} tool={tool} index={i} />)}
               </div>
             </section>
+            )}
 
             {/* Image Models */}
+            {sectionTools.images.length > 0 && (
             <section>
               <SectionHeader icon={<ImageIcon className="w-4 h-4 text-primary" />} title="نماذج الصور" />
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {imageTools.map((tool, i) => tool && <ToolCard key={tool.id} tool={tool} index={i} />)}
+                {sectionTools.images.map((tool, i) => <ToolCard key={tool.id} tool={tool} index={i} />)}
               </div>
             </section>
+            )}
 
             {/* Video Models */}
+            {sectionTools.videos.length > 0 && (
             <section>
               <SectionHeader icon={<Video className="w-4 h-4 text-primary" />} title="نماذج الفيديو" />
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {videoTools.map((tool, i) => tool && <ToolCard key={tool.id} tool={tool} index={i} />)}
+                {sectionTools.videos.map((tool, i) => <ToolCard key={tool.id} tool={tool} index={i} />)}
               </div>
             </section>
+            )}
 
             {/* Trending Images */}
             {trendingImages.length > 0 && (
