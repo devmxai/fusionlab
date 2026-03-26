@@ -83,7 +83,7 @@ const PricingPage = () => {
                 </div>
               </div>
               <div className="text-left">
-                <p className="text-lg font-extrabold text-foreground">${plan.price}</p>
+                <p className="text-lg font-extrabold text-foreground">{plan.price.toLocaleString("ar")} <span className="text-xs">د.ع</span></p>
                 <p className="text-[10px] text-muted-foreground">/شهرياً</p>
               </div>
             </div>
