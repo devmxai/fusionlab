@@ -27,6 +27,9 @@ const PricingPage = () => {
   const [plans, setPlans] = useState<any[]>([]);
   const [trialRequested, setTrialRequested] = useState(false);
   const [loadingTrial, setLoadingTrial] = useState(false);
+  const [showPhoneVerify, setShowPhoneVerify] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"trial" | "subscribe" | null>(null);
 
   useEffect(() => {
     supabase.from("subscription_plans").select("*").eq("is_active", true).order("price").then(({ data }) => setPlans(data || []));
