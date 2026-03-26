@@ -40,18 +40,17 @@ const PhoneVerificationDialog = ({ open, onOpenChange, onVerified }: PhoneVerifi
     }
   }, [open]);
 
-  const formatPhoneDisplay = (value: string) => {
-    // Show placeholder zeros that get replaced
-    const digits = value.replace(/\D/g, "");
-    return digits;
-  };
-
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/\D/g, "");
+    const raw = e.target.value.replace(/\D/g, "");
+    // Prevent leading zero
+    const val = raw.startsWith("0") ? raw.slice(1) : raw;
     if (val.length <= PHONE_LENGTH) {
       setPhone(val);
     }
   };
+
+  // Build display: typed digits + remaining zeros as placeholder
+  const phoneDisplay = phone + "0".repeat(Math.max(0, PHONE_LENGTH - phone.length));
 
   const sendOtp = async () => {
     if (phone.length !== PHONE_LENGTH || !phone.startsWith("07")) {
