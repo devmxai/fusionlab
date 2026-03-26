@@ -130,6 +130,7 @@ export type Database = {
           id: string
           metadata: Json | null
           prompt: string | null
+          reservation_id: string | null
           thumbnail_url: string | null
           tool_id: string
           tool_name: string | null
@@ -142,6 +143,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           prompt?: string | null
+          reservation_id?: string | null
           thumbnail_url?: string | null
           tool_id: string
           tool_name?: string | null
@@ -154,6 +156,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           prompt?: string | null
+          reservation_id?: string | null
           thumbnail_url?: string | null
           tool_id?: string
           tool_name?: string | null
