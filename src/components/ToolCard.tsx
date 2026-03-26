@@ -1,8 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import type { AITool } from "@/data/tools";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 import imageGen from "@/assets/tools/image-gen.jpg";
 import skinEnhance from "@/assets/tools/skin-enhance.jpg";
@@ -28,6 +29,20 @@ const imageMap: Record<string, string> = {
   inpaint,
 };
 
+// Cache for model card overrides from DB
+let modelCardsCache: Record<string, { image_url: string | null; title: string | null; description: string | null }> = {};
+let modelCardsFetched = false;
+
+export const fetchModelCards = async () => {
+  if (modelCardsFetched) return modelCardsCache;
+  const { data } = await supabase.from("model_cards").select("tool_id, image_url, title, description, is_visible").eq("is_visible", true);
+  if (data) {
+    data.forEach((c: any) => { modelCardsCache[c.tool_id] = c; });
+  }
+  modelCardsFetched = true;
+  return modelCardsCache;
+};
+
 interface ToolCardProps {
   tool: AITool;
   index?: number;
@@ -43,7 +58,17 @@ const ShimmerCard = () => (
 
 const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
   const [loaded, setLoaded] = useState(false);
+  const [cardOverride, setCardOverride] = useState<{ image_url: string | null; title: string | null; description: string | null } | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchModelCards().then(cache => {
+      if (cache[tool.id]) setCardOverride(cache[tool.id]);
+    });
+  }, [tool.id]);
+
+  const imgSrc = cardOverride?.image_url || imageMap[tool.image];
+  const title = cardOverride?.title || tool.title;
 
   return (
     <motion.div
@@ -61,15 +86,15 @@ const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
       >
         <div className="relative aspect-[3/4] overflow-hidden">
           <img
-            src={imageMap[tool.image]}
-            alt={tool.title}
+            src={imgSrc}
+            alt={title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading={index < 6 ? "eager" : "lazy"}
             onLoad={() => setLoaded(true)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
           <div className="absolute bottom-0 right-0 left-0 p-3">
-            <h3 className="text-sm font-bold text-foreground truncate">{tool.title}</h3>
+            <h3 className="text-sm font-bold text-foreground truncate">{title}</h3>
             <span className="text-[10px] text-muted-foreground">{tool.provider}</span>
           </div>
           {tool.isPro && (

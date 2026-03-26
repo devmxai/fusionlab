@@ -6,13 +6,12 @@ import BannerCarousel from "@/components/BannerCarousel";
 import ToolCard from "@/components/ToolCard";
 import { supabase } from "@/integrations/supabase/client";
 import { tools } from "@/data/tools";
-import { Flame, ImageIcon, Video, TrendingUp } from "lucide-react";
+import { Flame, ImageIcon, Video, TrendingUp, Copy } from "lucide-react";
+import { toast } from "sonner";
 
-// Define which tools appear in "Latest" section
+// Define which tools appear in sections
 const latestToolIds = ["grok-video", "seedream-5-lite", "kling-3", "flux-2-pro"];
-// Image models to feature
 const imageToolIds = ["z-image", "nano-banana", "nano-banana-pro", "seedream-5-lite"];
-// Video models to feature (8)
 const videoToolIds = ["veo31-fast", "veo31-quality", "kling-3", "kling-2-6", "seedance", "sora-2", "wan-2-6", "grok-video"];
 
 const latestTools = latestToolIds.map(id => tools.find(t => t.id === id)).filter(Boolean);
@@ -23,7 +22,9 @@ interface TrendingImage {
   id: string;
   title: string | null;
   image_url: string;
+  prompt: string | null;
   sort_order: number;
+  is_published: boolean | null;
 }
 
 interface TrendingVideo {
@@ -31,8 +32,19 @@ interface TrendingVideo {
   title: string | null;
   video_url: string;
   thumbnail_url: string | null;
+  prompt: string | null;
   sort_order: number;
+  is_published: boolean | null;
 }
+
+const copyPrompt = (prompt: string | null) => {
+  if (!prompt) return;
+  navigator.clipboard.writeText(prompt).then(() => {
+    toast.success("تم نسخ البرومبت ✨", { duration: 2000 });
+  }).catch(() => {
+    toast.error("فشل النسخ");
+  });
+};
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("الكل");
@@ -40,10 +52,10 @@ const Index = () => {
   const [trendingVideos, setTrendingVideos] = useState<TrendingVideo[]>([]);
 
   useEffect(() => {
-    supabase.from("trending_images").select("*").order("sort_order").then(({ data }) => {
+    supabase.from("trending_images").select("*").eq("is_published", true).order("sort_order").then(({ data }) => {
       setTrendingImages((data as TrendingImage[]) || []);
     });
-    supabase.from("trending_videos").select("*").order("sort_order").then(({ data }) => {
+    supabase.from("trending_videos").select("*").eq("is_published", true).order("sort_order").then(({ data }) => {
       setTrendingVideos((data as TrendingVideo[]) || []);
     });
   }, []);
@@ -61,7 +73,7 @@ const Index = () => {
       <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
       <BannerCarousel />
 
-      <main className="px-4 pb-8 max-w-7xl mx-auto space-y-8">
+      <main className="px-4 pb-8 max-w-7xl mx-auto space-y-10">
         {showCategorized ? (
           <>
             {/* Latest Models */}
@@ -83,7 +95,7 @@ const Index = () => {
             {/* Video Models */}
             <section>
               <SectionHeader icon={<Video className="w-4 h-4 text-primary" />} title="نماذج الفيديو" />
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {videoTools.map((tool, i) => tool && <ToolCard key={tool.id} tool={tool} index={i} />)}
               </div>
             </section>
@@ -92,7 +104,7 @@ const Index = () => {
             {trendingImages.length > 0 && (
               <section>
                 <SectionHeader icon={<TrendingUp className="w-4 h-4 text-pink-500" />} title="ترند الصور" />
-                <div className="columns-2 sm:columns-3 gap-[6px]">
+                <div className="columns-2 sm:columns-3 lg:columns-4 gap-[6px]">
                   {trendingImages.map((img, i) => (
                     <motion.div
                       key={img.id}
@@ -100,7 +112,8 @@ const Index = () => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, margin: "-30px" }}
                       transition={{ duration: 0.3, delay: i * 0.04 }}
-                      className="break-inside-avoid mb-[6px] rounded-xl overflow-hidden border border-border/30 group cursor-pointer"
+                      className="break-inside-avoid mb-[6px] rounded-xl overflow-hidden border border-border/30 group cursor-pointer relative"
+                      onClick={() => copyPrompt(img.prompt)}
                     >
                       <img
                         src={img.image_url}
@@ -108,6 +121,15 @@ const Index = () => {
                         className="w-full block transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
                       />
+                      {/* Copy hint overlay */}
+                      {img.prompt && (
+                        <div className="absolute inset-0 bg-background/0 group-hover:bg-background/40 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <div className="px-3 py-1.5 rounded-full bg-card/90 backdrop-blur-sm flex items-center gap-1.5 shadow-lg">
+                            <Copy className="w-3 h-3 text-primary" />
+                            <span className="text-[10px] font-bold text-foreground">نسخ البرومبت</span>
+                          </div>
+                        </div>
+                      )}
                     </motion.div>
                   ))}
                 </div>
@@ -118,7 +140,7 @@ const Index = () => {
             {trendingVideos.length > 0 && (
               <section>
                 <SectionHeader icon={<TrendingUp className="w-4 h-4 text-purple-500" />} title="ترند الفيديو" />
-                <div className="columns-2 sm:columns-3 gap-[6px]">
+                <div className="columns-2 sm:columns-3 lg:columns-4 gap-[6px]">
                   {trendingVideos.map((vid, i) => (
                     <motion.div
                       key={vid.id}
@@ -127,6 +149,7 @@ const Index = () => {
                       viewport={{ once: true, margin: "-30px" }}
                       transition={{ duration: 0.3, delay: i * 0.04 }}
                       className="break-inside-avoid mb-[6px] rounded-xl overflow-hidden border border-border/30 group cursor-pointer relative"
+                      onClick={() => copyPrompt(vid.prompt)}
                     >
                       {vid.thumbnail_url ? (
                         <img src={vid.thumbnail_url} alt={vid.title || ""} className="w-full block" loading="lazy" />
@@ -135,10 +158,19 @@ const Index = () => {
                           onLoadedData={(e) => { e.currentTarget.currentTime = 0.5; }} />
                       )}
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-                          <Video className="w-5 h-5 text-white" />
+                        <div className="w-10 h-10 rounded-full bg-background/50 backdrop-blur-sm flex items-center justify-center group-hover:bg-primary/30 transition-colors">
+                          <Video className="w-5 h-5 text-foreground" />
                         </div>
                       </div>
+                      {/* Copy hint */}
+                      {vid.prompt && (
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="px-3 py-1 rounded-full bg-card/90 backdrop-blur-sm flex items-center gap-1 shadow-lg">
+                            <Copy className="w-3 h-3 text-primary" />
+                            <span className="text-[9px] font-bold text-foreground">نسخ البرومبت</span>
+                          </div>
+                        </div>
+                      )}
                     </motion.div>
                   ))}
                 </div>
