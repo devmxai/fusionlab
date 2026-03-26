@@ -30,7 +30,7 @@ const CategoryFilter = ({ selected, onSelect }: CategoryFilterProps) => {
   };
 
   return (
-    <div className="flex gap-2 overflow-x-auto scrollbar-hide py-3 px-4">
+    <div className="flex gap-2 overflow-x-auto scrollbar-hide py-3 px-3 sm:px-6 lg:px-8 justify-center">
       {categories.map((cat) => (
         <button
           key={cat}
