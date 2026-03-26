@@ -5,18 +5,9 @@ import CategoryFilter from "@/components/CategoryFilter";
 import BannerCarousel from "@/components/BannerCarousel";
 import ToolCard from "@/components/ToolCard";
 import { supabase } from "@/integrations/supabase/client";
-import { tools } from "@/data/tools";
+import { tools, AITool } from "@/data/tools";
 import { Flame, ImageIcon, Video, TrendingUp, Copy } from "lucide-react";
 import { toast } from "sonner";
-
-// Define which tools appear in sections
-const latestToolIds = ["grok-video", "seedream-5-lite", "kling-3", "flux-2-pro"];
-const imageToolIds = ["z-image", "nano-banana", "nano-banana-pro", "seedream-5-lite"];
-const videoToolIds = ["veo31-fast", "veo31-quality", "kling-3", "kling-2-6", "seedance", "sora-2", "wan-2-6", "grok-video"];
-
-const latestTools = latestToolIds.map(id => tools.find(t => t.id === id)).filter(Boolean);
-const imageTools = imageToolIds.map(id => tools.find(t => t.id === id)).filter(Boolean);
-const videoTools = videoToolIds.map(id => tools.find(t => t.id === id)).filter(Boolean);
 
 interface TrendingImage {
   id: string;
