@@ -82,28 +82,34 @@ const Index = () => {
         {showCategorized ? (
           <>
             {/* Latest Models */}
+            {sectionTools.latest.length > 0 && (
             <section>
               <SectionHeader icon={<Flame className="w-4 h-4 text-orange-500" />} title="الأحدث" />
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {latestTools.map((tool, i) => tool && <ToolCard key={tool.id} tool={tool} index={i} />)}
+                {sectionTools.latest.map((tool, i) => <ToolCard key={tool.id} tool={tool} index={i} />)}
               </div>
             </section>
+            )}
 
             {/* Image Models */}
+            {sectionTools.images.length > 0 && (
             <section>
               <SectionHeader icon={<ImageIcon className="w-4 h-4 text-primary" />} title="نماذج الصور" />
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {imageTools.map((tool, i) => tool && <ToolCard key={tool.id} tool={tool} index={i} />)}
+                {sectionTools.images.map((tool, i) => <ToolCard key={tool.id} tool={tool} index={i} />)}
               </div>
             </section>
+            )}
 
             {/* Video Models */}
+            {sectionTools.videos.length > 0 && (
             <section>
               <SectionHeader icon={<Video className="w-4 h-4 text-primary" />} title="نماذج الفيديو" />
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {videoTools.map((tool, i) => tool && <ToolCard key={tool.id} tool={tool} index={i} />)}
+                {sectionTools.videos.map((tool, i) => <ToolCard key={tool.id} tool={tool} index={i} />)}
               </div>
             </section>
+            )}
 
             {/* Trending Images */}
             {trendingImages.length > 0 && (
