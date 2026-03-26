@@ -113,8 +113,8 @@ const Index = () => {
         }
       }
       setSectionTools(map);
+      setDataLoaded(true);
     });
-  }, []);
 
   const filteredTools =
     selectedCategory === "الكل"
