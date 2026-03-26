@@ -52,6 +52,16 @@ const ProfilePage = () => {
     setEditName(user.user_metadata?.full_name || "");
     setEditEmail(user.email || "");
     const fetchData = async () => {
+      // Fetch phone info
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("phone_number, phone_verified")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (profile) {
+        setPhoneNumber(profile.phone_number);
+        setPhoneVerified(profile.phone_verified || false);
+      }
       const { data: sub } = await supabase
         .from("user_subscriptions")
         .select("*, subscription_plans(*)")
