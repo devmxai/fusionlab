@@ -41,6 +41,7 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("الكل");
   const [trendingImages, setTrendingImages] = useState<TrendingImage[]>([]);
   const [trendingVideos, setTrendingVideos] = useState<TrendingVideo[]>([]);
+  const [sectionTools, setSectionTools] = useState<Record<string, AITool[]>>({ latest: [], images: [], videos: [] });
 
   useEffect(() => {
     supabase.from("trending_images").select("*").eq("is_published", true).order("sort_order").then(({ data }) => {
@@ -48,6 +49,19 @@ const Index = () => {
     });
     supabase.from("trending_videos").select("*").eq("is_published", true).order("sort_order").then(({ data }) => {
       setTrendingVideos((data as TrendingVideo[]) || []);
+    });
+    // Fetch model_cards to build section→tools mapping
+    supabase.from("model_cards").select("tool_id, display_section, sort_order, is_visible").eq("is_visible", true).order("sort_order").then(({ data }) => {
+      const map: Record<string, AITool[]> = { latest: [], images: [], videos: [] };
+      if (data) {
+        for (const card of data as any[]) {
+          const section = card.display_section || "images";
+          const tool = tools.find(t => t.id === card.tool_id);
+          if (tool && map[section]) map[section].push(tool);
+          else if (tool) { map[section] = [tool]; }
+        }
+      }
+      setSectionTools(map);
     });
   }, []);
 
