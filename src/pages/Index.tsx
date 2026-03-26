@@ -134,6 +134,14 @@ const Index = () => {
         <main className="px-3 sm:px-6 lg:px-8 pb-8 space-y-10">
           {showCategorized ? (
             <>
+              {/* Loading skeletons */}
+              {!dataLoaded && (
+                <>
+                  <SectionSkeleton count={5} />
+                  <SectionSkeleton count={5} />
+                  <SectionSkeleton count={4} />
+                </>
+              )}
               {/* Dynamic sections from tabs */}
               {tabs.map(tab => {
                 const tabTools = sectionTools[tab.slug];
