@@ -254,7 +254,7 @@ const AudioStudioPage = () => {
 
         // Settle credits + save generation via complete-generation
         if (reservationId) {
-          await supabase.functions.invoke("complete-generation", {
+          const { data: completeResult, error: completeError } = await supabase.functions.invoke("complete-generation", {
             body: {
               reservationId,
               status: "success",
@@ -266,7 +266,12 @@ const AudioStudioPage = () => {
               metadata: { voice: selectedVoice.name, styleInstruction, speakingRate, pitch, stability },
             },
           });
-          reservationId = null;
+          if (completeError || !completeResult?.success) {
+            console.error("Settlement failed:", completeError || completeResult);
+            toast.error("تم التوليد لكن فشل تأكيد الخصم — سيتم المراجعة تلقائياً");
+          } else {
+            reservationId = null;
+          }
         }
 
         await refreshCredits();

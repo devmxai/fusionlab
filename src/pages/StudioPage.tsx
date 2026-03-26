@@ -441,7 +441,7 @@ const StudioPage = () => {
 
         // ── Step 5: Complete generation (server: settle + save) ──
         const fileUrl = parsed.resultUrls?.[0];
-        await supabase.functions.invoke("complete-generation", {
+        const { data: completeResult, error: completeError } = await supabase.functions.invoke("complete-generation", {
           body: {
             reservationId,
             status: "success",
@@ -454,7 +454,12 @@ const StudioPage = () => {
             metadata: { aspectRatio, resolution, model: tool.model },
           },
         });
-        reservationId = null;
+        if (completeError || !completeResult?.success) {
+          console.error("Settlement failed:", completeError || completeResult);
+          toast.error("تم التوليد لكن فشل تأكيد الخصم — سيتم المراجعة تلقائياً");
+        } else {
+          reservationId = null;
+        }
         await refreshCredits();
       } else {
         throw new Error("لم يتم إرجاع نتيجة من التوليد");
