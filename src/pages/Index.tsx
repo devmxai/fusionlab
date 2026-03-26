@@ -116,6 +116,8 @@ const Index = () => {
       setDataLoaded(true);
     });
   }, []);
+
+  const filteredTools =
     selectedCategory === "الكل"
       ? tools
       : tools.filter((t) => t.category === selectedCategory);
