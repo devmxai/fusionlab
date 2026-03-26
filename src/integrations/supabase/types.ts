@@ -233,6 +233,42 @@ export type Database = {
         }
         Relationships: []
       }
+      model_card_tabs: {
+        Row: {
+          created_at: string | null
+          icon: string | null
+          id: string
+          is_system: boolean | null
+          is_visible: boolean | null
+          label: string
+          slug: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          is_system?: boolean | null
+          is_visible?: boolean | null
+          label: string
+          slug: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          is_system?: boolean | null
+          is_visible?: boolean | null
+          label?: string
+          slug?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       model_cards: {
         Row: {
           category: string | null
@@ -242,6 +278,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_visible: boolean | null
+          media_type: string | null
           sort_order: number | null
           title: string | null
           tool_id: string
@@ -255,6 +292,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_visible?: boolean | null
+          media_type?: string | null
           sort_order?: number | null
           title?: string | null
           tool_id: string
@@ -268,6 +306,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_visible?: boolean | null
+          media_type?: string | null
           sort_order?: number | null
           title?: string | null
           tool_id?: string
