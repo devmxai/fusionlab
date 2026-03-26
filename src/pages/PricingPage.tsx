@@ -169,6 +169,11 @@ const PricingPage = () => {
         </motion.div>
       </div>
 
+      <PhoneVerificationDialog
+        open={showPhoneVerify}
+        onOpenChange={setShowPhoneVerify}
+        onVerified={handlePhoneVerified}
+      />
     </div>
   );
 };
