@@ -96,7 +96,7 @@ const PlanCard = ({ plan, onSaved }: { plan: any; onSaved: () => void }) => {
   );
 };
 
-type Tab = "dashboard" | "users" | "subscriptions" | "plans" | "pricing" | "ledger" | "trials" | "audit" | "generations";
+type Tab = "dashboard" | "users" | "subscriptions" | "plans" | "pricing" | "ledger" | "trials" | "audit" | "generations" | "content";
 
 const tabs: { id: Tab; label: string; icon: any }[] = [
   { id: "dashboard", label: "لوحة التحكم", icon: BarChart3 },
