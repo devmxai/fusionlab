@@ -138,8 +138,9 @@ const PricingPage = () => {
             </ul>
 
             <Button className="w-full text-xs" variant={plan.type === "pro" ? "default" : "outline"} onClick={() => {
-              if (!user) navigate("/auth");
-              else toast.info("تواصل مع الإدارة لتفعيل اشتراكك");
+              if (!user) { navigate("/auth"); return; }
+              if (!requirePhoneVerification("subscribe")) return;
+              toast.info("تواصل مع الإدارة لتفعيل اشتراكك");
             }}>
               <Send className="w-3 h-3 ml-1" />
               اشترك الآن
