@@ -108,6 +108,7 @@ const tabs: { id: Tab; label: string; icon: any }[] = [
   { id: "trials", label: "التجارب", icon: Clock },
   { id: "generations", label: "التوليدات", icon: RefreshCw },
   { id: "audit", label: "سجل العمليات", icon: History },
+  { id: "content", label: "المحتوى", icon: PanelTop },
 ];
 
 const AdminPage = () => {
