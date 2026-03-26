@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ArrowRight, Check, Crown, Sparkles, Send } from "lucide-react";
 import { toast } from "sonner";
+import PhoneVerificationDialog from "@/components/PhoneVerificationDialog";
 
 
 const tierColors: Record<string, string> = {
