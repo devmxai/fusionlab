@@ -85,11 +85,11 @@
 .shimmer-effect {
   background: linear-gradient(
     90deg,
-    transparent 0%,
-    hsl(var(--primary) / 0.08) 40%,
-    hsl(var(--primary) / 0.15) 50%,
-    hsl(var(--primary) / 0.08) 60%,
-    transparent 100%
+    hsl(var(--primary) / 0.06) 0%,
+    hsl(var(--primary) / 0.18) 40%,
+    hsl(var(--primary) / 0.28) 50%,
+    hsl(var(--primary) / 0.18) 60%,
+    hsl(var(--primary) / 0.06) 100%
   );
   animation: shimmer 1.8s ease-in-out infinite;
 }
