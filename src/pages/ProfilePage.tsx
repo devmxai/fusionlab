@@ -251,6 +251,16 @@ const ProfilePage = () => {
           </Button>
         </motion.div>
       </motion.div>
+
+      <PhoneVerificationDialog
+        open={showPhoneVerify}
+        onOpenChange={setShowPhoneVerify}
+        onVerified={(ph) => {
+          setPhoneNumber(ph);
+          setPhoneVerified(true);
+          toast.success("تم التحقق من رقمك بنجاح!");
+        }}
+      />
     </div>
   );
 };
