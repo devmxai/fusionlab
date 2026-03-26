@@ -44,8 +44,12 @@ const PricingPage = () => {
     }
   }, [user]);
 
-  const requirePhoneVerification = (action: "trial" | "subscribe") => {
-    if (!user) { navigate("/auth"); return; }
+  const requirePhoneVerification = (action: "trial" | "subscribe"): boolean => {
+    if (!user) {
+      toast.error("يجب تسجيل الدخول أولاً");
+      navigate("/auth");
+      return false;
+    }
     if (!phoneVerified) {
       setPendingAction(action);
       setShowPhoneVerify(true);
