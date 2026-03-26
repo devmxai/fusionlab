@@ -26,16 +26,25 @@ const AuthPage = () => {
         toast.success("تم تسجيل الدخول بنجاح!");
         navigate("/");
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: { full_name: fullName },
-            emailRedirectTo: window.location.origin,
           },
         });
         if (error) throw error;
-        toast.success("تم إنشاء الحساب! تحقق من بريدك الإلكتروني للتفعيل.");
+        // Auto-confirm is enabled, so user is logged in immediately
+        if (data.session) {
+          toast.success("تم إنشاء الحساب بنجاح! مرحباً بك");
+          navigate("/");
+        } else {
+          // Fallback: sign in immediately
+          const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+          if (signInError) throw signInError;
+          toast.success("تم إنشاء الحساب بنجاح!");
+          navigate("/");
+        }
       }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "حدث خطأ");
