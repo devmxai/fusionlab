@@ -54,6 +54,19 @@ serve(async (req) => {
     }
 
     if (status === "success") {
+      // ── Check if already completed (full idempotency) ──
+      const { data: existingGen } = await supabase
+        .from("generations")
+        .select("id")
+        .eq("reservation_id", reservationId)
+        .maybeSingle();
+
+      if (existingGen) {
+        // Already completed — return idempotent success
+        console.log("Idempotent hit: generation already exists for reservation", reservationId);
+        return jsonRes({ success: true, action: "settled", idempotent: true });
+      }
+
       // ── Settle credits via RPC ──
       const { data: settleData, error: settleError } = await supabase.rpc("settle_credits", {
         p_reservation_id: reservationId,
@@ -65,20 +78,20 @@ serve(async (req) => {
         return jsonRes({ success: false, error: "settle_failed", message: settleError.message }, 500);
       }
 
-      // ── Check business-level result from settle_credits ──
+      // ── Check business-level result ──
       if (!settleData?.success) {
         const bizError = settleData?.error || "unknown_settle_error";
         console.error("Settle business failure:", JSON.stringify(settleData));
 
-        // If already processed, treat as idempotent success
         if (bizError === "already_processed") {
-          console.log("Settle: already processed (idempotent), continuing...");
+          // Settlement done but generation record missing — allow insert below
+          console.log("Settle already_processed, will check/insert generation record");
         } else {
           return jsonRes({ success: false, error: bizError, details: settleData }, 422);
         }
       }
 
-      // ── Save generation record ──
+      // ── Save generation record (with reservation_id for uniqueness) ──
       if (fileUrl && toolId) {
         const { error: insertError } = await supabase.from("generations").insert({
           user_id: user.id,
@@ -88,11 +101,16 @@ serve(async (req) => {
           file_url: fileUrl,
           file_type: fileType || "image",
           metadata: metadata || {},
+          reservation_id: reservationId,
         });
 
         if (insertError) {
+          // Check if it's a unique constraint violation (duplicate)
+          if (insertError.code === "23505") {
+            console.log("Generation record already exists (unique constraint), idempotent success");
+            return jsonRes({ success: true, action: "settled", idempotent: true });
+          }
           console.error("Generation insert error:", insertError);
-          // Settlement succeeded but record saving failed — this is a data integrity issue
           return jsonRes({
             success: false,
             error: "generation_save_failed",
@@ -116,14 +134,13 @@ serve(async (req) => {
         return jsonRes({ success: false, error: "release_failed", message: releaseError.message }, 500);
       }
 
-      // ── Check business-level result from release_credits ──
       if (!releaseData?.success) {
         const bizError = releaseData?.error || "unknown_release_error";
         console.error("Release business failure:", JSON.stringify(releaseData));
 
-        // If already processed, treat as idempotent success
         if (bizError === "already_processed") {
-          console.log("Release: already processed (idempotent), continuing...");
+          console.log("Release: already processed (idempotent)");
+          return jsonRes({ success: true, action: "released", idempotent: true });
         } else {
           return jsonRes({ success: false, error: bizError, details: releaseData }, 422);
         }
