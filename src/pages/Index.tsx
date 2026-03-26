@@ -58,12 +58,37 @@ const SECTION_ICONS: Record<string, React.ReactNode> = {
   videos: <Video className="w-4 h-4 text-primary" />,
 };
 
+const CardSkeleton = () => (
+  <div className="rounded-xl overflow-hidden bg-card border border-border/50">
+    <div className="relative aspect-[3/4] bg-secondary">
+      <div className="absolute inset-0 shimmer-effect" />
+      <div className="absolute bottom-0 right-0 left-0 p-3">
+        <div className="h-3.5 w-3/4 rounded bg-secondary-foreground/10 mb-1.5" />
+        <div className="h-2.5 w-1/2 rounded bg-secondary-foreground/10" />
+      </div>
+    </div>
+  </div>
+);
+
+const SectionSkeleton = ({ count = 5 }: { count?: number }) => (
+  <section>
+    <div className="flex items-center gap-2 mb-3">
+      <div className="w-4 h-4 rounded bg-secondary shimmer-effect" />
+      <div className="h-4 w-20 rounded bg-secondary shimmer-effect" />
+    </div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+      {Array.from({ length: count }).map((_, i) => <CardSkeleton key={i} />)}
+    </div>
+  </section>
+);
+
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("الكل");
   const [trendingImages, setTrendingImages] = useState<TrendingImage[]>([]);
   const [trendingVideos, setTrendingVideos] = useState<TrendingVideo[]>([]);
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [sectionTools, setSectionTools] = useState<Record<string, AITool[]>>({});
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -88,8 +113,8 @@ const Index = () => {
         }
       }
       setSectionTools(map);
+      setDataLoaded(true);
     });
-  }, []);
 
   const filteredTools =
     selectedCategory === "الكل"
@@ -109,6 +134,14 @@ const Index = () => {
         <main className="px-3 sm:px-6 lg:px-8 pb-8 space-y-10">
           {showCategorized ? (
             <>
+              {/* Loading skeletons */}
+              {!dataLoaded && (
+                <>
+                  <SectionSkeleton count={5} />
+                  <SectionSkeleton count={5} />
+                  <SectionSkeleton count={4} />
+                </>
+              )}
               {/* Dynamic sections from tabs */}
               {tabs.map(tab => {
                 const tabTools = sectionTools[tab.slug];
