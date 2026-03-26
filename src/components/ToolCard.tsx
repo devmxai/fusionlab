@@ -64,10 +64,10 @@ const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 8 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-20px" }}
-      transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.15), ease: "easeOut" }}
+      viewport={{ once: true, margin: "-10px" }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
     >
       <div
         onClick={() => navigate(`/tool/${tool.id}`)}
@@ -83,7 +83,7 @@ const ToolCard = ({ tool, index = 0 }: ToolCardProps) => {
           <img
             src={imgSrc}
             alt={title}
-            className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+            className={`w-full h-full object-cover transition-opacity duration-200 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
             loading={index < 6 ? "eager" : "lazy"}
             onLoad={() => setImgLoaded(true)}
           />
