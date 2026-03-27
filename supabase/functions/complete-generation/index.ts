@@ -88,27 +88,9 @@ serve(async (req) => {
         }
       }
 
-      // ── Save generation record ──
-      if (fileUrl && toolId) {
-        const { error: insertError } = await supabase.from("generations").insert({
-          user_id: user.id,
-          tool_id: toolId,
-          tool_name: toolName || null,
-          prompt: prompt || null,
-          file_url: fileUrl,
-          file_type: fileType || "image",
-          metadata: metadata || {},
-          reservation_id: reservationId,
-        });
-
-        if (insertError && insertError.code !== "23505") {
-          console.error("Generation insert error:", insertError);
-          return jsonRes({
-            success: false, error: "generation_save_failed",
-            message: insertError.message, settlement: "completed",
-          }, 500);
-        }
-      }
+      // NOTE: We no longer insert into "generations" here.
+      // The library entry is created when the user views the result from the queue (markJobSeen).
+      // This ensures the library only contains items the user has actually seen/acknowledged.
 
       // ── Update job record to succeeded (server-authoritative) ──
       await supabaseAdmin

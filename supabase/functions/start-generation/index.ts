@@ -219,7 +219,18 @@ serve(async (req) => {
 
       if (jobError) {
         console.error("Failed to create job record:", jobError);
-        // Don't fail the whole generation — the task is already running
+        // CRITICAL: If we can't create a queue record, the user will lose visibility.
+        // Release credits and fail the request to maintain consistency.
+        try {
+          await supabase.rpc("release_credits", { p_reservation_id: reservationId });
+        } catch (releaseErr) {
+          console.error("Failed to release credits after job record failure:", releaseErr);
+        }
+        return jsonRes({
+          success: false,
+          error: "job_record_failed",
+          message: "Failed to create tracking record. Credits have been refunded.",
+        }, 500);
       }
 
       console.log("Generation started:", JSON.stringify({
