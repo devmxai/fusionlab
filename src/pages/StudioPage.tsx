@@ -279,7 +279,7 @@ const StudioPage = () => {
   const insufficientCredits = estimatedCost > 0 && credits < estimatedCost;
 
   const handleGenerate = async () => {
-    if (isImageOnlyTool && refImages.length === 0) {
+    if ((isImageOnlyTool || isShootsTool) && refImages.length === 0) {
       toast.error("يجب رفع صورة أولاً");
       return;
     }
