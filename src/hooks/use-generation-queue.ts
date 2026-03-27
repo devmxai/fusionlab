@@ -1,6 +1,6 @@
 /**
  * Hook: manages generation queue from DB with realtime updates.
- * Provides active jobs list, job creation, and auto-resume polling.
+ * Jobs are created SERVER-SIDE in start-generation — this hook only reads and polls.
  */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,11 +28,11 @@ export interface GenerationJob {
   created_at: string;
   updated_at: string;
   completed_at: string | null;
+  seen_at: string | null;
 }
 
 /**
- * Smooth simulated progress that gradually increases when
- * the provider doesn't return a numeric progress value.
+ * Smooth simulated progress
  */
 function createSmoothProgress(startFrom = 5) {
   let current = startFrom;
@@ -40,7 +40,6 @@ function createSmoothProgress(startFrom = 5) {
 
   return {
     update(providerProgress: number | undefined, state: string | undefined) {
-      // Map provider states to our phases
       const s = (state || "").toLowerCase();
       if (["success", "succeeded", "completed", "done"].includes(s)) {
         current = 100;
@@ -58,18 +57,15 @@ function createSmoothProgress(startFrom = 5) {
         phase = "waiting";
       }
 
-      // If provider gives numeric progress, use it (mapped to 30-95 range)
       if (providerProgress && providerProgress > 0) {
         current = Math.max(current, 30 + (providerProgress / 100) * 65);
         return { progress: Math.min(Math.round(current), 95), phase };
       }
 
-      // Simulated smooth progress based on phase
       const maxForPhase = phase === "waiting" ? 25 : phase === "queuing" ? 40 : phase === "generating" ? 90 : 95;
       const increment = phase === "waiting" ? 0.8 : phase === "queuing" ? 1.2 : phase === "generating" ? 1.5 : 0.5;
 
       if (current < maxForPhase) {
-        // Slow down as we approach the max — asymptotic
         const remaining = maxForPhase - current;
         const step = Math.min(increment, remaining * 0.08);
         current += Math.max(step, 0.2);
@@ -96,65 +92,21 @@ export function useGenerationQueue() {
   const [jobs, setJobs] = useState<GenerationJob[]>([]);
   const pollingRefs = useRef<Map<string, boolean>>(new Map());
 
-  // Fetch active jobs from DB
+  // Fetch jobs from DB (include recent completed for "unseen" tracking)
   const fetchJobs = useCallback(async () => {
     if (!user) return;
+    // Fetch active + recent unseen completed/failed (last 24h)
     const { data, error } = await (supabase as any)
       .from("generation_jobs")
       .select("*")
       .eq("user_id", user.id)
-      .in("status", ["pending", "running", "succeeded", "failed", "timed_out"])
+      .or("status.in.(pending,running),and(status.in.(succeeded,failed,timed_out),completed_at.gte." + new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() + ")")
       .order("created_at", { ascending: false })
       .limit(50);
 
     if (!error && data) {
       setJobs(data as unknown as GenerationJob[]);
     }
-  }, [user]);
-
-  // Create a new job record
-  const createJob = useCallback(async (params: {
-    taskId: string;
-    reservationId: string;
-    toolId: string;
-    toolName: string;
-    model: string;
-    apiType: string;
-    prompt: string;
-    fileType: string;
-    metadata?: Record<string, unknown>;
-  }) => {
-    if (!user) return null;
-
-    const jobRecord = {
-      user_id: user.id,
-      task_id: params.taskId,
-      reservation_id: params.reservationId,
-      tool_id: params.toolId,
-      tool_name: params.toolName,
-      model: params.model,
-      api_type: params.apiType,
-      prompt: params.prompt,
-      file_type: params.fileType,
-      status: "pending" as const,
-      progress: 0,
-      metadata: params.metadata || {},
-    };
-
-    const { data, error } = await (supabase as any)
-      .from("generation_jobs")
-      .insert(jobRecord)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Failed to create generation job:", error);
-      return null;
-    }
-
-    const job = data as unknown as GenerationJob;
-    setJobs((prev) => [job, ...prev]);
-    return job;
   }, [user]);
 
   // Update job in local state
@@ -172,6 +124,16 @@ export function useGenerationQueue() {
       .eq("id", jobId);
   }, []);
 
+  // Mark a job as seen
+  const markJobSeen = useCallback(async (jobId: string) => {
+    const now = new Date().toISOString();
+    updateJobLocal(jobId, { seen_at: now });
+    await (supabase as any)
+      .from("generation_jobs")
+      .update({ seen_at: now, updated_at: now })
+      .eq("id", jobId);
+  }, [updateJobLocal]);
+
   // Poll a specific job
   const pollJob = useCallback(async (
     job: GenerationJob,
@@ -179,17 +141,15 @@ export function useGenerationQueue() {
     onFail?: (error: string, job: GenerationJob) => void,
   ) => {
     if (!job.task_id) return;
-    if (pollingRefs.current.get(job.id)) return; // Already polling
+    if (pollingRefs.current.get(job.id)) return;
     pollingRefs.current.set(job.id, true);
 
     const smooth = createSmoothProgress(job.progress || 5);
     const apiType = (job.api_type || "standard") as ApiType;
 
-    // Update to running
     updateJobLocal(job.id, { status: "running" as JobStatus, progress: 10 });
     await updateJobDB(job.id, { status: "running", progress: 10 });
 
-    // Set up progress simulation interval
     let latestState = "waiting";
     let latestProgress: number | undefined;
     const progressInterval = setInterval(() => {
@@ -206,11 +166,10 @@ export function useGenerationQueue() {
         (state, prog) => {
           latestState = state;
           latestProgress = prog;
-          // Also update DB periodically
           const { progress: simProg } = smooth.update(prog, state);
           updateJobDB(job.id, { progress: Math.round(simProg), status: "running" });
         },
-        180, // max attempts (9 min)
+        180,
         3000,
         false,
         apiType,
@@ -228,12 +187,7 @@ export function useGenerationQueue() {
           result_url: resultUrl,
           completed_at: new Date().toISOString(),
         });
-        await updateJobDB(job.id, {
-          status: "succeeded",
-          progress: 100,
-          result_url: resultUrl,
-          completed_at: new Date().toISOString(),
-        });
+        // DB update is handled by complete-generation edge function
 
         onSuccess?.(parsed.resultUrls || [], job);
       } else {
@@ -248,11 +202,7 @@ export function useGenerationQueue() {
         error_message: msg,
         completed_at: new Date().toISOString(),
       });
-      await updateJobDB(job.id, {
-        status: "failed",
-        error_message: msg,
-        completed_at: new Date().toISOString(),
-      });
+      // DB update is handled by complete-generation edge function
 
       onFail?.(msg, job);
     } finally {
@@ -260,7 +210,7 @@ export function useGenerationQueue() {
     }
   }, [updateJobLocal, updateJobDB]);
 
-  // Resume any in-progress jobs on mount
+  // Fetch on mount
   useEffect(() => {
     if (!user) return;
     fetchJobs();
@@ -319,16 +269,22 @@ export function useGenerationQueue() {
   const activeJobs = jobs.filter((j) => j.status === "pending" || j.status === "running");
   const completedJobs = jobs.filter((j) => j.status === "succeeded");
   const failedJobs = jobs.filter((j) => j.status === "failed" || j.status === "timed_out");
+  const unseenJobs = jobs.filter(
+    (j) => (j.status === "succeeded" || j.status === "failed" || j.status === "timed_out") && !j.seen_at
+  );
 
   return {
     jobs,
     activeJobs,
     completedJobs,
     failedJobs,
+    unseenJobs,
     activeCount: activeJobs.length,
-    createJob,
+    unseenCount: unseenJobs.length,
+    createJob: async () => null as any, // Deprecated - jobs are now created server-side
     pollJob,
     fetchJobs,
     updateJobLocal,
+    markJobSeen,
   };
 }
