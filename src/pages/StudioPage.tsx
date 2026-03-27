@@ -199,6 +199,18 @@ const StudioPage = () => {
   const remixMaxImages = isRemixTool ? (caps?.maxImages ?? 3) : 0;
   const remixMinImages = isRemixTool ? (caps?.minImages ?? 0) : 0;
 
+  // Shoots: Coming Soon page
+  if (isShootsTool) {
+    return (
+      <div className="h-screen bg-background flex flex-col items-center justify-center gap-4" dir="rtl">
+        <Sparkles className="w-12 h-12 text-primary opacity-50" />
+        <h1 className="text-2xl font-bold text-primary">Coming Soon</h1>
+        <p className="text-sm text-muted-foreground">قسم الشوتس قيد التطوير — ترقبوا التحديث القادم</p>
+        <Button variant="outline" size="sm" onClick={() => navigate("/")}>العودة</Button>
+      </div>
+    );
+  }
+
   if (!categoryName || categoryTools.length === 0 || !tool) {
     return (
       <div className="h-screen bg-background flex flex-col items-center justify-center gap-3" dir="rtl">

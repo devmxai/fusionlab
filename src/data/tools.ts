@@ -91,16 +91,17 @@ export const tools: AITool[] = [
     category: "صور",
     model: "flux-2/pro-text-to-image",
   },
-  {
-    id: "grok-imagine",
-    title: "Grok Imagine",
-    provider: "xAI",
-    description: "صور واقعية وإبداعية",
-    image: "image-merge",
-    isPro: false,
-    category: "صور",
-    model: "grok-imagine/text-to-image",
-  },
+  // Grok Imagine (hidden from images — only used via Shoots)
+  // {
+  //   id: "grok-imagine",
+  //   title: "Grok Imagine",
+  //   provider: "xAI",
+  //   description: "صور واقعية وإبداعية",
+  //   image: "image-merge",
+  //   isPro: false,
+  //   category: "صور",
+  //   model: "grok-imagine/text-to-image",
+  // },
 
   // ─── Shoots (Grok Image-to-Image: 2 angle shots from 1 image) ───
   {
