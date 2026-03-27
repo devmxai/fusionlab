@@ -96,7 +96,7 @@ serve(async (req) => {
         headers: authHeaders,
         body: JSON.stringify({ base64Data, uploadPath: "references", fileName }),
       });
-      const data = await response.json();
+      const data = await safeJson(response, "Upload");
       console.log("Upload response:", JSON.stringify(data));
       if (!response.ok || !data?.success) {
         return jsonRes({ error: data?.msg || "Upload failed", details: data }, response.status || 500);
