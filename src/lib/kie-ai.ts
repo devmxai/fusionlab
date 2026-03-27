@@ -112,11 +112,19 @@ export async function pollTask(
   }
 
   for (let i = 0; i < maxAttempts; i++) {
-    const result = await statusFn(taskId);
-    onProgress?.(result.state || "waiting", result.progress);
+    try {
+      const result = await statusFn(taskId);
+      onProgress?.(result.state || "waiting", result.progress);
 
-    if (result.state === "success") return result;
-    if (result.state === "fail") throw new Error(result.failMsg || "Task failed");
+      if (result.state === "success") return result;
+      if (result.state === "fail") throw new Error(result.failMsg || "Task failed");
+    } catch (err) {
+      // If it's a definitive failure (not a transient polling error), rethrow
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("Task failed") || msg.includes("fail")) throw err;
+      // Transient error — log and continue polling
+      console.warn(`Poll attempt ${i + 1} failed:`, msg);
+    }
 
     await new Promise((r) => setTimeout(r, intervalMs));
   }

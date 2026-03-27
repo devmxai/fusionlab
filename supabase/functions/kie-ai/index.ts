@@ -60,6 +60,17 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
+  // Safe JSON parser for external API responses
+  const safeJson = async (response: Response, label: string) => {
+    const text = await response.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      console.error(`${label}: non-JSON response (status ${response.status}):`, text.slice(0, 200));
+      return { error: `Provider returned non-JSON response (HTTP ${response.status})`, code: response.status };
+    }
+  };
+
   try {
     const body = await req.json();
     const { action } = body;
@@ -85,7 +96,7 @@ serve(async (req) => {
         headers: authHeaders,
         body: JSON.stringify({ base64Data, uploadPath: "references", fileName }),
       });
-      const data = await response.json();
+      const data = await safeJson(response, "Upload");
       console.log("Upload response:", JSON.stringify(data));
       if (!response.ok || !data?.success) {
         return jsonRes({ error: data?.msg || "Upload failed", details: data }, response.status || 500);
@@ -112,7 +123,7 @@ serve(async (req) => {
         headers: authHeaders,
         body: JSON.stringify(veoBody),
       });
-      const data = await response.json();
+      const data = await safeJson(response, "Veo create");
       console.log("Veo create response:", JSON.stringify(data));
       if (data?.code === 200 && data?.data?.taskId) {
         return jsonRes({ code: 200, data: { taskId: data.data.taskId } });
@@ -126,7 +137,7 @@ serve(async (req) => {
       const response = await fetch(`${KIE_BASE}/veo/record-info?taskId=${taskId}`, {
         headers: { Authorization: `Bearer ${KIE_API_KEY}` },
       });
-      const data = await response.json();
+      const data = await safeJson(response, "Veo status");
       if (data?.code === 200 && data?.data) {
         const veoData = data.data;
         const successFlag = veoData.successFlag ?? veoData.response?.successFlag;
@@ -163,7 +174,7 @@ serve(async (req) => {
         headers: authHeaders,
         body: JSON.stringify(fkBody),
       });
-      const data = await response.json();
+      const data = await safeJson(response, "Flux Kontext create");
       console.log("Flux Kontext create response:", JSON.stringify(data));
       if (data?.code === 200 && data?.data?.taskId) {
         return jsonRes({ code: 200, data: { taskId: data.data.taskId } });
@@ -177,7 +188,7 @@ serve(async (req) => {
       const response = await fetch(`${KIE_BASE}/flux/kontext/record-info?taskId=${taskId}`, {
         headers: { Authorization: `Bearer ${KIE_API_KEY}` },
       });
-      const data = await response.json();
+      const data = await safeJson(response, "Flux Kontext status");
       if (data?.code === 200 && data?.data) {
         const fkData = data.data;
         const successFlag = fkData.successFlag ?? fkData.response?.successFlag;
@@ -207,7 +218,7 @@ serve(async (req) => {
         headers: authHeaders,
         body: JSON.stringify({ model, input }),
       });
-      const data = await response.json();
+      const data = await safeJson(response, "Create task");
       console.log("Create task response:", JSON.stringify(data));
       return jsonRes(data, response.ok ? 200 : response.status);
     }
@@ -218,7 +229,7 @@ serve(async (req) => {
       const response = await fetch(`${KIE_BASE}/jobs/recordInfo?taskId=${taskId}`, {
         headers: { Authorization: `Bearer ${KIE_API_KEY}` },
       });
-      const data = await response.json();
+      const data = await safeJson(response, "Task status");
       return jsonRes(data);
     }
 
@@ -227,7 +238,7 @@ serve(async (req) => {
       const response = await fetch(`${KIE_BASE}/chat/credit`, {
         headers: { Authorization: `Bearer ${KIE_API_KEY}` },
       });
-      const data = await response.json();
+      const data = await safeJson(response, "Credits");
       return jsonRes(data);
     }
 
