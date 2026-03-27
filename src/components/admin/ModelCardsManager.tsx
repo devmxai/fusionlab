@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Trash2, Eye, EyeOff, Save, Upload, Layers, Pencil, X, Plus, GripVertical } from "lucide-react";
 import { tools } from "@/data/tools";
+import { compressImage } from "@/lib/image-compress";
 
 interface Tab {
   id: string;

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Plus, Trash2, GripVertical, Eye, EyeOff, Save, Upload, X } from "lucide-react";
+import { compressImage } from "@/lib/image-compress";
 
 interface Banner {
   id: string;
