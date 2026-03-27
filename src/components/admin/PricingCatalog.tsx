@@ -187,7 +187,7 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
   const tabCounts = useMemo(() => {
     const counts: Record<string, number> = { all: rules.length };
     for (const r of rules) {
-      const cat = inferCategory(r, getAccess(r.model));
+      const cat = mapCategory(r);
       counts[cat] = (counts[cat] || 0) + 1;
     }
     return counts;
