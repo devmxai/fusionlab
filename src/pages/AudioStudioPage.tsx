@@ -484,7 +484,7 @@ const AudioStudioPage = () => {
                 </span>
                 {charCount > 0 && (
                   <span className="text-muted-foreground">
-                    ({currentTier.label})
+                    ({(price?.perCharRate ?? 0.005).toFixed(3)} كريديت/حرف)
                   </span>
                 )}
               </div>
