@@ -279,8 +279,12 @@ const StudioPage = () => {
   const insufficientCredits = estimatedCost > 0 && credits < estimatedCost;
 
   const handleGenerate = async () => {
-    if ((isImageOnlyTool || isShootsTool) && refImages.length === 0) {
+    if (isImageOnlyTool && refImages.length === 0) {
       toast.error("يجب رفع صورة أولاً");
+      return;
+    }
+    if (isShootsTool && refImages.length === 0 && !prompt.trim()) {
+      toast.error("اكتب وصفاً أو ارفع صورة");
       return;
     }
     if (isRemixTool && refImages.length === 0 && !prompt.trim()) {
