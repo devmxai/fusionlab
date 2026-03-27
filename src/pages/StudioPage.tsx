@@ -162,6 +162,20 @@ const StudioPage = () => {
     if (c.qualities?.length) setQuality(c.qualities[0]);
   };
 
+  // Pre-select model from query param (e.g. ?model=kling-3)
+  useEffect(() => {
+    const modelId = searchParams.get("model");
+    if (modelId && categoryTools.length > 0) {
+      const found = categoryTools.find((t) => t.id === modelId);
+      if (found) {
+        handleSelectModel(found);
+        searchParams.delete("model");
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryTools]);
+
   const tool = selectedTool || categoryTools[0] || null;
   const isVideoTool = category === "video";
   const isImageOnlyTool = category === "remove-bg" || category === "upscale";
