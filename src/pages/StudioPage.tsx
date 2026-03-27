@@ -700,9 +700,9 @@ const StudioPage = () => {
       // Single result
       return (
         <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-          className="w-full h-full cursor-pointer relative group" onClick={() => !isVideoTool && openViewer(resultUrls[0])}>
-          {isVideoTool ? (
-            <video src={resultUrls[0]} controls className="w-full h-full object-cover rounded-2xl" />
+          className="w-full h-full cursor-pointer relative group" onClick={() => !(isVideoTool || isAvatarTool) && openViewer(resultUrls[0])}>
+          {(isVideoTool || isAvatarTool) ? (
+            <video src={resultUrls[0]} controls autoPlay playsInline className="w-full h-full object-cover rounded-2xl" />
           ) : (
             <img src={resultUrls[0]} alt="Result" className="w-full h-full object-cover rounded-2xl" />
           )}
