@@ -309,7 +309,7 @@ export function useGenerationQueue() {
 
     updateJobLocal(job.id, {
       status: "running" as JobStatus,
-      progress: Math.max(0, Math.min(job.progress || 0, 95)),
+      progress: Math.max(1, Math.min(job.progress || 1, 95)),
     });
 
     let latestState = "waiting";
