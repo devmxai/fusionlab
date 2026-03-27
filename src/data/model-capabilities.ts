@@ -67,8 +67,10 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
   },
 
   // Docs: aspect_ratio 2:3,3:2,1:1,16:9,9:16 | no resolution, no quality
+  // text-to-image → 6 images, image-to-image → 2 images
   "grok-imagine/text-to-image": {
     aspectRatios: ["1:1", "3:4", "9:16", "16:9"],
+    maxImages: 1,
   },
 
   // ─── Remix / Image Edit Models ───

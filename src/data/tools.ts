@@ -405,7 +405,9 @@ export function buildModelInput(
   }
 
   if (model === "grok-imagine/text-to-image") {
-    return { prompt, aspect_ratio: aspectRatio || "1:1" };
+    const input: Record<string, unknown> = { prompt, aspect_ratio: aspectRatio || "1:1" };
+    if (imageUrls?.length) input.image_url = imageUrls[0];
+    return input;
   }
 
   if (model === "z-image") {
