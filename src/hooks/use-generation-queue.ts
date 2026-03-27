@@ -166,7 +166,7 @@ export function useGenerationQueue() {
 
   // Update job in DB
   const updateJobDB = useCallback(async (jobId: string, updates: Record<string, unknown>) => {
-    await supabase
+    await (supabase as any)
       .from("generation_jobs")
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", jobId);
