@@ -14,6 +14,42 @@ import angles from "@/assets/tools/angles.jpg";
 import imageMerge from "@/assets/tools/image-merge.jpg";
 import inpaint from "@/assets/tools/inpaint.jpg";
 
+// Section-specific card images
+import latest1 from "@/assets/cards/latest-1.jpg";
+import latest2 from "@/assets/cards/latest-2.jpg";
+import latest3 from "@/assets/cards/latest-3.jpg";
+import latest4 from "@/assets/cards/latest-4.jpg";
+import latest5 from "@/assets/cards/latest-5.jpg";
+import latest6 from "@/assets/cards/latest-6.jpg";
+import img1 from "@/assets/cards/img-1.jpg";
+import img2 from "@/assets/cards/img-2.jpg";
+import img3 from "@/assets/cards/img-3.jpg";
+import img4 from "@/assets/cards/img-4.jpg";
+import img5 from "@/assets/cards/img-5.jpg";
+import img6 from "@/assets/cards/img-6.jpg";
+import vid1 from "@/assets/cards/vid-1.jpg";
+import vid2 from "@/assets/cards/vid-2.jpg";
+import vid3 from "@/assets/cards/vid-3.jpg";
+import vid4 from "@/assets/cards/vid-4.jpg";
+import vid5 from "@/assets/cards/vid-5.jpg";
+import vid6 from "@/assets/cards/vid-6.jpg";
+import remix1 from "@/assets/cards/remix-1.jpg";
+import remix2 from "@/assets/cards/remix-2.jpg";
+import remix3 from "@/assets/cards/remix-3.jpg";
+import remix4 from "@/assets/cards/remix-4.jpg";
+import remix5 from "@/assets/cards/remix-5.jpg";
+import remix6 from "@/assets/cards/remix-6.jpg";
+import avatar1 from "@/assets/cards/avatar-1.jpg";
+import avatar2 from "@/assets/cards/avatar-2.jpg";
+import avatar3 from "@/assets/cards/avatar-3.jpg";
+import avatar4 from "@/assets/cards/avatar-4.jpg";
+import avatar5 from "@/assets/cards/avatar-5.jpg";
+import avatar6 from "@/assets/cards/avatar-6.jpg";
+import rmbg1 from "@/assets/cards/rmbg-1.jpg";
+import rmbg2 from "@/assets/cards/rmbg-2.jpg";
+import upscale1 from "@/assets/cards/upscale-1.jpg";
+import upscale2 from "@/assets/cards/upscale-2.jpg";
+
 const imageMap: Record<string, string> = {
   "image-gen": imageGen,
   "skin-enhance": skinEnhance,
@@ -27,6 +63,44 @@ const imageMap: Record<string, string> = {
   inpaint,
 };
 
+// Card images keyed by "section/toolId"
+export const cardImageMap: Record<string, string> = {
+  "latest/kling-3": latest1,
+  "latest/seedance": latest2,
+  "latest/veo31-quality": latest3,
+  "latest/grok-video": latest4,
+  "latest/z-image": latest5,
+  "latest/nano-banana": latest6,
+  "images/nano-banana": img1,
+  "images/flux-2-pro": img2,
+  "images/seedream-5-lite": img3,
+  "images/z-image": img4,
+  "images/nano-banana-pro": img5,
+  "images/grok-imagine": img6,
+  "videos/kling-3": vid1,
+  "videos/seedance": vid2,
+  "videos/veo31-fast": vid3,
+  "videos/grok-video": vid4,
+  "videos/veo31-quality": vid5,
+  "videos/sora-2": vid6,
+  "remix/nano-banana-edit": remix1,
+  "remix/qwen-image-edit": remix2,
+  "remix/flux-kontext-pro": remix3,
+  "remix/gpt-image-1-5-edit": remix4,
+  "remix/flux-kontext-max": remix5,
+  "remix/seedream-4-5-edit": remix6,
+  "avatar/kling-avatar-standard": avatar1,
+  "avatar/infinitalk": avatar2,
+  "avatar/kling-avatar-pro": avatar3,
+  "avatar/wan-animate": avatar4,
+  "avatar/kling-avatar-standard-2": avatar5,
+  "avatar/infinitalk-2": avatar6,
+  "remove-bg/recraft-bg": rmbg1,
+  "remove-bg/recraft-bg-2": rmbg2,
+  "upscale/recraft-crisp-upscale": upscale1,
+  "upscale/topaz-upscale": upscale2,
+};
+
 interface ToolCardOverride {
   image_url: string | null;
   title: string | null;
@@ -37,6 +111,7 @@ interface ToolCardProps {
   tool: AITool;
   index?: number;
   override?: ToolCardOverride;
+  sectionSlug?: string;
 }
 
 const categoryStudioMap: Record<string, string> = {
@@ -51,7 +126,6 @@ const categoryStudioMap: Record<string, string> = {
 
 const optimizeStorageUrl = (url: string | undefined, width = 400): string | undefined => {
   if (!url) return url;
-  // Add Supabase image transformation for storage URLs
   if (url.includes("supabase.co/storage/v1/object/public/")) {
     return url.replace(
       "/storage/v1/object/public/",
@@ -61,11 +135,13 @@ const optimizeStorageUrl = (url: string | undefined, width = 400): string | unde
   return url;
 };
 
-const ToolCard = ({ tool, index = 0, override }: ToolCardProps) => {
+const ToolCard = ({ tool, index = 0, override, sectionSlug }: ToolCardProps) => {
   const [imgLoaded, setImgLoaded] = useState(false);
   const navigate = useNavigate();
 
-  const rawSrc = override?.image_url || imageMap[tool.image];
+  // Priority: 1) CMS override image, 2) section-specific card image, 3) default tool image
+  const sectionKey = sectionSlug ? `${sectionSlug}/${tool.id}` : "";
+  const rawSrc = override?.image_url || (sectionKey && cardImageMap[sectionKey]) || imageMap[tool.image];
   const imgSrc = optimizeStorageUrl(rawSrc);
   const title = override?.title || tool.title;
 
