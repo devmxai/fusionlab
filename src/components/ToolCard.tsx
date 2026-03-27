@@ -151,7 +151,6 @@ export const optimizeStorageUrl = (
   if (nextUrl.includes("/storage/v1/render/image/public/")) {
     nextUrl = appendParam(nextUrl, "width", String(width));
     nextUrl = appendParam(nextUrl, "quality", "75");
-    nextUrl = appendParam(nextUrl, "format", "webp");
   }
 
   if (versionKey) {
