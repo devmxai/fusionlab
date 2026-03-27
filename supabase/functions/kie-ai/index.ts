@@ -188,7 +188,7 @@ serve(async (req) => {
       const response = await fetch(`${KIE_BASE}/flux/kontext/record-info?taskId=${taskId}`, {
         headers: { Authorization: `Bearer ${KIE_API_KEY}` },
       });
-      const data = await response.json();
+      const data = await safeJson(response, "Flux Kontext status");
       if (data?.code === 200 && data?.data) {
         const fkData = data.data;
         const successFlag = fkData.successFlag ?? fkData.response?.successFlag;
