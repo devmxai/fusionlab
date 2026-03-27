@@ -304,7 +304,7 @@ const StudioPage = () => {
 
     setLoading(true);
     setStatus("جاري التحضير...");
-    setProgress(0);
+    setProgress(1);
     setResultUrls([]);
 
     let reservationId: string | null = null;
