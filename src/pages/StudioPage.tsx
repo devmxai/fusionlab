@@ -492,6 +492,11 @@ const StudioPage = () => {
         updated_at: new Date().toISOString(),
         completed_at: null,
         seen_at: null,
+        provider_billing_state: "upstream_task_created" as const,
+        reconciliation_status: "not_required" as const,
+        provider_status_code: null,
+        provider_status_message: null,
+        reconciliation_notes: null,
       };
 
       // Poll via queue
