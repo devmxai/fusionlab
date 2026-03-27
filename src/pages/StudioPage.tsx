@@ -679,7 +679,7 @@ const StudioPage = () => {
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden" dir="rtl">
       {/* ── Header / App Bar ── */}
       <header ref={headerRef} className="relative shrink-0 bg-card/90 backdrop-blur-xl border-b border-border/30 z-[120] rounded-b-2xl shadow-lg">
-        <div className="flex items-center gap-2 px-3 py-2.5 max-w-3xl mx-auto flex-row-reverse relative">
+        <div className="flex items-center gap-2 px-3 py-2.5 w-full flex-row-reverse relative">
           {/* Back button - pinned to left edge */}
           <button
             onClick={() => navigate("/")}
