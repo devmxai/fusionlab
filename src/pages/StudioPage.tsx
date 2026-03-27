@@ -890,7 +890,7 @@ const StudioPage = () => {
                             >
                               <div className="flex-1 min-w-0">
                                 <p className={`text-sm font-bold truncate ${hasSelectedInGroup ? "text-primary" : "text-foreground"}`}>{group.provider}</p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">{group.tools.length} نماذج</p>
+                                
                               </div>
                               <ChevronDown className="w-4 h-4 text-muted-foreground rotate-90" />
                             </button>
