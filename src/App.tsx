@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { GenerationQueueProvider } from "@/contexts/GenerationQueueContext";
 import Index from "./pages/Index.tsx";
 import ToolPage from "./pages/ToolPage.tsx";
 import StudioPage from "./pages/StudioPage.tsx";
@@ -21,23 +22,25 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="/library" element={<LibraryPage />} />
-            <Route path="/studio/audio" element={<AudioStudioPage />} />
-            <Route path="/studio/:category" element={<StudioPage />} />
-            <Route path="/tool/:toolId" element={<ToolPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <GenerationQueueProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/library" element={<LibraryPage />} />
+              <Route path="/studio/audio" element={<AudioStudioPage />} />
+              <Route path="/studio/:category" element={<StudioPage />} />
+              <Route path="/tool/:toolId" element={<ToolPage />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </GenerationQueueProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
