@@ -102,6 +102,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
           .from("generations")
           .select("*")
           .eq("user_id", user.id)
+          .neq("file_type", "audio")
           .order("created_at", { ascending: false })
           .limit(50);
         setGenerations(data || []);
