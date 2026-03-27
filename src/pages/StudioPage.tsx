@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { tools, buildModelInput, AITool } from "@/data/tools";
 import { getModelCapabilities } from "@/data/model-capabilities";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,7 @@ const dropdownAnim = {
 
 const StudioPage = () => {
   const { category } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const remixSlotInputRef = useRef<HTMLInputElement>(null);
@@ -160,6 +161,20 @@ const StudioPage = () => {
     if (c.upscaleFactors?.length) setUpscaleFactor(c.upscaleFactors[0]);
     if (c.qualities?.length) setQuality(c.qualities[0]);
   };
+
+  // Pre-select model from query param (e.g. ?model=kling-3)
+  useEffect(() => {
+    const modelId = searchParams.get("model");
+    if (modelId && categoryTools.length > 0) {
+      const found = categoryTools.find((t) => t.id === modelId);
+      if (found) {
+        handleSelectModel(found);
+        searchParams.delete("model");
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryTools]);
 
   const tool = selectedTool || categoryTools[0] || null;
   const isVideoTool = category === "video";
