@@ -88,10 +88,8 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
   // ── Filtered rules ──
   const filtered = useMemo(() => {
     let list = rules;
-    // Category filter
-    if (activeTab !== "all") {
-      list = list.filter((r) => mapCategory(r) === activeTab);
-    }
+    // Category filter — always applied (no "all" tab)
+    list = list.filter((r) => mapCategory(r) === activeTab);
     // Search
     if (search.trim()) {
       const q = search.trim().toLowerCase();
