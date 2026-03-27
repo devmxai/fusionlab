@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import type { AITool } from "@/data/tools";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import imageGen from "@/assets/tools/image-gen.jpg";
@@ -169,6 +169,7 @@ const ToolCard = ({
   highPriority,
 }: ToolCardProps) => {
   const [imgLoaded, setImgLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
   const navigate = useNavigate();
   const shouldEagerLoad = eagerLoad ?? false;
   const shouldHighPriority = highPriority ?? false;
@@ -180,6 +181,17 @@ const ToolCard = ({
   const title = override?.title || tool.title;
 
   useEffect(() => {
+    if (!imgSrc) {
+      setImgLoaded(true);
+      return;
+    }
+
+    const imageElement = imgRef.current;
+    if (imageElement?.complete) {
+      setImgLoaded(true);
+      return;
+    }
+
     setImgLoaded(false);
   }, [imgSrc]);
 
@@ -205,6 +217,7 @@ const ToolCard = ({
             </div>
           )}
           <img
+            ref={imgRef}
             src={imgSrc}
             alt={title}
             className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
