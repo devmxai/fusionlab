@@ -85,21 +85,27 @@ interface InlineTag {
   tag: string; // the actual tag sent to backend
 }
 
+// Tags categorized by valid placement:
+// "start" = can appear at beginning of speech
+// "mid" = can appear between words/sentences (not at start)
+// "any" = can appear anywhere
 const inlineTags: InlineTag[] = [
-  { id: "short-pause", emoji: "⏸️", label: "وقفة قصيرة", tag: "[short pause]" },
-  { id: "medium-pause", emoji: "⏯️", label: "وقفة متوسطة", tag: "[medium pause]" },
-  { id: "long-pause", emoji: "⏹️", label: "وقفة طويلة", tag: "[long pause]" },
-  { id: "whispering", emoji: "🤫", label: "همس", tag: "[whispering]" },
-  { id: "shouting", emoji: "🗣️", label: "صراخ", tag: "[shouting]" },
-  { id: "sarcasm", emoji: "😏", label: "سخرية", tag: "[sarcasm]" },
-  { id: "laughing", emoji: "😂", label: "ضحك", tag: "[laughing]" },
-  { id: "sigh", emoji: "😮‍💨", label: "تنهيدة", tag: "[sigh]" },
-  { id: "fast", emoji: "⚡", label: "سريع", tag: "[fast]" },
-  { id: "scared", emoji: "😨", label: "خوف", tag: "[scared]" },
-  { id: "curious", emoji: "🤔", label: "فضول", tag: "[curious]" },
-  { id: "bored", emoji: "😑", label: "ملل", tag: "[bored]" },
-  { id: "uhm", emoji: "🤨", label: "تردد", tag: "[uhm]" },
-  { id: "gasp", emoji: "😲", label: "شهقة", tag: "[gasp]" },
+  // ── Pauses: only mid/end, never at the start ──
+  { id: "short-pause", emoji: "⏸️", label: "وقفة قصيرة", tag: "..." },
+  { id: "medium-pause", emoji: "⏯️", label: "وقفة متوسطة", tag: "...... " },
+  { id: "long-pause", emoji: "⏹️", label: "وقفة طويلة", tag: "......... " },
+  // ── Emotions/Effects: can appear at start or mid ──
+  { id: "whispering", emoji: "🤫", label: "همس", tag: "*يهمس*" },
+  { id: "shouting", emoji: "🗣️", label: "صراخ", tag: "*يصرخ*" },
+  { id: "sarcasm", emoji: "😏", label: "سخرية", tag: "*بسخرية*" },
+  { id: "laughing", emoji: "😂", label: "ضحك", tag: "*يضحك* هههه" },
+  { id: "sigh", emoji: "😮‍💨", label: "تنهيدة", tag: "*تنهيدة* آه" },
+  { id: "fast", emoji: "⚡", label: "سريع", tag: "*بسرعة*" },
+  { id: "scared", emoji: "😨", label: "خوف", tag: "*بخوف*" },
+  { id: "curious", emoji: "🤔", label: "فضول", tag: "*بفضول*" },
+  { id: "bored", emoji: "😑", label: "ملل", tag: "*بملل*" },
+  { id: "uhm", emoji: "🤨", label: "تردد", tag: "اممم" },
+  { id: "gasp", emoji: "😲", label: "شهقة", tag: "*شهقة*" },
 ];
 
 // Build emoji↔tag maps
