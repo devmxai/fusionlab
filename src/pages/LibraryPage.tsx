@@ -38,6 +38,7 @@ const LibraryPage = () => {
         .from("generations")
         .select("*")
         .eq("user_id", user.id)
+        .neq("file_type", "audio")
         .order("created_at", { ascending: false });
       setItems((data as Generation[]) || []);
       setFetching(false);
