@@ -214,7 +214,7 @@ const AudioStudioPage = () => {
           toolId: "gemini-tts",
           model: "gemini-tts",
           apiType: "tts",
-          quality: currentTier.quality,
+          quality: null,
           idempotencyKey,
           ttsParams: {
             text: textForBackend,
