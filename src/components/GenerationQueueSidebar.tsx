@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Layers, ChevronLeft, Image, Video, Loader2, Music, CheckCircle2, XCircle, Clock, ExternalLink } from "lucide-react";
+import { Layers, ChevronLeft, Image, Video, Loader2, Music, CheckCircle2, XCircle, Clock, ExternalLink, Eye } from "lucide-react";
 import { useQueue } from "@/contexts/GenerationQueueContext";
 import type { GenerationJob } from "@/hooks/use-generation-queue";
 
@@ -12,10 +12,13 @@ interface GenerationQueueSidebarProps {
 }
 
 const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQueueSidebarProps) => {
-  const { jobs, activeCount } = useQueue();
+  const { jobs, activeCount, unseenCount, markJobSeen } = useQueue();
   const [localOpen, setLocalOpen] = useState(false);
   const [openedAt, setOpenedAt] = useState(0);
   const isOpen = open || localOpen;
+
+  // Total badge count = active + unseen completed/failed
+  const badgeCount = activeCount + unseenCount;
 
   const handleOpen = () => { setOpenedAt(Date.now()); setLocalOpen(true); onOpen?.(); };
   const handleClose = () => { setLocalOpen(false); onClose?.(); };
@@ -31,30 +34,30 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
     return () => { document.body.style.overflow = ""; document.documentElement.style.overflow = ""; };
   }, [isOpen]);
 
-  const statusLabel = (s: string) => {
-    switch (s) {
-      case "pending": return "بالانتظار";
-      case "running": return "جارٍ التوليد";
-      case "succeeded": return "مكتمل";
-      case "failed": return "فشل";
-      case "timed_out": return "انتهى الوقت";
-      default: return s;
-    }
+  const statusLabel = (j: GenerationJob) => {
+    if (j.status === "succeeded" && !j.seen_at) return "جاهزة للعرض";
+    if (j.status === "succeeded") return "مكتمل";
+    if (j.status === "failed" && !j.seen_at) return "فشل - لم يُشاهد";
+    if (j.status === "failed") return "فشل";
+    if (j.status === "timed_out") return "انتهى الوقت";
+    if (j.status === "running") return "جارٍ التوليد";
+    if (j.status === "pending") return "بالانتظار";
+    return j.status;
   };
 
-  const statusColor = (s: string) => {
-    switch (s) {
-      case "pending": return "text-muted-foreground";
-      case "running": return "text-primary";
-      case "succeeded": return "text-green-400";
-      case "failed": case "timed_out": return "text-destructive";
-      default: return "text-muted-foreground";
-    }
+  const statusColor = (j: GenerationJob) => {
+    if (j.status === "succeeded" && !j.seen_at) return "text-green-400 font-bold";
+    if (j.status === "succeeded") return "text-green-400/60";
+    if ((j.status === "failed" || j.status === "timed_out") && !j.seen_at) return "text-destructive font-bold";
+    if (j.status === "failed" || j.status === "timed_out") return "text-destructive/60";
+    if (j.status === "running") return "text-primary";
+    return "text-muted-foreground";
   };
 
   const typeIcon = (job: GenerationJob) => {
     if (job.status === "running" || job.status === "pending") return <Loader2 className="w-4 h-4 text-primary animate-spin" />;
-    if (job.status === "succeeded") return <CheckCircle2 className="w-4 h-4 text-green-400" />;
+    if (job.status === "succeeded" && !job.seen_at) return <CheckCircle2 className="w-4 h-4 text-green-400" />;
+    if (job.status === "succeeded") return <CheckCircle2 className="w-4 h-4 text-green-400/50" />;
     if (job.status === "failed" || job.status === "timed_out") return <XCircle className="w-4 h-4 text-destructive" />;
     if (job.file_type === "video") return <Video className="w-4 h-4 text-muted-foreground" />;
     if (job.file_type === "audio") return <Music className="w-4 h-4 text-muted-foreground" />;
@@ -70,6 +73,28 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
     if (hours < 24) return `${hours} س`;
     return `${Math.floor(hours / 24)} ي`;
   };
+
+  const handleJobClick = async (job: GenerationJob) => {
+    if ((job.status === "succeeded" || job.status === "failed" || job.status === "timed_out") && !job.seen_at) {
+      await markJobSeen(job.id);
+    }
+    if (job.status === "succeeded" && job.result_url) {
+      window.open(job.result_url, "_blank");
+    }
+  };
+
+  // Sort: active first, then unseen, then seen
+  const sortedJobs = [...jobs].sort((a, b) => {
+    const priority = (j: GenerationJob) => {
+      if (j.status === "pending" || j.status === "running") return 0;
+      if (!j.seen_at) return 1;
+      return 2;
+    };
+    const pa = priority(a);
+    const pb = priority(b);
+    if (pa !== pb) return pa - pb;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
 
   const sidebarLayer = (
     <AnimatePresence>
@@ -98,12 +123,17 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
               <ChevronLeft className="w-4 h-4 text-muted-foreground" />
             </button>
 
-            <div className="px-5 pt-5 pb-2">
+            <div className="px-5 pt-5 pb-2 flex items-center gap-2">
               <span className="text-[11px] font-bold text-muted-foreground tracking-wide">قيد التوليد</span>
+              {unseenCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 text-[9px] font-bold">
+                  {unseenCount} جديد
+                </span>
+              )}
             </div>
 
             <div className="flex-1 px-4 mt-3 overflow-y-auto scrollbar-hide">
-              {jobs.length === 0 ? (
+              {sortedJobs.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full opacity-40">
                   <Layers className="w-10 h-10 text-muted-foreground mb-3" />
                   <p className="text-xs text-muted-foreground text-center">لا توجد عمليات توليد حالياً</p>
@@ -111,56 +141,82 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {jobs.map((job) => (
-                    <motion.div key={job.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                      className="p-3 rounded-xl bg-secondary/30 border border-border/20"
-                    >
-                      <div className="flex items-start gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-secondary/60 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          {typeIcon(job)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[11px] text-foreground truncate" dir="ltr">
-                            {job.prompt || job.tool_name || job.model}
-                          </p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className={`text-[9px] font-medium ${statusColor(job.status)}`}>
-                              {job.status === "running" && job.metadata
-                                ? ((job.metadata as any).phaseLabel || statusLabel(job.status))
-                                : statusLabel(job.status)}
-                            </span>
-                            <span className="text-[9px] text-muted-foreground/50 flex items-center gap-0.5">
-                              <Clock className="w-2.5 h-2.5" />
-                              {timeAgo(job.created_at)}
-                            </span>
-                          </div>
-                          {job.status === "failed" && job.error_message && (
-                            <p className="text-[9px] text-destructive/80 mt-1 truncate">{job.error_message}</p>
-                          )}
-                          {job.status === "succeeded" && job.result_url && (
-                            <a href={job.result_url} target="_blank" rel="noopener noreferrer"
-                              className="text-[9px] text-primary flex items-center gap-0.5 mt-1 hover:underline">
-                              <ExternalLink className="w-2.5 h-2.5" /> فتح النتيجة
-                            </a>
-                          )}
-                        </div>
-                      </div>
+                  {sortedJobs.map((job) => {
+                    const isUnseen = (job.status === "succeeded" || job.status === "failed" || job.status === "timed_out") && !job.seen_at;
+                    const isClickable = job.status === "succeeded" || isUnseen;
 
-                      {(job.status === "running" || job.status === "pending") && (
-                        <div className="mt-2 flex items-center gap-2">
-                          <div className="flex-1 h-1 bg-secondary/60 rounded-full overflow-hidden">
-                            <motion.div
-                              className="h-full bg-primary rounded-full"
-                              animate={{ width: `${job.progress}%` }}
-                              transition={{ duration: 0.8, ease: "easeOut" }}
-                              style={{ boxShadow: "0 0 8px hsl(var(--primary) / 0.4)" }}
-                            />
+                    return (
+                      <motion.div
+                        key={job.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className={`p-3 rounded-xl border transition-all ${
+                          isUnseen
+                            ? "bg-primary/5 border-primary/30 ring-1 ring-primary/20"
+                            : "bg-secondary/30 border-border/20"
+                        } ${isClickable ? "cursor-pointer hover:bg-secondary/50" : ""}`}
+                        onClick={() => isClickable && handleJobClick(job)}
+                      >
+                        <div className="flex items-start gap-2.5">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                            isUnseen ? "bg-primary/10" : "bg-secondary/60"
+                          }`}>
+                            {typeIcon(job)}
                           </div>
-                          <span className="text-[9px] text-muted-foreground font-medium w-7 text-left">{job.progress}%</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] text-foreground truncate" dir="ltr">
+                              {job.prompt || job.tool_name || job.model}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className={`text-[9px] ${statusColor(job)}`}>
+                                {job.status === "running" && job.metadata
+                                  ? ((job.metadata as any).phaseLabel || statusLabel(job))
+                                  : statusLabel(job)}
+                              </span>
+                              <span className="text-[9px] text-muted-foreground/50 flex items-center gap-0.5">
+                                <Clock className="w-2.5 h-2.5" />
+                                {timeAgo(job.created_at)}
+                              </span>
+                            </div>
+                            {job.status === "failed" && job.error_message && (
+                              <p className="text-[9px] text-destructive/80 mt-1 truncate">{job.error_message}</p>
+                            )}
+                            {job.status === "succeeded" && !job.seen_at && (
+                              <div className="flex items-center gap-1 mt-1">
+                                <Eye className="w-2.5 h-2.5 text-green-400" />
+                                <span className="text-[9px] text-green-400 font-medium">اضغط لعرض النتيجة</span>
+                              </div>
+                            )}
+                            {job.status === "succeeded" && job.seen_at && job.result_url && (
+                              <a href={job.result_url} target="_blank" rel="noopener noreferrer"
+                                className="text-[9px] text-primary flex items-center gap-0.5 mt-1 hover:underline"
+                                onClick={(e) => e.stopPropagation()}>
+                                <ExternalLink className="w-2.5 h-2.5" /> فتح النتيجة
+                              </a>
+                            )}
+                          </div>
+
+                          {isUnseen && (
+                            <div className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0 mt-1 animate-pulse" />
+                          )}
                         </div>
-                      )}
-                    </motion.div>
-                  ))}
+
+                        {(job.status === "running" || job.status === "pending") && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <div className="flex-1 h-1 bg-secondary/60 rounded-full overflow-hidden">
+                              <motion.div
+                                className="h-full bg-primary rounded-full"
+                                animate={{ width: `${job.progress}%` }}
+                                transition={{ duration: 0.8, ease: "easeOut" }}
+                                style={{ boxShadow: "0 0 8px hsl(var(--primary) / 0.4)" }}
+                              />
+                            </div>
+                            <span className="text-[9px] text-muted-foreground font-medium w-7 text-left">{job.progress}%</span>
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -168,7 +224,10 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
             {jobs.length > 0 && (
               <div className="px-4 pb-8 pt-3">
                 <p className="text-[10px] text-muted-foreground text-center">
-                  {activeCount} عملية نشطة من {jobs.length}
+                  {activeCount > 0 && `${activeCount} نشطة`}
+                  {activeCount > 0 && unseenCount > 0 && " · "}
+                  {unseenCount > 0 && `${unseenCount} جديدة`}
+                  {activeCount === 0 && unseenCount === 0 && `${jobs.length} عملية`}
                 </p>
               </div>
             )}
@@ -182,11 +241,15 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
     <>
       <button onClick={handleOpen} className="p-2 rounded-full hover:bg-secondary transition-colors relative">
         <Layers className="w-5 h-5 text-muted-foreground" />
-        {activeCount > 0 && (
+        {badgeCount > 0 && (
           <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}
-            className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center"
+            className={`absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center ${
+              unseenCount > 0
+                ? "bg-green-500 text-white"
+                : "bg-primary text-primary-foreground"
+            }`}
           >
-            {activeCount}
+            {badgeCount}
           </motion.span>
         )}
       </button>
