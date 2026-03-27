@@ -7,11 +7,14 @@ export async function compressImage(
   options: { maxWidth?: number; maxHeight?: number; quality?: number; maxSizeKB?: number } = {}
 ): Promise<File> {
   const { maxWidth = 1200, maxHeight = 1200, quality = 0.82, maxSizeKB = 300 } = options;
+  type DrawableContext = {
+    drawImage: (...args: unknown[]) => void;
+  };
 
   // Skip if already small enough
   if (file.size <= maxSizeKB * 1024) return file;
 
-  const readImageDimensions = async (): Promise<{ width: number; height: number; draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => void; cleanup: () => void; }> => {
+  const readImageDimensions = async (): Promise<{ width: number; height: number; draw: (ctx: DrawableContext, w: number, h: number) => void; cleanup: () => void; }> => {
     if (typeof createImageBitmap === "function") {
       const bitmap = await createImageBitmap(file);
       return {
