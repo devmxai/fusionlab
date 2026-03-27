@@ -126,22 +126,24 @@ export function useGenerationQueue() {
   }) => {
     if (!user) return null;
 
+    const jobRecord = {
+      user_id: user.id,
+      task_id: params.taskId,
+      reservation_id: params.reservationId,
+      tool_id: params.toolId,
+      tool_name: params.toolName,
+      model: params.model,
+      api_type: params.apiType,
+      prompt: params.prompt,
+      file_type: params.fileType,
+      status: "pending" as const,
+      progress: 0,
+      metadata: params.metadata || {},
+    };
+
     const { data, error } = await supabase
       .from("generation_jobs")
-      .insert({
-        user_id: user.id,
-        task_id: params.taskId,
-        reservation_id: params.reservationId,
-        tool_id: params.toolId,
-        tool_name: params.toolName,
-        model: params.model,
-        api_type: params.apiType,
-        prompt: params.prompt,
-        file_type: params.fileType,
-        status: "pending",
-        progress: 0,
-        metadata: params.metadata || {},
-      })
+      .insert(jobRecord as any)
       .select()
       .single();
 
