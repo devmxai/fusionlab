@@ -146,7 +146,12 @@ export function useGenerationQueue() {
       .limit(50);
 
     if (!error && data) {
-      setJobs(data as unknown as GenerationJob[]);
+      // Normalize effective status on fetch
+      const normalized = (data as unknown as GenerationJob[]).map((j) => {
+        const eff = getEffectiveStatus(j);
+        return eff !== j.status ? { ...j, status: eff } : j;
+      });
+      setJobs(normalized);
     }
   }, [user]);
 
