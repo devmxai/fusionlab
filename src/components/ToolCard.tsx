@@ -49,11 +49,24 @@ const categoryStudioMap: Record<string, string> = {
   "رفع الجودة": "/studio/upscale",
 };
 
+const optimizeStorageUrl = (url: string | undefined, width = 400): string | undefined => {
+  if (!url) return url;
+  // Add Supabase image transformation for storage URLs
+  if (url.includes("supabase.co/storage/v1/object/public/")) {
+    return url.replace(
+      "/storage/v1/object/public/",
+      `/storage/v1/render/image/public/`
+    ) + `?width=${width}&quality=75`;
+  }
+  return url;
+};
+
 const ToolCard = ({ tool, index = 0, override }: ToolCardProps) => {
   const [imgLoaded, setImgLoaded] = useState(false);
   const navigate = useNavigate();
 
-  const imgSrc = override?.image_url || imageMap[tool.image];
+  const rawSrc = override?.image_url || imageMap[tool.image];
+  const imgSrc = optimizeStorageUrl(rawSrc);
   const title = override?.title || tool.title;
 
   useEffect(() => {
