@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { tools, buildModelInput, AITool } from "@/data/tools";
 import { getModelCapabilities } from "@/data/model-capabilities";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Image as ImageIcon, Send, X, Sparkles, ChevronDown, Upload, Plus, Music, Video, Lock } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, Send, X, Sparkles, ChevronDown, Upload, Plus, Music, Video, Lock, Play, Pause } from "lucide-react";
 import { uploadFileBase64 } from "@/lib/kie-ai";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -1190,61 +1190,79 @@ const StudioPage = () => {
 
           {/* ── Avatar upload strip ── */}
           {isAvatarTool && selectedTool && (
-            <div className="flex gap-2">
-              {/* Image slot */}
+            <div className="flex gap-2 items-stretch">
+              {/* Image slot - square */}
               <button
                 onClick={() => avatarImageInputRef.current?.click()}
-                className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
+                className={`relative rounded-xl border-2 border-dashed transition-all overflow-hidden flex-shrink-0 ${
                   avatarImage ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
                 }`}
-                style={{ minHeight: "56px" }}
+                style={{ width: "56px", height: "56px" }}
               >
                 {avatarImage ? (
-                  <div className="relative w-full h-14">
+                  <div className="relative w-full h-full">
                     <img src={avatarImage.preview} alt="Avatar" className="w-full h-full object-cover rounded-lg" />
                     <button
                       onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }}
-                      className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                      className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
                     >
                       <X className="w-2.5 h-2.5 text-destructive-foreground" />
                     </button>
-                    <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">صورة</span>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center gap-1 py-2">
+                  <div className="flex flex-col items-center justify-center gap-0.5 w-full h-full">
                     <Upload className="w-4 h-4 text-muted-foreground/60" />
-                    <span className="text-[9px] font-semibold text-muted-foreground/70">صورة</span>
+                    <span className="text-[8px] font-semibold text-muted-foreground/70">صورة</span>
                   </div>
                 )}
               </button>
 
-              {/* Audio slot (for avatar models) */}
+              {/* Audio slot - wide bar with play button */}
               {isAvatarAudioModel && (
-                <button
-                  onClick={() => avatarAudioInputRef.current?.click()}
+                <div
                   className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
                     avatarAudio ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
                   }`}
                   style={{ minHeight: "56px" }}
                 >
                   {avatarAudio ? (
-                    <div className="relative w-full h-14 flex flex-col items-center justify-center gap-1">
-                      <Music className="w-4 h-4 text-primary" />
-                      <span className="text-[8px] font-bold text-foreground truncate max-w-[80%] px-1">{avatarAudio.name}</span>
+                    <div className="relative w-full h-14 flex items-center gap-3 px-3">
+                      {/* Play/Pause button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const audioEl = document.getElementById("avatar-audio-preview") as HTMLAudioElement | null;
+                          if (audioEl) {
+                            if (audioEl.paused) { audioEl.play(); }
+                            else { audioEl.pause(); }
+                          }
+                        }}
+                        className="w-8 h-8 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center flex-shrink-0 transition-colors"
+                      >
+                        <Play className="w-3.5 h-3.5 text-primary ml-0.5" />
+                      </button>
+                      <audio id="avatar-audio-preview" src={URL.createObjectURL(avatarAudio.file)} className="hidden" />
+                      <div className="flex-1 min-w-0">
+                        <Music className="w-3.5 h-3.5 text-primary inline-block mr-1" />
+                        <span className="text-[10px] font-medium text-foreground truncate">{avatarAudio.name}</span>
+                      </div>
                       <button
                         onClick={(e) => { e.stopPropagation(); setAvatarAudio(null); }}
-                        className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                        className="w-4 h-4 rounded-full bg-destructive flex items-center justify-center flex-shrink-0"
                       >
                         <X className="w-2.5 h-2.5 text-destructive-foreground" />
                       </button>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center gap-1 py-2">
+                    <button
+                      onClick={() => avatarAudioInputRef.current?.click()}
+                      className="flex items-center justify-center gap-2 w-full h-full py-2"
+                    >
                       <Music className="w-4 h-4 text-muted-foreground/60" />
-                      <span className="text-[9px] font-semibold text-muted-foreground/70">مقطع صوتي</span>
-                    </div>
+                      <span className="text-[10px] font-semibold text-muted-foreground/70">ارفع مقطع صوتي</span>
+                    </button>
                   )}
-                </button>
+                </div>
               )}
 
               {/* Video slot (for animate models like Wan Animate) */}
