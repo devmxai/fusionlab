@@ -435,7 +435,7 @@ const StudioPage = () => {
 
       reservationId = startResult.reservationId;
       const taskId = startResult.taskId;
-      const fileType2 = (isVideoTool || isAvatarTool) ? "video" : "image";
+      
 
       // Job was created server-side. Refresh jobs list to pick it up,
       // then find it and start polling.
@@ -482,7 +482,7 @@ const StudioPage = () => {
         model: tool.model,
         api_type: apiType || "standard",
         prompt: prompt || tool.title,
-        file_type: fileType2,
+        file_type: fileType,
         status: "pending" as const,
         progress: 0,
         result_url: null,
@@ -514,7 +514,7 @@ const StudioPage = () => {
               toolName: tool.title,
               prompt,
               fileUrl: fileUrl || "",
-              fileType: fileType2,
+              fileType: fileType,
               metadata: { aspectRatio, resolution, model: tool.model },
             },
           });
