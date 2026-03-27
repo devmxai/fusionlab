@@ -43,12 +43,12 @@ const categoryTitleMap: Record<string, string> = {
 };
 
 const ratioConfig: Record<string, { label: string; cssAspect: string; placeholderMaxW: string }> = {
-  "1:1":  { label: "1:1",   cssAspect: "1/1",  placeholderMaxW: "260px" },
-  "3:4":  { label: "3:4",   cssAspect: "3/4",  placeholderMaxW: "220px" },
-  "4:3":  { label: "4:3",   cssAspect: "4/3",  placeholderMaxW: "320px" },
-  "9:16": { label: "9:16",  cssAspect: "9/16", placeholderMaxW: "180px" },
-  "16:9": { label: "16:9",  cssAspect: "16/9", placeholderMaxW: "340px" },
-  "21:9": { label: "21:9",  cssAspect: "21/9", placeholderMaxW: "360px" },
+  "1:1":  { label: "1:1",   cssAspect: "1/1",  placeholderMaxW: "min(90vw, 480px)" },
+  "3:4":  { label: "3:4",   cssAspect: "3/4",  placeholderMaxW: "min(85vw, 420px)" },
+  "4:3":  { label: "4:3",   cssAspect: "4/3",  placeholderMaxW: "min(92vw, 600px)" },
+  "9:16": { label: "9:16",  cssAspect: "9/16", placeholderMaxW: "min(65vw, 340px)" },
+  "16:9": { label: "16:9",  cssAspect: "16/9", placeholderMaxW: "min(95vw, 700px)" },
+  "21:9": { label: "21:9",  cssAspect: "21/9", placeholderMaxW: "min(95vw, 750px)" },
 };
 
 const StudioPage = () => {
