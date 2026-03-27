@@ -730,6 +730,13 @@ export type Database = {
         Args: { p_approve: boolean; p_trial_id: string }
         Returns: Json
       }
+      admin_set_role: {
+        Args: {
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_target_user_id: string
+        }
+        Returns: Json
+      }
       check_entitlement:
         | {
             Args: {
