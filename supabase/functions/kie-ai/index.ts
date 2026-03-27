@@ -218,7 +218,7 @@ serve(async (req) => {
         headers: authHeaders,
         body: JSON.stringify({ model, input }),
       });
-      const data = await response.json();
+      const data = await safeJson(response, "Create task");
       console.log("Create task response:", JSON.stringify(data));
       return jsonRes(data, response.ok ? 200 : response.status);
     }
