@@ -22,44 +22,51 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePricing } from "@/hooks/use-pricing";
 
-// ─── Official Gemini Voices ───
+// ─── Official Gemini Voices (all 30) ───
 interface GeminiVoice {
   name: string;
   label: string;
   gender: "male" | "female";
+  trait: string;
   description: string;
 }
 
 const GEMINI_FLASH_TTS_MODEL = "gemini-2.5-flash-preview-tts";
 
 const geminiVoices: GeminiVoice[] = [
-  // ─── Male Voices (14) ───
-  { name: "Puck", label: "Puck", gender: "male", description: "صوت شاب ديناميكي ومرن" },
-  { name: "Charon", label: "Charon", gender: "male", description: "صوت عميق وهادئ" },
-  { name: "Orus", label: "Orus", gender: "male", description: "صوت واضح ومهني" },
-  { name: "Achird", label: "Achird", gender: "male", description: "صوت دافئ وطبيعي" },
-  { name: "Algenib", label: "Algenib", gender: "male", description: "صوت قوي وواثق" },
-  { name: "Alnilam", label: "Alnilam", gender: "male", description: "صوت رصين ومتزن" },
-  { name: "Fenrir", label: "Fenrir", gender: "male", description: "صوت حاد وجريء" },
-  { name: "Gacrux", label: "Gacrux", gender: "male", description: "صوت ناضج ومستقر" },
-  { name: "Iapetus", label: "Iapetus", gender: "male", description: "صوت واضح ومتوازن" },
-  { name: "Rasalgethi", label: "Rasalgethi", gender: "male", description: "صوت عميق ومؤثر" },
-  { name: "Sadachbia", label: "Sadachbia", gender: "male", description: "صوت هادئ ولطيف" },
-  { name: "Sadaltager", label: "Sadaltager", gender: "male", description: "صوت طبيعي وسلس" },
-  { name: "Schedar", label: "Schedar", gender: "male", description: "صوت قوي ورسمي" },
-  { name: "Umbriel", label: "Umbriel", gender: "male", description: "صوت ثابت ومحايد" },
-  { name: "Zubenelgenubi", label: "Zubenelgenubi", gender: "male", description: "صوت متميز وفريد" },
-  // ─── Female Voices (10) ───
-  { name: "Kore", label: "Kore", gender: "female", description: "صوت أنثوي دافئ" },
-  { name: "Leda", label: "Leda", gender: "female", description: "صوت ناعم وراقي" },
-  { name: "Zephyr", label: "Zephyr", gender: "female", description: "صوت حيوي ومرح" },
-  { name: "Aoede", label: "Aoede", gender: "female", description: "صوت غني ومعبّر" },
-  { name: "Achernar", label: "Achernar", gender: "female", description: "صوت هادئ ومريح" },
-  { name: "Elara", label: "Elara", gender: "female", description: "صوت صافي ورقيق" },
-  { name: "Laomedeia", label: "Laomedeia", gender: "female", description: "صوت أنيق ومتزن" },
-  { name: "Pulcherrima", label: "Pulcherrima", gender: "female", description: "صوت جميل وناعم" },
-  { name: "Sulafat", label: "Sulafat", gender: "female", description: "صوت مميز وجذاب" },
-  { name: "Vindemiatrix", label: "Vindemiatrix", gender: "female", description: "صوت قوي وأنثوي" },
+  // ─── Male Voices (17) ───
+  { name: "Puck", label: "حيدر", gender: "male", trait: "حيوي", description: "صوت شاب حماسي ومفعم بالطاقة" },
+  { name: "Charon", label: "كريم", gender: "male", trait: "إخباري", description: "صوت عميق ورصين للسرد والأخبار" },
+  { name: "Fenrir", label: "باسل", gender: "male", trait: "متحمس", description: "صوت حاد وجريء مليء بالحماس" },
+  { name: "Orus", label: "عمر", gender: "male", trait: "حازم", description: "صوت واضح ومهني وحازم" },
+  { name: "Achird", label: "سامر", gender: "male", trait: "ودود", description: "صوت دافئ وودود وقريب من المستمع" },
+  { name: "Algenib", label: "ثامر", gender: "male", trait: "خشن", description: "صوت غليظ وخشن ذو طابع قوي" },
+  { name: "Alnilam", label: "فاضل", gender: "male", trait: "صارم", description: "صوت رسمي وصارم ومتماسك" },
+  { name: "Iapetus", label: "ياسر", gender: "male", trait: "صافي", description: "صوت صافي ونقي ومتوازن" },
+  { name: "Umbriel", label: "رائد", gender: "male", trait: "مريح", description: "صوت هادئ ومسترخي ومريح للسمع" },
+  { name: "Gacrux", label: "أبو حسن", gender: "male", trait: "ناضج", description: "صوت ناضج وعميق بخبرة واضحة" },
+  { name: "Rasalgethi", label: "منير", gender: "male", trait: "معلوماتي", description: "صوت واثق مناسب للشرح والتعليم" },
+  { name: "Schedar", label: "وليد", gender: "male", trait: "متزن", description: "صوت ثابت ومتزن ومحايد" },
+  { name: "Sadachbia", label: "مصطفى", gender: "male", trait: "نشيط", description: "صوت حيوي ونشيط ومبتهج" },
+  { name: "Sadaltager", label: "طارق", gender: "male", trait: "عارف", description: "صوت حكيم ومتمكن وواسع المعرفة" },
+  { name: "Zubenelgenubi", label: "علي", gender: "male", trait: "عفوي", description: "صوت عفوي وطبيعي للمحادثات اليومية" },
+  { name: "Enceladus", label: "همام", gender: "male", trait: "هامس", description: "صوت ناعم وهامس ذو نفس عميق" },
+  { name: "Algieba", label: "نبيل", gender: "male", trait: "ناعم", description: "صوت أنيق وناعم وسلس" },
+
+  // ─── Female Voices (13) ───
+  { name: "Kore", label: "زينب", gender: "female", trait: "حازمة", description: "صوت أنثوي قوي وحازم وواثق" },
+  { name: "Zephyr", label: "نور", gender: "female", trait: "مشرقة", description: "صوت مشرق وحيوي مليء بالنشاط" },
+  { name: "Leda", label: "سارة", gender: "female", trait: "شابة", description: "صوت شبابي ناعم ومفعم بالحيوية" },
+  { name: "Aoede", label: "ريم", gender: "female", trait: "منعشة", description: "صوت منعش وخفيف كنسيم الصباح" },
+  { name: "Achernar", label: "هديل", gender: "female", trait: "ناعمة", description: "صوت ناعم وهادئ ومريح جداً" },
+  { name: "Pulcherrima", label: "مريم", gender: "female", trait: "جريئة", description: "صوت أنثوي جريء وواضح ومباشر" },
+  { name: "Vindemiatrix", label: "لمى", gender: "female", trait: "رقيقة", description: "صوت رقيق ولطيف وهادئ" },
+  { name: "Sulafat", label: "دانية", gender: "female", trait: "دافئة", description: "صوت دافئ وحنون ومطمئن" },
+  { name: "Laomedeia", label: "فرح", gender: "female", trait: "مبتهجة", description: "صوت مبتهج ومتفائل ومرح" },
+  { name: "Autonoe", label: "آلاء", gender: "female", trait: "ساطعة", description: "صوت ساطع وواضح ونقي" },
+  { name: "Callirrhoe", label: "رغد", gender: "female", trait: "مسترخية", description: "صوت مسترخي وطبيعي وعفوي" },
+  { name: "Despina", label: "جنى", gender: "female", trait: "سلسة", description: "صوت سلس وانسيابي وراقي" },
+  { name: "Erinome", label: "حلا", gender: "female", trait: "واضحة", description: "صوت واضح ونظيف ودقيق النطق" },
 ];
 
 // ─── Enhancement Presets ───
@@ -127,6 +134,8 @@ const AudioStudioPage = () => {
   // ─── State ───
   const [styleInstruction, setStyleInstruction] = useState("");
   const [text, setText] = useState("");
+  const [voiceGenderTab, setVoiceGenderTab] = useState<"male" | "female">("male");
+  const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
 
   // Count only spoken characters (exclude emoji tags)
   const getSpokenCharCount = useCallback((input: string): number => {
@@ -158,14 +167,13 @@ const AudioStudioPage = () => {
   const [stability, setStability] = useState(0.7);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [previewing, setPreviewing] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
 
-  const maleVoices = geminiVoices.filter((v) => v.gender === "male");
-  const femaleVoices = geminiVoices.filter((v) => v.gender === "female");
+  const maleVoices = useMemo(() => geminiVoices.filter((v) => v.gender === "male"), []);
+  const femaleVoices = useMemo(() => geminiVoices.filter((v) => v.gender === "female"), []);
 
   const base64ToAudioUrl = (base64: string, mimeType: string): string => {
     const byteCharacters = atob(base64);
@@ -316,14 +324,15 @@ const AudioStudioPage = () => {
     }
   };
 
-  const handlePreviewVoice = async () => {
-    setPreviewing(true);
+  const handlePreviewVoice = async (voice?: GeminiVoice) => {
+    const v = voice || selectedVoice;
+    setPreviewingVoice(v.name);
     try {
       const { data, error } = await supabase.functions.invoke("gemini-tts", {
         body: {
           action: "preview",
           prebuiltModel: GEMINI_FLASH_TTS_MODEL,
-          voiceName: selectedVoice.name,
+          voiceName: v.name,
           previewText: "مرحباً، أنا صوتك الجديد. كيف أبدو؟",
           styleInstruction: styleInstruction.trim(),
           dialectHint: "لهجة عراقية عامية طبيعية",
@@ -343,7 +352,7 @@ const AudioStudioPage = () => {
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "خطأ في المعاينة");
     } finally {
-      setPreviewing(false);
+      setPreviewingVoice(null);
     }
   };
 
@@ -410,7 +419,7 @@ const AudioStudioPage = () => {
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden" dir="rtl">
       {/* Header */}
       <header className="shrink-0 bg-nav-bg/80 backdrop-blur-xl border-b border-border/50 px-4 py-3 z-50">
-        <div className="flex items-center gap-3 max-w-3xl mx-auto">
+        <div className="flex items-center gap-3 max-w-5xl mx-auto">
           <button onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground transition-colors">
             <ArrowRight className="w-5 h-5" />
           </button>
@@ -429,170 +438,271 @@ const AudioStudioPage = () => {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main Content - Desktop: two columns */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        <div className="max-w-3xl mx-auto space-y-4">
-          {/* Style Instructions */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-              أسلوب الأداء
-            </label>
-            <Textarea
-              value={styleInstruction}
-              onChange={(e) => setStyleInstruction(e.target.value)}
-              placeholder="مثال: رجل عراقي متوسط العمر، لهجة عامية، نبرة طبيعية وقريبة من المستمع..."
-              className="min-h-[80px] bg-card border-border/50 text-sm resize-none focus:border-primary/50"
-              dir="rtl"
-            />
-            {/* Enhancement Presets */}
-            <div className="flex gap-1.5 flex-wrap">
-              {presets.map((p) => (
-                <button
-                  key={p.label}
-                  onClick={() => applyPreset(p.style)}
-                  className="text-[10px] px-2.5 py-1 rounded-full bg-secondary border border-border/30 text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
-                >
-                  {p.label}
-                </button>
-              ))}
+        <div className="max-w-5xl mx-auto flex flex-col lg:flex-row gap-6">
+          {/* Left Column - Main content */}
+          <div className="flex-1 space-y-4 min-w-0">
+            {/* Style Instructions */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                أسلوب الأداء
+              </label>
+              <Textarea
+                value={styleInstruction}
+                onChange={(e) => setStyleInstruction(e.target.value)}
+                placeholder="مثال: رجل عراقي متوسط العمر، لهجة عامية، نبرة طبيعية وقريبة من المستمع..."
+                className="min-h-[80px] bg-card border-border/50 text-sm resize-none focus:border-primary/50"
+                dir="rtl"
+              />
+              {/* Enhancement Presets */}
+              <div className="flex gap-1.5 flex-wrap">
+                {presets.map((p) => (
+                  <button
+                    key={p.label}
+                    onClick={() => applyPreset(p.style)}
+                    className="text-[10px] px-2.5 py-1 rounded-full bg-secondary border border-border/30 text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Text Field */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-              <Volume2 className="w-3.5 h-3.5 text-primary" />
-              النص
-            </label>
-            <Textarea
-              ref={textareaRef}
-              value={text}
-              onChange={(e) => {
-                const newText = tagsToEmojis(e.target.value);
-                setText(newText);
-              }}
-              placeholder="اكتب النص الذي تريد تحويله إلى صوت..."
-              className={`min-h-[120px] bg-card border-border/50 text-sm resize-none focus:border-primary/50 ${isOverLimit ? "border-destructive focus:border-destructive" : ""}`}
-              dir="rtl"
-            />
-            {/* Character counter & cost indicator */}
-            <div className="flex items-center justify-between text-[10px] px-1">
-              <div className="flex items-center gap-2">
-                <span className={`font-mono ${isOverLimit ? "text-destructive font-bold" : charCount > MAX_TTS_CHARS * 0.8 ? "text-yellow-500" : "text-muted-foreground"}`}>
-                  {charCount.toLocaleString()} / {MAX_TTS_CHARS.toLocaleString()} حرف
-                </span>
+            {/* Text Field */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                <Volume2 className="w-3.5 h-3.5 text-primary" />
+                النص
+              </label>
+              <Textarea
+                ref={textareaRef}
+                value={text}
+                onChange={(e) => {
+                  const newText = tagsToEmojis(e.target.value);
+                  setText(newText);
+                }}
+                placeholder="اكتب النص الذي تريد تحويله إلى صوت..."
+                className={`min-h-[120px] lg:min-h-[180px] bg-card border-border/50 text-sm resize-none focus:border-primary/50 ${isOverLimit ? "border-destructive focus:border-destructive" : ""}`}
+                dir="rtl"
+              />
+              {/* Character counter & cost indicator */}
+              <div className="flex items-center justify-between text-[10px] px-1">
+                <div className="flex items-center gap-2">
+                  <span className={`font-mono ${isOverLimit ? "text-destructive font-bold" : charCount > MAX_TTS_CHARS * 0.8 ? "text-yellow-500" : "text-muted-foreground"}`}>
+                    {charCount.toLocaleString()} / {MAX_TTS_CHARS.toLocaleString()} حرف
+                  </span>
+                  {charCount > 0 && (
+                    <span className="text-muted-foreground">
+                      ({(price?.perCharRate ?? 0.005).toFixed(3)} كريديت/حرف)
+                    </span>
+                  )}
+                </div>
                 {charCount > 0 && (
-                  <span className="text-muted-foreground">
-                    ({(price?.perCharRate ?? 0.005).toFixed(3)} كريديت/حرف)
+                  <span className="text-primary font-bold">
+                    {estimatedCost} كريديت
                   </span>
                 )}
               </div>
-              {charCount > 0 && (
-                <span className="text-primary font-bold">
-                  {estimatedCost} كريديت
-                </span>
-              )}
+              {/* Inline Tags - Emoji Chips */}
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+                {inlineTags.map((tag) => (
+                  <button
+                    key={tag.id}
+                    onClick={() => insertTag(tag)}
+                    title={tag.label}
+                    className="shrink-0 flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-foreground transition-all border border-primary/10 hover:border-primary/30"
+                  >
+                    <span className="text-sm">{tag.emoji}</span>
+                    <span className="text-[10px] text-muted-foreground">{tag.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-            {/* Inline Tags - Emoji Chips */}
-            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
-              {inlineTags.map((tag) => (
+
+            {/* Audio Player - Always visible */}
+            <div className="bg-card rounded-xl border border-border/50 p-4 space-y-3">
+              <audio
+                ref={audioRef}
+                src={audioUrl || undefined}
+                onTimeUpdate={handleTimeUpdate}
+                onEnded={() => setIsPlaying(false)}
+                onLoadedMetadata={handleTimeUpdate}
+              />
+
+              {/* Waveform-style progress */}
+              <div className="relative h-12 flex items-center gap-[2px] px-2">
+                {Array.from({ length: 60 }).map((_, i) => {
+                  const filled = audioDuration > 0 && (i / 60) <= (audioProgress / audioDuration);
+                  const height = 15 + Math.sin(i * 0.5) * 10 + Math.sin(i * 1.3) * 5;
+                  return (
+                    <div
+                      key={i}
+                      className={`flex-1 rounded-full transition-colors duration-150 cursor-pointer ${
+                        !audioUrl ? "bg-secondary/50" : filled ? "bg-primary" : "bg-secondary"
+                      }`}
+                      style={{ height: `${height}px` }}
+                      onClick={() => {
+                        if (audioRef.current && audioDuration > 0) {
+                          audioRef.current.currentTime = (i / 60) * audioDuration;
+                        }
+                      }}
+                    />
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground px-2">
+                <span>{formatTime(audioProgress)}</span>
+                <span>{audioDuration > 0 ? formatTime(audioDuration) : "0:00"}</span>
+              </div>
+
+              <div className="flex items-center justify-center gap-3">
                 <button
-                  key={tag.id}
-                  onClick={() => insertTag(tag)}
-                  title={tag.label}
-                  className="shrink-0 flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-foreground transition-all border border-primary/10 hover:border-primary/30"
+                  onClick={togglePlay}
+                  disabled={!audioUrl}
+                  className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors ${
+                    audioUrl
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "bg-secondary text-muted-foreground cursor-not-allowed"
+                  }`}
                 >
-                  <span className="text-sm">{tag.emoji}</span>
-                  <span className="text-[10px] text-muted-foreground">{tag.label}</span>
+                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
                 </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Audio Player - Always visible */}
-          <div className="bg-card rounded-xl border border-border/50 p-4 space-y-3">
-            <audio
-              ref={audioRef}
-              src={audioUrl || undefined}
-              onTimeUpdate={handleTimeUpdate}
-              onEnded={() => setIsPlaying(false)}
-              onLoadedMetadata={handleTimeUpdate}
-            />
-
-            {/* Waveform-style progress */}
-            <div className="relative h-12 flex items-center gap-[2px] px-2">
-              {Array.from({ length: 60 }).map((_, i) => {
-                const filled = audioDuration > 0 && (i / 60) <= (audioProgress / audioDuration);
-                const height = 15 + Math.sin(i * 0.5) * 10 + Math.sin(i * 1.3) * 5;
-                return (
-                  <div
-                    key={i}
-                    className={`flex-1 rounded-full transition-colors duration-150 cursor-pointer ${
-                      !audioUrl ? "bg-secondary/50" : filled ? "bg-primary" : "bg-secondary"
-                    }`}
-                    style={{ height: `${height}px` }}
-                    onClick={() => {
-                      if (audioRef.current && audioDuration > 0) {
-                        audioRef.current.currentTime = (i / 60) * audioDuration;
-                      }
-                    }}
-                  />
-                );
-              })}
+              </div>
             </div>
 
-            <div className="flex items-center justify-between text-[10px] text-muted-foreground px-2">
-              <span>{formatTime(audioProgress)}</span>
-              <span>{audioDuration > 0 ? formatTime(audioDuration) : "0:00"}</span>
-            </div>
-
-            <div className="flex items-center justify-center gap-3">
-              <button
-                onClick={togglePlay}
-                disabled={!audioUrl}
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors ${
-                  audioUrl
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "bg-secondary text-muted-foreground cursor-not-allowed"
-                }`}
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <Button
+                onClick={handleGenerate}
+                disabled={loading || !text.trim() || insufficientCredits || isOverLimit}
+                className={`flex-1 gap-2 h-11 rounded-xl text-sm font-bold shadow-md ${insufficientCredits ? "bg-destructive hover:bg-destructive/90" : ""}`}
               >
-                {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-              </button>
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+                {loading ? "جاري التوليد..." : (
+                  <span className="flex items-center gap-1.5">
+                    توليد الصوت
+                    {estimatedCost > 0 && (
+                      <span className="text-xs font-bold opacity-90">{estimatedCost}</span>
+                    )}
+                  </span>
+                )}
+              </Button>
+
+              <Button variant="outline" onClick={handleDownload} disabled={!audioUrl} className="gap-2">
+                <Download className="w-4 h-4" />
+                تحميل
+              </Button>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            <Button
-              onClick={handleGenerate}
-              disabled={loading || !text.trim() || insufficientCredits || isOverLimit}
-              className={`flex-1 gap-2 h-11 rounded-xl text-sm font-bold shadow-md ${insufficientCredits ? "bg-destructive hover:bg-destructive/90" : ""}`}
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Sparkles className="w-4 h-4" />
-              )}
-              {loading ? "جاري التوليد..." : (
-                <span className="flex items-center gap-1.5">
-                  توليد الصوت
-                  {estimatedCost > 0 && (
-                    <span className="text-xs font-bold opacity-90">{estimatedCost}</span>
-                  )}
-                </span>
-              )}
-            </Button>
+          {/* Right Column - Desktop inline voice settings (hidden on mobile, shown on lg+) */}
+          <div className="hidden lg:block w-80 shrink-0">
+            <div className="bg-card rounded-xl border border-border/50 p-4 space-y-4 sticky top-4">
+              <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <Mic className="w-4 h-4 text-primary" />
+                إعدادات الصوت
+              </h2>
 
-            <Button variant="outline" onClick={handleDownload} disabled={!audioUrl} className="gap-2">
-              <Download className="w-4 h-4" />
-              تحميل
-            </Button>
+              {/* Gender Tabs */}
+              <div className="flex rounded-lg bg-secondary/50 p-0.5">
+                <button
+                  onClick={() => setVoiceGenderTab("male")}
+                  className={`flex-1 text-xs py-2 rounded-md font-semibold transition-all ${
+                    voiceGenderTab === "male" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  أصوات الرجال ({maleVoices.length})
+                </button>
+                <button
+                  onClick={() => setVoiceGenderTab("female")}
+                  className={`flex-1 text-xs py-2 rounded-md font-semibold transition-all ${
+                    voiceGenderTab === "female" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  أصوات النساء ({femaleVoices.length})
+                </button>
+              </div>
+
+              {/* Voice List */}
+              <div className="space-y-1 max-h-[320px] overflow-y-auto scrollbar-hide">
+                {(voiceGenderTab === "male" ? maleVoices : femaleVoices).map((v) => (
+                  <div
+                    key={v.name}
+                    onClick={() => setSelectedVoice(v)}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                      selectedVoice.name === v.name
+                        ? "bg-primary/15 border border-primary/30"
+                        : "hover:bg-secondary/50 border border-transparent"
+                    }`}
+                  >
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                      selectedVoice.name === v.name ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                    }`}>
+                      {v.label[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className={`text-xs font-semibold ${selectedVoice.name === v.name ? "text-primary" : "text-foreground"}`}>
+                          {v.label}
+                        </p>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground">{v.trait}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground truncate">{v.description}</p>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handlePreviewVoice(v); }}
+                      disabled={previewingVoice === v.name}
+                      className="w-6 h-6 rounded-full flex items-center justify-center bg-secondary hover:bg-primary/20 transition-colors shrink-0"
+                    >
+                      {previewingVoice === v.name ? (
+                        <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                      ) : (
+                        <Play className="w-3 h-3 text-muted-foreground" />
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Speed */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-muted-foreground">السرعة</label>
+                  <span className="text-[10px] text-primary font-mono">{speakingRate.toFixed(1)}x</span>
+                </div>
+                <Slider value={[speakingRate]} onValueChange={([v]) => setSpeakingRate(v)} min={0.5} max={2.0} step={0.1} />
+              </div>
+
+              {/* Stability */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-muted-foreground">الثبات</label>
+                  <span className="text-[10px] text-primary font-mono">{(stability * 100).toFixed(0)}%</span>
+                </div>
+                <Slider value={[stability]} onValueChange={([v]) => setStability(v)} min={0} max={1} step={0.05} />
+              </div>
+
+              {/* Pitch */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-muted-foreground">درجة الصوت</label>
+                  <span className="text-[10px] text-primary font-mono">{pitch > 0 ? "+" : ""}{pitch}</span>
+                </div>
+                <Slider value={[pitch]} onValueChange={([v]) => setPitch(v)} min={-10} max={10} step={1} />
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ─── Voice Settings Sidebar ─── */}
+      {/* ─── Voice Settings Sidebar (Mobile only) ─── */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
@@ -623,77 +733,66 @@ const AudioStudioPage = () => {
 
               {/* Sidebar Content */}
               <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
-                {/* Male Voices */}
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">أصوات الرجال</label>
-                  <div className="space-y-1">
-                    {maleVoices.map((v) => (
-                      <button
-                        key={v.name}
-                        onClick={() => setSelectedVoice(v)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-right transition-all ${
-                          selectedVoice.name === v.name
-                            ? "bg-primary/15 border border-primary/30"
-                            : "hover:bg-secondary/50 border border-transparent"
-                        }`}
-                      >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                          selectedVoice.name === v.name ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-                        }`}>
-                          {v.label[0]}
-                        </div>
-                        <div className="flex-1 min-w-0">
+                {/* Gender Tabs */}
+                <div className="flex rounded-lg bg-secondary/50 p-0.5">
+                  <button
+                    onClick={() => setVoiceGenderTab("male")}
+                    className={`flex-1 text-xs py-2 rounded-md font-semibold transition-all ${
+                      voiceGenderTab === "male" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    أصوات الرجال ({maleVoices.length})
+                  </button>
+                  <button
+                    onClick={() => setVoiceGenderTab("female")}
+                    className={`flex-1 text-xs py-2 rounded-md font-semibold transition-all ${
+                      voiceGenderTab === "female" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    أصوات النساء ({femaleVoices.length})
+                  </button>
+                </div>
+
+                {/* Voice List */}
+                <div className="space-y-1">
+                  {(voiceGenderTab === "male" ? maleVoices : femaleVoices).map((v) => (
+                    <div
+                      key={v.name}
+                      onClick={() => setSelectedVoice(v)}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${
+                        selectedVoice.name === v.name
+                          ? "bg-primary/15 border border-primary/30"
+                          : "hover:bg-secondary/50 border border-transparent"
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                        selectedVoice.name === v.name ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                      }`}>
+                        {v.label[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
                           <p className={`text-xs font-semibold ${selectedVoice.name === v.name ? "text-primary" : "text-foreground"}`}>
                             {v.label}
                           </p>
-                          <p className="text-[10px] text-muted-foreground">{v.description}</p>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground">{v.trait}</span>
                         </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Female Voices */}
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">أصوات النساء</label>
-                  <div className="space-y-1">
-                    {femaleVoices.map((v) => (
+                        <p className="text-[10px] text-muted-foreground">{v.description}</p>
+                      </div>
                       <button
-                        key={v.name}
-                        onClick={() => setSelectedVoice(v)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-right transition-all ${
-                          selectedVoice.name === v.name
-                            ? "bg-primary/15 border border-primary/30"
-                            : "hover:bg-secondary/50 border border-transparent"
-                        }`}
+                        onClick={(e) => { e.stopPropagation(); handlePreviewVoice(v); }}
+                        disabled={previewingVoice === v.name}
+                        className="w-7 h-7 rounded-full flex items-center justify-center bg-secondary hover:bg-primary/20 transition-colors shrink-0"
                       >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                          selectedVoice.name === v.name ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-                        }`}>
-                          {v.label[0]}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-semibold ${selectedVoice.name === v.name ? "text-primary" : "text-foreground"}`}>
-                            {v.label}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">{v.description}</p>
-                        </div>
+                        {previewingVoice === v.name ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                        ) : (
+                          <Play className="w-3.5 h-3.5 text-muted-foreground" />
+                        )}
                       </button>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-
-                {/* Preview Voice */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePreviewVoice}
-                  disabled={previewing}
-                  className="w-full gap-2"
-                >
-                  {previewing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-                  معاينة الصوت
-                </Button>
 
                 {/* Speed */}
                 <div className="space-y-2">
@@ -701,13 +800,7 @@ const AudioStudioPage = () => {
                     <label className="text-[11px] font-semibold text-muted-foreground">السرعة</label>
                     <span className="text-[10px] text-primary font-mono">{speakingRate.toFixed(1)}x</span>
                   </div>
-                  <Slider
-                    value={[speakingRate]}
-                    onValueChange={([v]) => setSpeakingRate(v)}
-                    min={0.5}
-                    max={2.0}
-                    step={0.1}
-                  />
+                  <Slider value={[speakingRate]} onValueChange={([v]) => setSpeakingRate(v)} min={0.5} max={2.0} step={0.1} />
                 </div>
 
                 {/* Stability */}
@@ -716,13 +809,7 @@ const AudioStudioPage = () => {
                     <label className="text-[11px] font-semibold text-muted-foreground">الثبات</label>
                     <span className="text-[10px] text-primary font-mono">{(stability * 100).toFixed(0)}%</span>
                   </div>
-                  <Slider
-                    value={[stability]}
-                    onValueChange={([v]) => setStability(v)}
-                    min={0}
-                    max={1}
-                    step={0.05}
-                  />
+                  <Slider value={[stability]} onValueChange={([v]) => setStability(v)} min={0} max={1} step={0.05} />
                 </div>
 
                 {/* Pitch */}
@@ -731,13 +818,7 @@ const AudioStudioPage = () => {
                     <label className="text-[11px] font-semibold text-muted-foreground">درجة الصوت</label>
                     <span className="text-[10px] text-primary font-mono">{pitch > 0 ? "+" : ""}{pitch}</span>
                   </div>
-                  <Slider
-                    value={[pitch]}
-                    onValueChange={([v]) => setPitch(v)}
-                    min={-10}
-                    max={10}
-                    step={1}
-                  />
+                  <Slider value={[pitch]} onValueChange={([v]) => setPitch(v)} min={-10} max={10} step={1} />
                 </div>
               </div>
             </motion.div>
