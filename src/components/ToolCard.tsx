@@ -169,7 +169,7 @@ const ToolCard = ({
   highPriority,
 }: ToolCardProps) => {
   const [imgLoaded, setImgLoaded] = useState(false);
-  const imgRef = useRef<HTMLImageElement | null>(null);
+  const loadAttemptRef = useRef(0);
   const navigate = useNavigate();
   const shouldEagerLoad = eagerLoad ?? false;
   const shouldHighPriority = highPriority ?? false;
@@ -186,13 +186,31 @@ const ToolCard = ({
       return;
     }
 
-    const imageElement = imgRef.current;
-    if (imageElement?.complete) {
-      setImgLoaded(true);
-      return;
+    const attemptId = ++loadAttemptRef.current;
+    setImgLoaded(false);
+
+    const probe = new Image();
+    const markReady = () => {
+      if (loadAttemptRef.current === attemptId) {
+        setImgLoaded(true);
+      }
+    };
+
+    probe.onload = markReady;
+    probe.onerror = markReady;
+    probe.src = imgSrc;
+
+    if (probe.complete) {
+      markReady();
     }
 
-    setImgLoaded(false);
+    const fallbackTimer = window.setTimeout(markReady, 3500);
+
+    return () => {
+      window.clearTimeout(fallbackTimer);
+      probe.onload = null;
+      probe.onerror = null;
+    };
   }, [imgSrc]);
 
   const handleClick = () => {
@@ -217,7 +235,6 @@ const ToolCard = ({
             </div>
           )}
           <img
-            ref={imgRef}
             src={imgSrc}
             alt={title}
             className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
