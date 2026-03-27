@@ -39,7 +39,7 @@ function extractResultUrls(taskData: Record<string, any>): string[] {
   const out = new Set<string>();
 
   const tryParseJsonString = (value: unknown): boolean => {
-    if (typeof value !== "string") return;
+    if (typeof value !== "string") return false;
     const trimmed = value.trim();
     if (!trimmed || (!trimmed.startsWith("{") && !trimmed.startsWith("["))) return false;
     try {
