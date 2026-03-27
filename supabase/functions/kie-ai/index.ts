@@ -38,9 +38,31 @@ function normalizeProviderState(taskData: Record<string, any>): string {
 function extractResultUrls(taskData: Record<string, any>): string[] {
   const out = new Set<string>();
 
+  const tryParseJsonString = (value: unknown) => {
+    if (typeof value !== "string") return;
+    const trimmed = value.trim();
+    if (!trimmed || (!trimmed.startsWith("{") && !trimmed.startsWith("["))) return;
+    try {
+      const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+      collect(parsed?.resultUrls);
+      collect(parsed?.resultImageUrls);
+      collect(parsed?.resultImageUrl);
+      collect(parsed?.resultVideoUrl);
+      collect(parsed?.videoUrl);
+      collect(parsed?.resultUrl);
+      collect(parsed?.output);
+      collect(parsed?.outputUrl);
+      collect(parsed?.url);
+      collect(parsed);
+    } catch {
+      // ignore invalid JSON-like strings
+    }
+  };
+
   const collect = (value: unknown) => {
     if (!value) return;
     if (typeof value === "string") {
+      tryParseJsonString(value);
       if (value.trim()) out.add(value.trim());
       return;
     }
@@ -65,10 +87,12 @@ function extractResultUrls(taskData: Record<string, any>): string[] {
 
   const candidates = [
     taskData?.response?.resultUrls,
+    taskData?.response?.resultJson,
     taskData?.response?.resultImageUrls,
     taskData?.response?.images,
     taskData?.response?.output,
     taskData?.response?.urls,
+    taskData?.resultJson,
     taskData?.resultUrls,
     taskData?.resultImageUrls,
     taskData?.images,
