@@ -3,10 +3,12 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { tools, buildModelInput, AITool } from "@/data/tools";
 import { getModelCapabilities } from "@/data/model-capabilities";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Image as ImageIcon, Send, X, Sparkles, ChevronDown, Upload, Plus, Music, Video } from "lucide-react";
-import { pollTask, uploadFileBase64 } from "@/lib/kie-ai";
+import { ArrowLeft, Image as ImageIcon, Send, X, Sparkles, ChevronDown, Upload, Plus, Music, Video, Lock } from "lucide-react";
+import { uploadFileBase64 } from "@/lib/kie-ai";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQueue } from "@/contexts/GenerationQueueContext";
+import { usePlanGating } from "@/hooks/use-plan-gating";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import CircularProgress from "@/components/CircularProgress";
@@ -69,6 +71,7 @@ const StudioPage = () => {
   const [remixUploadSlot, setRemixUploadSlot] = useState<number>(-1);
 
   const { user, credits, refreshCredits } = useAuth();
+  const { createJob, pollJob } = useQueue();
   const categoryName = category ? categorySlugMap[category] : undefined;
 
   const categoryTools = useMemo(
@@ -134,6 +137,7 @@ const StudioPage = () => {
   }, [selectedTool, resolution, quality, videoDuration]);
 
   const { price } = usePricing(pricingParams);
+  const { checkAccess } = usePlanGating(selectedTool?.model || null);
 
   // Reset settings when model changes
   const handleSelectModel = (t: AITool) => {
@@ -425,60 +429,85 @@ const StudioPage = () => {
 
       reservationId = startResult.reservationId;
       const taskId = startResult.taskId;
+      const fileType = (isVideoTool || isAvatarTool) ? "video" : "image";
 
-      // ── Step 4: Poll task status ──
-      const result = await pollTask(taskId, (state, prog) => {
-        const m: Record<string, string> = {
-          waiting: "في الانتظار...",
-          queuing: "في قائمة الانتظار...",
-          generating: "جاري التوليد...",
-          success: "تم!",
-          fail: "فشل",
-        };
-        setStatus(m[state] || state);
-        if (prog) {
-          setProgress(30 + (prog / 100) * 70);
-        } else {
-          setProgress(
-            state === "waiting" ? 35 :
-            state === "queuing" ? 45 :
-            state === "generating" ? 65 :
-            state === "success" ? 100 : progress
-          );
-        }
-      }, 120, 3000, false, apiType);
+      // ── Step 4: Create persistent job record + poll via queue ──
+      const job = await createJob({
+        taskId,
+        reservationId,
+        toolId: tool.id,
+        toolName: tool.title,
+        model: tool.model,
+        apiType: apiType || "standard",
+        prompt: prompt || tool.title,
+        fileType,
+        metadata: { aspectRatio, resolution, quality },
+      });
 
-      if (result.resultJson) {
-        const parsed = JSON.parse(result.resultJson);
-        setResultUrls(parsed.resultUrls || []);
-        toast.success("تم التوليد بنجاح!");
-        setProgress(100);
-
-        // ── Step 5: Complete generation (server: settle + save) ──
-        const fileUrl = parsed.resultUrls?.[0];
-        const { data: completeResult, error: completeError } = await supabase.functions.invoke("complete-generation", {
-          body: {
-            reservationId,
-            status: "success",
-            taskId,
-            toolId: tool.id,
-            toolName: tool.title,
-            prompt,
-            fileUrl: fileUrl || "",
-            fileType: (isVideoTool || isAvatarTool) ? "video" : "image",
-            metadata: { aspectRatio, resolution, model: tool.model },
-          },
-        });
-        if (completeError || !completeResult?.success) {
-          console.error("Settlement failed:", completeError || completeResult);
-          toast.error("تم التوليد لكن فشل تأكيد الخصم — سيتم المراجعة تلقائياً");
-        } else {
-          reservationId = null;
-        }
-        await refreshCredits();
-      } else {
-        throw new Error("لم يتم إرجاع نتيجة من التوليد");
+      if (!job) {
+        throw new Error("فشل إنشاء سجل المهمة");
       }
+
+      // Poll via queue (handles smooth progress, DB updates, resume)
+      await pollJob(
+        job,
+        // onSuccess
+        async (resultUrls, completedJob) => {
+          setResultUrls(resultUrls);
+          toast.success("تم التوليد بنجاح!");
+          setProgress(100);
+          setStatus("تم!");
+
+          // Settle credits
+          const fileUrl = resultUrls[0];
+          const { data: completeResult, error: completeError } = await supabase.functions.invoke("complete-generation", {
+            body: {
+              reservationId,
+              status: "success",
+              taskId,
+              toolId: tool.id,
+              toolName: tool.title,
+              prompt,
+              fileUrl: fileUrl || "",
+              fileType,
+              metadata: { aspectRatio, resolution, model: tool.model },
+            },
+          });
+          if (completeError || !completeResult?.success) {
+            console.error("Settlement failed:", completeError || completeResult);
+            toast.error("تم التوليد لكن فشل تأكيد الخصم — سيتم المراجعة تلقائياً");
+          } else {
+            reservationId = null;
+          }
+          await refreshCredits();
+          setLoading(false);
+        },
+        // onFail
+        async (errorMsg, failedJob) => {
+          if (reservationId) {
+            try {
+              await supabase.functions.invoke("complete-generation", {
+                body: { reservationId, status: "failed" },
+              });
+            } catch (releaseErr) {
+              console.error("Failed to release credits:", releaseErr);
+            }
+          }
+          toast.error(errorMsg || "فشل التوليد");
+          setStatus("");
+          setProgress(0);
+          await refreshCredits();
+          setLoading(false);
+        },
+      );
+
+      // Track progress from queue job updates
+      const trackProgress = setInterval(() => {
+        // This will be handled by realtime updates in the queue
+      }, 500);
+
+      // Note: setLoading(false) is handled in onSuccess/onFail callbacks above
+      return;
     } catch (err: unknown) {
       // ── Release reserved credits on failure ──
       if (reservationId) {
@@ -495,7 +524,8 @@ const StudioPage = () => {
       setProgress(0);
       await refreshCredits();
     } finally {
-      setLoading(false);
+      // Only set loading false if we didn't hand off to pollJob
+      // pollJob callbacks handle this
     }
   };
 
@@ -651,30 +681,66 @@ const StudioPage = () => {
                   </div>
                 )}
 
-                {/* Quality / Mode */}
+                {/* Quality / Mode with Plan Gating */}
                 {showQuality && (
                   <div className="relative shrink-0">
                     <DropdownBtn id="quality" label="الجودة" value={quality.toUpperCase()} hasValue={!!selectedTool} />
                     <DropdownMenu id="quality">
-                      {caps!.qualities!.map((q) => (
-                        <DropdownItem key={q} selected={quality === q} onClick={() => { setQuality(q); setOpenMenu(null); }}>
-                          {q.toUpperCase()}
-                        </DropdownItem>
-                      ))}
+                      {caps!.qualities!.map((q) => {
+                        const access = checkAccess(null, q, null);
+                        const locked = !access.available;
+                        return (
+                          <button key={q}
+                            disabled={locked}
+                            onClick={() => { if (!locked) { setQuality(q); setOpenMenu(null); } }}
+                            className={`w-full px-3.5 py-2.5 rounded-lg text-right text-sm font-semibold transition-colors flex items-center justify-between gap-2 ${
+                              locked ? "opacity-50 cursor-not-allowed text-muted-foreground"
+                                : quality === q ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary/50"
+                            }`}
+                          >
+                            <span>{q.toUpperCase()}</span>
+                            {locked && (
+                              <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                                <Lock className="w-2.5 h-2.5" />{access.requiredPlanLabel}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </DropdownMenu>
                   </div>
                 )}
 
-                {/* Resolution */}
+                {/* Resolution with Plan Gating */}
                 {showRes && (
                   <div className="relative shrink-0">
                     <DropdownBtn id="resolution" label="الدقة" value={resolution.toUpperCase()} hasValue={!!selectedTool} />
                     <DropdownMenu id="resolution">
-                      {caps!.resolutions!.map((r) => (
-                        <DropdownItem key={r} selected={resolution === r} onClick={() => { setResolution(r); setOpenMenu(null); }}>
-                          {r.toUpperCase()}
-                        </DropdownItem>
-                      ))}
+                      {caps!.resolutions!.map((r) => {
+                        const access = checkAccess(r, null, null);
+                        const locked = !access.available;
+                        return (
+                          <button key={r}
+                            disabled={locked}
+                            onClick={() => { if (!locked) { setResolution(r); setOpenMenu(null); } }}
+                            className={`w-full px-3.5 py-2.5 rounded-lg text-right text-sm font-semibold transition-colors flex items-center justify-between gap-2 ${
+                              locked
+                                ? "opacity-50 cursor-not-allowed text-muted-foreground"
+                                : resolution === r
+                                ? "bg-primary/10 text-primary"
+                                : "text-foreground hover:bg-secondary/50"
+                            }`}
+                          >
+                            <span>{r.toUpperCase()}</span>
+                            {locked && (
+                              <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                                <Lock className="w-2.5 h-2.5" />
+                                {access.requiredPlanLabel}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </DropdownMenu>
                   </div>
                 )}

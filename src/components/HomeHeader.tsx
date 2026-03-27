@@ -31,7 +31,7 @@ const HomeHeader = () => {
           </div>
 
           {/* Left side (last in RTL): Generation Queue */}
-          <GenerationQueueSidebar items={[]} open={queueOpen} onOpen={() => setQueueOpen(true)} onClose={() => setQueueOpen(false)} />
+          <GenerationQueueSidebar open={queueOpen} onOpen={() => setQueueOpen(true)} onClose={() => setQueueOpen(false)} />
         </div>
       </header>
 
