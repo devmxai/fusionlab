@@ -477,7 +477,10 @@ export function useGenerationQueue() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          const newJob = payload.new as unknown as GenerationJob;
+          const rawJob = payload.new as unknown as GenerationJob;
+          const incomingEffective = getEffectiveStatus(rawJob);
+          const newJob = incomingEffective !== rawJob.status ? { ...rawJob, status: incomingEffective } : rawJob;
+
           if (payload.eventType === "INSERT") {
             setJobs((prev) => {
               if (prev.some((j) => j.id === newJob.id)) return prev;
@@ -488,14 +491,17 @@ export function useGenerationQueue() {
               prev.map((j) => {
                 if (j.id !== newJob.id) return j;
 
-                const localIsTerminal = j.status === "succeeded" || j.status === "failed" || j.status === "timed_out";
-                const incomingIsActive = newJob.status === "pending" || newJob.status === "running";
-                const localUpdatedAt = new Date(j.updated_at || j.created_at).getTime();
-                const incomingUpdatedAt = new Date(newJob.updated_at || newJob.created_at).getTime();
+                const localIsTerminal = isTerminalStatus(j.status);
+                const incomingIsTerminal = isTerminalStatus(incomingEffective);
 
-                // Prevent regressing UI from terminal local state back to stale active updates.
-                if (localIsTerminal && incomingIsActive && incomingUpdatedAt <= localUpdatedAt) {
+                // NEVER regress from terminal → active
+                if (localIsTerminal && !incomingIsTerminal) {
                   return j;
+                }
+
+                // If local is terminal, only accept terminal updates (e.g. seen_at changes)
+                if (localIsTerminal && incomingIsTerminal) {
+                  return { ...j, ...newJob, status: j.status };
                 }
 
                 return newJob;
