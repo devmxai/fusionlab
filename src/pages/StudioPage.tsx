@@ -651,11 +651,12 @@ const StudioPage = () => {
     }
 
     if (resultUrls.length > 0) {
-      // Multi-image grid (e.g. Grok generating multiple images)
+      // Multi-image grid (e.g. Grok generating multiple images or Shoots)
       if (resultUrls.length > 1 && !isVideoTool) {
+        const cols = resultUrls.length <= 2 ? "grid-cols-2" : resultUrls.length <= 4 ? "grid-cols-2" : "grid-cols-3";
         return (
           <motion.div key="multi-result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-            className={`w-full h-full grid gap-1.5 ${resultUrls.length === 2 ? "grid-cols-2" : resultUrls.length === 3 ? "grid-cols-2" : "grid-cols-2"}`}>
+            className={`w-full h-full grid gap-2 ${cols}`}>
             {resultUrls.map((url, i) => (
               <motion.div key={i}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -663,7 +664,7 @@ const StudioPage = () => {
                 transition={{ delay: i * 0.08 }}
                 className={`cursor-pointer rounded-xl overflow-hidden border border-border/20 hover:border-primary/40 transition-all ${
                   resultUrls.length === 3 && i === 2 ? "col-span-2" : ""
-                }`}
+                } ${resultUrls.length === 5 && i === 4 ? "col-span-3" : ""}`}
                 onClick={() => openViewer(url)}
               >
                 <img src={url} alt={`Result ${i + 1}`} className="w-full h-full object-cover" />
@@ -700,14 +701,24 @@ const StudioPage = () => {
       <motion.div key="placeholder" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         className="flex flex-col items-center justify-center gap-3 text-center px-4">
         <Sparkles className="w-9 h-9 text-primary opacity-40" />
-        <h2 className="text-base font-bold text-foreground/70">{tool.title}</h2>
-        <p className="text-xs text-muted-foreground/60">{tool.description}</p>
-        <span className="text-[10px] text-muted-foreground/50 mt-1 bg-secondary/30 px-3 py-1 rounded-full">
-          {currentRatio.label} {resolution ? `• ${resolution.toUpperCase()}` : ""}
-        </span>
+        <h2 className="text-base font-bold text-foreground/70">{isShootsTool ? "شوتس" : tool.title}</h2>
+        <p className="text-xs text-muted-foreground/60">{isShootsTool ? "ارفع صورة واكتب وصفاً لتوليد زاويتين" : tool.description}</p>
+        {!isShootsTool && (
+          <span className="text-[10px] text-muted-foreground/50 mt-1 bg-secondary/30 px-3 py-1 rounded-full">
+            {currentRatio.label} {resolution ? `• ${resolution.toUpperCase()}` : ""}
+          </span>
+        )}
       </motion.div>
     );
   };
+
+  // For shoots, use a wider aspect ratio to show 2 cards side by side
+  const shootsPlaceholderStyle = isShootsTool ? {
+    width: "100%",
+    maxWidth: "min(95vw, 700px)",
+    aspectRatio: "2/1",
+    maxHeight: "calc(100dvh - 180px)",
+  } : undefined;
 
   // Determine which settings to show based on model capabilities
   const showAspect = !!(selectedTool && caps?.aspectRatios?.length);
