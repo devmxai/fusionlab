@@ -39,24 +39,26 @@ const PLAN_OPTIONS = [
 ];
 
 const CATEGORY_TABS = [
-  { id: "all", label: "الكل", icon: Layers },
-  { id: "image", label: "صور", icon: Image },
   { id: "video", label: "فيديو", icon: Film },
-  { id: "audio", label: "صوت", icon: Mic },
+  { id: "image", label: "صور", icon: Image },
   { id: "remix", label: "ريمكس", icon: Wand2 },
-  { id: "other", label: "أخرى", icon: Sparkles },
+  { id: "audio", label: "صوت", icon: Mic },
+  { id: "avatar", label: "افتار", icon: Sparkles },
+  { id: "remove-bg", label: "حذف الخلفية", icon: Layers },
+  { id: "upscale", label: "رفع الجودة", icon: Zap },
 ];
 
-/** Guess category from generation_type / model name */
-const inferCategory = (rule: PricingRule, access?: ModelAccess): string => {
-  if (access?.category) return access.category;
+/** Map generation_type from DB to UI category */
+const mapCategory = (rule: PricingRule): string => {
   const gt = rule.generation_type.toLowerCase();
-  const m = rule.model.toLowerCase();
-  if (gt.includes("audio") || gt.includes("tts") || m.includes("tts")) return "audio";
-  if (gt.includes("remix") || m.includes("remix")) return "remix";
-  if (gt.includes("video") || m.includes("video") || rule.duration_seconds) return "video";
-  if (gt.includes("image") || m.includes("flux") || m.includes("stable") || m.includes("midjourney") || m.includes("dall")) return "image";
-  return "other";
+  if (gt === "text-to-video" || gt.includes("video")) return "video";
+  if (gt === "text-to-image" || gt.includes("text-to-image")) return "image";
+  if (gt === "image-to-image" || gt.includes("remix") || gt.includes("kontext")) return "remix";
+  if (gt === "tts" || gt.includes("audio") || gt.includes("tts")) return "audio";
+  if (gt === "avatar" || gt.includes("avatar") || gt.includes("animate")) return "avatar";
+  if (gt === "remove-bg" || gt.includes("remove")) return "remove-bg";
+  if (gt === "upscale" || gt.includes("upscale")) return "upscale";
+  return "image"; // fallback
 };
 
 const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
@@ -66,7 +68,7 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
   const [editValue, setEditValue] = useState("");
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState("video");
   const [search, setSearch] = useState("");
 
   useEffect(() => { fetchAll(); }, []);
@@ -86,10 +88,8 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
   // ── Filtered rules ──
   const filtered = useMemo(() => {
     let list = rules;
-    // Category filter
-    if (activeTab !== "all") {
-      list = list.filter((r) => inferCategory(r, getAccess(r.model)) === activeTab);
-    }
+    // Category filter — always applied (no "all" tab)
+    list = list.filter((r) => mapCategory(r) === activeTab);
     // Search
     if (search.trim()) {
       const q = search.trim().toLowerCase();
@@ -183,9 +183,9 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
   };
 
   const tabCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: rules.length };
+    const counts: Record<string, number> = {};
     for (const r of rules) {
-      const cat = inferCategory(r, getAccess(r.model));
+      const cat = mapCategory(r);
       counts[cat] = (counts[cat] || 0) + 1;
     }
     return counts;
