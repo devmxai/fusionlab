@@ -138,6 +138,11 @@ const AdminPage = () => {
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const [subDays, setSubDays] = useState("30");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [roleSearchQuery, setRoleSearchQuery] = useState("");
+  const [roleSearchResults, setRoleSearchResults] = useState<any[]>([]);
+  const [roleLoading, setRoleLoading] = useState(false);
+
+  const visibleTabs = tabs.filter(t => !t.superOnly || isSuperAdmin);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
