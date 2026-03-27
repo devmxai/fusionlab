@@ -123,7 +123,7 @@ serve(async (req) => {
         headers: authHeaders,
         body: JSON.stringify(veoBody),
       });
-      const data = await response.json();
+      const data = await safeJson(response, "Veo create");
       console.log("Veo create response:", JSON.stringify(data));
       if (data?.code === 200 && data?.data?.taskId) {
         return jsonRes({ code: 200, data: { taskId: data.data.taskId } });
