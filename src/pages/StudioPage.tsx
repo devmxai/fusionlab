@@ -1311,43 +1311,53 @@ const StudioPage = () => {
             )}
 
             {isImageOnlyTool ? (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex-1 h-10 rounded-xl bg-secondary/40 border border-border/30 px-3 flex items-center justify-center gap-2 hover:bg-secondary/60 transition-colors"
-              >
-                <Upload className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs font-semibold text-foreground">
-                  {refImages.length > 0
-                    ? "تغيير الصورة"
-                    : category === "remove-bg"
-                    ? "رفع صورة لحذف الخلفية"
-                    : "رفع صورة لرفع الجودة"}
-                </span>
-              </button>
-            ) : (
-              <input
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : "اكتب وصفاً لما تريد توليده..."}
-                className="flex-1 h-9 rounded-lg bg-secondary/40 border border-border/30 px-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/40"
-                dir="ltr"
-                onKeyDown={(e) => e.key === "Enter" && !loading && handleGenerate()}
-              />
-            )}
+              <>
+                {/* Small upload icon button — same style as other studios */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`shrink-0 w-9 h-9 rounded-lg border flex items-center justify-center transition-colors ${
+                    refImages.length > 0 ? "bg-primary/10 border-primary/40" : "bg-secondary border-border/50 hover:bg-secondary/80"
+                  }`}
+                >
+                  <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                </button>
 
-            <Button
-              onClick={handleGenerate}
-              disabled={loading || !selectedTool || insufficientCredits || (isImageOnlyTool && refImages.length === 0) || (isShootsTool && refImages.length === 0 && !prompt.trim()) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
-              className="shrink-0 rounded-xl gap-2 px-4 h-10 text-xs font-bold shadow-md"
-            >
-              {isImageOnlyTool ? <Upload className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-              {isImageOnlyTool && (
-                <span>{category === "remove-bg" ? "حذف الخلفية" : "رفع الجودة"}</span>
-              )}
-              {estimatedCost > 0 && (
-                <span className="text-[11px] font-bold">{estimatedCost}</span>
-              )}
-            </Button>
+                {/* Wide action button */}
+                <Button
+                  onClick={handleGenerate}
+                  disabled={loading || !selectedTool || insufficientCredits || refImages.length === 0}
+                  className="flex-1 rounded-xl gap-2 h-10 text-xs font-bold shadow-md"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>{category === "remove-bg" ? "حذف الخلفية" : "رفع الجودة"}</span>
+                  {estimatedCost > 0 && (
+                    <span className="text-[10px] opacity-80">{estimatedCost} كريدت</span>
+                  )}
+                </Button>
+              </>
+            ) : (
+              <>
+                <input
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : "اكتب وصفاً لما تريد توليده..."}
+                  className="flex-1 h-9 rounded-lg bg-secondary/40 border border-border/30 px-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/40"
+                  dir="rtl"
+                  onKeyDown={(e) => e.key === "Enter" && !loading && handleGenerate()}
+                />
+
+                <Button
+                  onClick={handleGenerate}
+                  disabled={loading || !selectedTool || insufficientCredits || (isShootsTool && refImages.length === 0 && !prompt.trim()) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
+                  className="shrink-0 rounded-xl gap-2 px-4 h-10 text-xs font-bold shadow-md"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {estimatedCost > 0 && (
+                    <span className="text-[11px] font-bold">{estimatedCost}</span>
+                  )}
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
