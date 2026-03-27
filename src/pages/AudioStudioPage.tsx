@@ -173,11 +173,90 @@ const AudioStudioPage = () => {
   const [pitch, setPitch] = useState(0);
   const [stability, setStability] = useState(0.7);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [librarySidebarOpen, setLibrarySidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
+
+  // ─── Audio Library State ───
+  interface AudioGeneration {
+    id: string;
+    tool_id: string;
+    tool_name: string | null;
+    prompt: string | null;
+    file_url: string;
+    file_type: string;
+    created_at: string;
+  }
+  const [audioLibrary, setAudioLibrary] = useState<AudioGeneration[]>([]);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [playingLibId, setPlayingLibId] = useState<string | null>(null);
+  const [deletingLibId, setDeletingLibId] = useState<string | null>(null);
+  const libAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const fetchAudioLibrary = useCallback(async () => {
+    if (!user) return;
+    setLibraryLoading(true);
+    const { data } = await supabase
+      .from("generations")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("file_type", "audio")
+      .order("created_at", { ascending: false });
+    setAudioLibrary((data as AudioGeneration[]) || []);
+    setLibraryLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    if (user) fetchAudioLibrary();
+  }, [user, fetchAudioLibrary]);
+
+  const handleLibPlay = (item: AudioGeneration) => {
+    if (playingLibId === item.id) {
+      libAudioRef.current?.pause();
+      setPlayingLibId(null);
+      return;
+    }
+    if (libAudioRef.current) libAudioRef.current.pause();
+    const audio = new Audio(item.file_url);
+    libAudioRef.current = audio;
+    audio.play();
+    setPlayingLibId(item.id);
+    audio.onended = () => setPlayingLibId(null);
+  };
+
+  const handleLibDownload = async (item: AudioGeneration) => {
+    try {
+      const res = await fetch(item.file_url);
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `audio_${item.id.slice(0, 6)}.wav`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      toast.error("فشل في التحميل");
+    }
+  };
+
+  const handleLibDelete = async (item: AudioGeneration) => {
+    setDeletingLibId(item.id);
+    try {
+      const urlParts = item.file_url.split("/generations/");
+      if (urlParts[1]) {
+        await supabase.storage.from("generations").remove([decodeURIComponent(urlParts[1])]);
+      }
+      await supabase.from("generations").delete().eq("id", item.id);
+      setAudioLibrary((prev) => prev.filter((g) => g.id !== item.id));
+      toast.success("تم الحذف");
+    } catch {
+      toast.error("فشل في الحذف");
+    } finally {
+      setDeletingLibId(null);
+    }
+  };
 
   const maleVoices = useMemo(() => geminiVoices.filter((v) => v.gender === "male"), []);
   const femaleVoices = useMemo(() => geminiVoices.filter((v) => v.gender === "female"), []);
