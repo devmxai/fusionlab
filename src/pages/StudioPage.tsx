@@ -965,7 +965,7 @@ const StudioPage = () => {
           className={`relative rounded-2xl overflow-hidden flex items-center justify-center border ${
             resultUrls.length > 0 && !loading ? "border-transparent" : loading ? "border-primary/30" : "border-border/30"
           }`}
-          style={{
+          style={shootsPlaceholderStyle || {
             width: "100%",
             maxWidth: currentRatio.placeholderMaxW,
             aspectRatio: currentRatio.cssAspect,
