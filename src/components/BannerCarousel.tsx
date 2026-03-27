@@ -13,20 +13,33 @@ interface Banner {
   is_active: boolean;
 }
 
+const optimizeBannerUrl = (url: string, width = 800): string => {
+  if (url.includes("supabase.co/storage/v1/object/public/")) {
+    return url.replace(
+      "/storage/v1/object/public/",
+      `/storage/v1/render/image/public/`
+    ) + `?width=${width}&quality=75`;
+  }
+  return url;
+};
+
 const BannerImage = ({
   src,
   alt,
   className,
   loading = "lazy",
   fetchPriority = "auto",
+  width = 800,
 }: {
   src: string;
   alt: string;
   className?: string;
   loading?: "eager" | "lazy";
   fetchPriority?: "high" | "low" | "auto";
+  width?: number;
 }) => {
   const [loaded, setLoaded] = useState(false);
+  const optimizedSrc = optimizeBannerUrl(src, width);
 
   return (
     <div className="relative w-full h-full">
@@ -36,7 +49,7 @@ const BannerImage = ({
         </div>
       )}
       <img
-        src={src}
+        src={optimizedSrc}
         alt={alt}
         className={`${className || ""} ${loaded ? "opacity-100" : "opacity-0"}`}
         loading={loading}
