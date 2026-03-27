@@ -134,6 +134,12 @@ export type Database = {
           model: string
           progress: number
           prompt: string | null
+          provider_billing_state: string
+          provider_refund_confirmed_at: string | null
+          provider_status_code: string | null
+          provider_status_message: string | null
+          reconciliation_notes: string | null
+          reconciliation_status: string
           reservation_id: string | null
           result_url: string | null
           seen_at: string | null
@@ -142,6 +148,8 @@ export type Database = {
           tool_id: string
           tool_name: string | null
           updated_at: string
+          upstream_task_created_at: string | null
+          upstream_terminal_at: string | null
           user_id: string
         }
         Insert: {
@@ -155,6 +163,12 @@ export type Database = {
           model: string
           progress?: number
           prompt?: string | null
+          provider_billing_state?: string
+          provider_refund_confirmed_at?: string | null
+          provider_status_code?: string | null
+          provider_status_message?: string | null
+          reconciliation_notes?: string | null
+          reconciliation_status?: string
           reservation_id?: string | null
           result_url?: string | null
           seen_at?: string | null
@@ -163,6 +177,8 @@ export type Database = {
           tool_id: string
           tool_name?: string | null
           updated_at?: string
+          upstream_task_created_at?: string | null
+          upstream_terminal_at?: string | null
           user_id: string
         }
         Update: {
@@ -176,6 +192,12 @@ export type Database = {
           model?: string
           progress?: number
           prompt?: string | null
+          provider_billing_state?: string
+          provider_refund_confirmed_at?: string | null
+          provider_status_code?: string | null
+          provider_status_message?: string | null
+          reconciliation_notes?: string | null
+          reconciliation_status?: string
           reservation_id?: string | null
           result_url?: string | null
           seen_at?: string | null
@@ -184,6 +206,8 @@ export type Database = {
           tool_id?: string
           tool_name?: string | null
           updated_at?: string
+          upstream_task_created_at?: string | null
+          upstream_terminal_at?: string | null
           user_id?: string
         }
         Relationships: []
