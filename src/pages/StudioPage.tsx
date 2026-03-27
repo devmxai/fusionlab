@@ -721,11 +721,11 @@ const StudioPage = () => {
   } : undefined;
 
   // Determine which settings to show based on model capabilities
-  const showAspect = !!(selectedTool && caps?.aspectRatios?.length);
-  const showDuration = !!(selectedTool && caps?.durations && caps.durations.length > 0);
-  const showRes = !!(selectedTool && caps?.resolutions?.length);
-  const showQuality = !!(selectedTool && caps?.qualities?.length);
-  const showUpscale = !!(selectedTool && caps?.upscaleFactors?.length);
+  const showAspect = !isShootsTool && !!(selectedTool && caps?.aspectRatios?.length);
+  const showDuration = !isShootsTool && !!(selectedTool && caps?.durations && caps.durations.length > 0);
+  const showRes = !isShootsTool && !!(selectedTool && caps?.resolutions?.length);
+  const showQuality = !isShootsTool && !!(selectedTool && caps?.qualities?.length);
+  const showUpscale = !isShootsTool && !!(selectedTool && caps?.upscaleFactors?.length);
 
   return (
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden" dir="rtl">
