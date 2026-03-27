@@ -111,11 +111,27 @@ const phaseLabels: Record<string, string> = {
   finalizing: "جاري الإنهاء...",
 };
 
+/**
+ * Derive the true status from all available signals.
+ * Prevents flicker when DB status is stale but result/error fields are set.
+ */
+function getEffectiveStatus(job: { status: string; result_url?: string | null; completed_at?: string | null; error_message?: string | null }): JobStatus {
+  if (job.result_url && !job.error_message) return "succeeded";
+  if (job.completed_at && job.error_message) return "failed";
+  if (job.completed_at && job.result_url) return "succeeded";
+  return job.status as JobStatus;
+}
+
+function isTerminalStatus(s: string): boolean {
+  return s === "succeeded" || s === "failed" || s === "timed_out";
+}
+
 export function useGenerationQueue() {
   const { user } = useAuth();
   const [jobs, setJobs] = useState<GenerationJob[]>([]);
   const pollingRefs = useRef<Map<string, boolean>>(new Map());
   const pollListenersRef = useRef<Map<string, JobPollListeners>>(new Map());
+  const selfHealedRef = useRef<Set<string>>(new Set());
 
   // Fetch jobs from DB (include recent completed for "unseen" tracking)
   const fetchJobs = useCallback(async () => {
@@ -130,7 +146,12 @@ export function useGenerationQueue() {
       .limit(50);
 
     if (!error && data) {
-      setJobs(data as unknown as GenerationJob[]);
+      // Normalize effective status on fetch
+      const normalized = (data as unknown as GenerationJob[]).map((j) => {
+        const eff = getEffectiveStatus(j);
+        return eff !== j.status ? { ...j, status: eff } : j;
+      });
+      setJobs(normalized);
     }
   }, [user]);
 
@@ -275,7 +296,7 @@ export function useGenerationQueue() {
       .eq("id", jobId);
 
     // Insert into generations (library) only if succeeded and has result
-    if (job && job.status === "succeeded" && job.result_url && user) {
+    if (job && getEffectiveStatus(job) === "succeeded" && job.result_url && user) {
       await (supabase as any)
         .from("generations")
         .insert({
@@ -456,7 +477,10 @@ export function useGenerationQueue() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          const newJob = payload.new as unknown as GenerationJob;
+          const rawJob = payload.new as unknown as GenerationJob;
+          const incomingEffective = getEffectiveStatus(rawJob);
+          const newJob = incomingEffective !== rawJob.status ? { ...rawJob, status: incomingEffective } : rawJob;
+
           if (payload.eventType === "INSERT") {
             setJobs((prev) => {
               if (prev.some((j) => j.id === newJob.id)) return prev;
@@ -467,14 +491,17 @@ export function useGenerationQueue() {
               prev.map((j) => {
                 if (j.id !== newJob.id) return j;
 
-                const localIsTerminal = j.status === "succeeded" || j.status === "failed" || j.status === "timed_out";
-                const incomingIsActive = newJob.status === "pending" || newJob.status === "running";
-                const localUpdatedAt = new Date(j.updated_at || j.created_at).getTime();
-                const incomingUpdatedAt = new Date(newJob.updated_at || newJob.created_at).getTime();
+                const localIsTerminal = isTerminalStatus(j.status);
+                const incomingIsTerminal = isTerminalStatus(incomingEffective);
 
-                // Prevent regressing UI from terminal local state back to stale active updates.
-                if (localIsTerminal && incomingIsActive && incomingUpdatedAt <= localUpdatedAt) {
+                // NEVER regress from terminal → active
+                if (localIsTerminal && !incomingIsTerminal) {
                   return j;
+                }
+
+                // If local is terminal, only accept terminal updates (e.g. seen_at changes)
+                if (localIsTerminal && incomingIsTerminal) {
+                  return { ...j, ...newJob, status: j.status };
                 }
 
                 return newJob;
@@ -492,18 +519,25 @@ export function useGenerationQueue() {
     };
   }, [user]);
 
-  // Auto-resume polling for pending/running jobs
+  // Auto-resume polling for genuinely active jobs only
   useEffect(() => {
     jobs.forEach((job) => {
-      if (
-        (job.status === "pending" || job.status === "running") &&
-        job.task_id &&
-        !pollingRefs.current.get(job.id)
-      ) {
+      const eff = getEffectiveStatus(job);
+      const isActive = eff === "pending" || eff === "running";
+
+      if (isActive && job.task_id && !pollingRefs.current.get(job.id)) {
         pollJob(job);
       }
+
+      // Self-heal: if DB status is active but effective is terminal, fix DB once
+      if (!isActive && (job.status === "pending" || job.status === "running") && !selfHealedRef.current.has(job.id)) {
+        selfHealedRef.current.add(job.id);
+        const healUpdates: Record<string, unknown> = { status: eff, progress: 100 };
+        if (!job.completed_at) healUpdates.completed_at = new Date().toISOString();
+        updateJobDB(job.id, healUpdates);
+      }
     });
-  }, [jobs, pollJob]);
+  }, [jobs, pollJob, updateJobDB]);
 
   const activeJobs = jobs.filter((j) => j.status === "pending" || j.status === "running");
   const completedJobs = jobs.filter((j) => j.status === "succeeded");

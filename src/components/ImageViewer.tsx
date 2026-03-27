@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download, ZoomIn, ZoomOut, RotateCcw, Play } from "lucide-react";
@@ -16,6 +16,15 @@ const ImageViewer = ({ src, alt = "Result", open, onClose, type = "image" }: Ima
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const startPos = useRef({ x: 0, y: 0 });
+
+  // Reset zoom/position whenever viewer opens or src changes
+  useEffect(() => {
+    if (open) {
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+      setDragging(false);
+    }
+  }, [open, src]);
 
   const reset = useCallback(() => {
     setScale(1);
