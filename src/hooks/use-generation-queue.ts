@@ -124,15 +124,36 @@ export function useGenerationQueue() {
       .eq("id", jobId);
   }, []);
 
-  // Mark a job as seen
+  // Mark a job as seen AND move to library (generations table)
   const markJobSeen = useCallback(async (jobId: string) => {
     const now = new Date().toISOString();
     updateJobLocal(jobId, { seen_at: now });
+
+    // Find the job to get its data for library insert
+    const job = jobs.find((j) => j.id === jobId);
+
+    // Update seen_at in generation_jobs
     await (supabase as any)
       .from("generation_jobs")
       .update({ seen_at: now, updated_at: now })
       .eq("id", jobId);
-  }, [updateJobLocal]);
+
+    // Insert into generations (library) only if succeeded and has result
+    if (job && job.status === "succeeded" && job.result_url && user) {
+      await (supabase as any)
+        .from("generations")
+        .insert({
+          user_id: user.id,
+          tool_id: job.tool_id,
+          tool_name: job.tool_name || null,
+          prompt: job.prompt || null,
+          file_url: job.result_url,
+          file_type: job.file_type || "image",
+          metadata: job.metadata || {},
+          reservation_id: job.reservation_id,
+        });
+    }
+  }, [updateJobLocal, jobs, user]);
 
   // Poll a specific job
   const pollJob = useCallback(async (
