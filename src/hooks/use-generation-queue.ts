@@ -31,6 +31,11 @@ export interface GenerationJob {
   updated_at: string;
   completed_at: string | null;
   seen_at: string | null;
+  provider_billing_state: ProviderBillingState;
+  reconciliation_status: ReconciliationStatus;
+  provider_status_code: string | null;
+  provider_status_message: string | null;
+  reconciliation_notes: string | null;
 }
 
 /**
