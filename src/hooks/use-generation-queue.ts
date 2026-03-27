@@ -111,11 +111,27 @@ const phaseLabels: Record<string, string> = {
   finalizing: "جاري الإنهاء...",
 };
 
+/**
+ * Derive the true status from all available signals.
+ * Prevents flicker when DB status is stale but result/error fields are set.
+ */
+function getEffectiveStatus(job: { status: string; result_url?: string | null; completed_at?: string | null; error_message?: string | null }): JobStatus {
+  if (job.result_url && !job.error_message) return "succeeded";
+  if (job.completed_at && job.error_message) return "failed";
+  if (job.completed_at && job.result_url) return "succeeded";
+  return job.status as JobStatus;
+}
+
+function isTerminalStatus(s: string): boolean {
+  return s === "succeeded" || s === "failed" || s === "timed_out";
+}
+
 export function useGenerationQueue() {
   const { user } = useAuth();
   const [jobs, setJobs] = useState<GenerationJob[]>([]);
   const pollingRefs = useRef<Map<string, boolean>>(new Map());
   const pollListenersRef = useRef<Map<string, JobPollListeners>>(new Map());
+  const selfHealedRef = useRef<Set<string>>(new Set());
 
   // Fetch jobs from DB (include recent completed for "unseen" tracking)
   const fetchJobs = useCallback(async () => {
