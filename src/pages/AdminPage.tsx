@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Users, Crown, Coins, Clock, Shield, Check, X,
   Search, BarChart3, FileText, CreditCard, Tag, History, Settings,
-  ChevronDown, AlertCircle, RefreshCw, Eye, Pencil, Save, PanelTop
+  ChevronDown, AlertCircle, RefreshCw, Eye, Pencil, Save, PanelTop, UserCog
 } from "lucide-react";
 import ContentTab from "@/components/admin/ContentTab";
 import { toast } from "sonner";
@@ -96,23 +96,24 @@ const PlanCard = ({ plan, onSaved }: { plan: any; onSaved: () => void }) => {
   );
 };
 
-type Tab = "dashboard" | "users" | "subscriptions" | "plans" | "pricing" | "ledger" | "trials" | "audit" | "generations" | "content";
+type Tab = "dashboard" | "users" | "subscriptions" | "plans" | "pricing" | "ledger" | "trials" | "audit" | "generations" | "content" | "roles";
 
-const tabs: { id: Tab; label: string; icon: any }[] = [
+const tabs: { id: Tab; label: string; icon: any; superOnly?: boolean }[] = [
   { id: "dashboard", label: "لوحة التحكم", icon: BarChart3 },
   { id: "users", label: "المستخدمون", icon: Users },
+  { id: "roles", label: "إدارة الأدوار", icon: UserCog, superOnly: true },
   { id: "subscriptions", label: "الاشتراكات", icon: Crown },
   { id: "plans", label: "الخطط", icon: CreditCard },
-  { id: "pricing", label: "التسعير", icon: Tag },
+  { id: "pricing", label: "التسعير", icon: Tag, superOnly: true },
   { id: "ledger", label: "سجل الكريدت", icon: FileText },
   { id: "trials", label: "التجارب", icon: Clock },
   { id: "generations", label: "التوليدات", icon: RefreshCw },
-  { id: "audit", label: "سجل العمليات", icon: History },
+  { id: "audit", label: "سجل العمليات", icon: History, superOnly: true },
   { id: "content", label: "المحتوى", icon: PanelTop },
 ];
 
 const AdminPage = () => {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, isSuperAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("dashboard");
   const [users, setUsers] = useState<any[]>([]);
@@ -137,6 +138,11 @@ const AdminPage = () => {
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const [subDays, setSubDays] = useState("30");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [roleSearchQuery, setRoleSearchQuery] = useState("");
+  const [roleSearchResults, setRoleSearchResults] = useState<any[]>([]);
+  const [roleLoading, setRoleLoading] = useState(false);
+
+  const visibleTabs = tabs.filter(t => !t.superOnly || isSuperAdmin);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -232,6 +238,46 @@ const AdminPage = () => {
     fetchData();
   };
 
+  const searchUserForRole = async () => {
+    if (!roleSearchQuery.trim()) return;
+    setRoleLoading(true);
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, email, full_name")
+      .ilike("email", `%${roleSearchQuery.trim()}%`)
+      .limit(10);
+    
+    if (data && data.length > 0) {
+      // Fetch roles for these users
+      const userIds = data.map(u => u.id);
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", userIds);
+      
+      const roleMap: Record<string, string> = {};
+      (roles || []).forEach((r: any) => { roleMap[r.user_id] = r.role; });
+      
+      setRoleSearchResults(data.map(u => ({ ...u, role: roleMap[u.id] || "user" })));
+    } else {
+      setRoleSearchResults([]);
+    }
+    setRoleLoading(false);
+  };
+
+  const setUserRole = async (userId: string, role: string) => {
+    const { data, error } = await supabase.rpc("admin_set_role", {
+      p_target_user_id: userId,
+      p_role: role,
+    } as any);
+    if (error) { toast.error(error.message); return; }
+    const res = data as any;
+    if (!res?.success) { toast.error(res?.message || res?.error || "فشلت العملية"); return; }
+    toast.success(`تم تحديث الدور إلى ${role === "admin" ? "مسؤول" : "مستخدم"}`);
+    searchUserForRole();
+    fetchData();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
@@ -284,7 +330,7 @@ const AdminPage = () => {
           <h1 className="text-sm font-bold text-foreground">لوحة الإدارة</h1>
         </div>
         <nav className="flex-1 p-2 space-y-0.5">
-          {tabs.map((t) => (
+          {visibleTabs.map((t) => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
                 tab === t.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
@@ -349,7 +395,7 @@ const AdminPage = () => {
                   </button>
                 </div>
                 <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-                  {tabs.map((t) => (
+                  {visibleTabs.map((t) => (
                     <button key={t.id} onClick={() => { setTab(t.id); setSidebarOpen(false); }}
                       className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors ${
                         tab === t.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
@@ -436,6 +482,87 @@ const AdminPage = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Roles Management (Super Admin Only) */}
+          {tab === "roles" && isSuperAdmin && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-bold text-foreground">إدارة الأدوار</h2>
+              <p className="text-xs text-muted-foreground">ابحث بالإيميل لتعيين مستخدم كمسؤول ثانوي أو إزالة صلاحياته</p>
+              
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    value={roleSearchQuery}
+                    onChange={(e) => setRoleSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && searchUserForRole()}
+                    placeholder="أدخل الإيميل للبحث..."
+                    className="pr-10 bg-card text-xs"
+                    dir="ltr"
+                  />
+                </div>
+                <Button size="sm" className="text-xs" onClick={searchUserForRole} disabled={roleLoading}>
+                  {roleLoading ? "جاري البحث..." : "بحث"}
+                </Button>
+              </div>
+
+              {roleSearchResults.length > 0 && (
+                <div className="space-y-2">
+                  {roleSearchResults.map((u) => (
+                    <div key={u.id} className="bg-card rounded-xl border border-border/50 p-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-sm font-bold text-primary">
+                        {(u.full_name || u.email)?.[0]?.toUpperCase() || "?"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">{u.full_name || "بدون اسم"}</p>
+                        <p className="text-[10px] text-muted-foreground truncate" dir="ltr">{u.email}</p>
+                        <div className="mt-1">
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                            u.role === "super_admin" ? "bg-primary/20 text-primary" :
+                            u.role === "admin" ? "bg-green-500/15 text-green-400" :
+                            "bg-secondary text-muted-foreground"
+                          }`}>
+                            {u.role === "super_admin" ? "مسؤول رئيسي" : u.role === "admin" ? "مسؤول ثانوي" : "مستخدم"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        {u.role === "super_admin" ? (
+                          <p className="text-[9px] text-muted-foreground">لا يمكن التعديل</p>
+                        ) : u.role === "admin" ? (
+                          <Button size="sm" variant="outline" className="text-[10px] h-7" onClick={() => setUserRole(u.id, "user")}>
+                            <X className="w-3 h-3 ml-1" /> إزالة الصلاحية
+                          </Button>
+                        ) : (
+                          <Button size="sm" className="text-[10px] h-7" onClick={() => setUserRole(u.id, "admin")}>
+                            <Shield className="w-3 h-3 ml-1" /> تعيين مسؤول
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {roleSearchResults.length === 0 && roleSearchQuery && !roleLoading && (
+                <p className="text-xs text-muted-foreground text-center py-6">لم يتم العثور على مستخدم بهذا الإيميل</p>
+              )}
+
+              <div className="mt-6 bg-card rounded-xl border border-border/50 p-4 space-y-2">
+                <h3 className="text-sm font-bold text-foreground">الفرق بين الأدوار</h3>
+                <div className="space-y-2 text-[11px]">
+                  <div className="flex items-start gap-2">
+                    <span className="px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold shrink-0">مسؤول رئيسي</span>
+                    <span className="text-muted-foreground">صلاحيات كاملة: إدارة الأدوار، التسعير، سجل العمليات، وجميع الميزات</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 font-bold shrink-0">مسؤول ثانوي</span>
+                    <span className="text-muted-foreground">إدارة الاشتراكات، توزيع الكريدت، تعديل المحتوى والواجهة</span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
