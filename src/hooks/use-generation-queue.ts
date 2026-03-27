@@ -8,6 +8,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { pollTask, type ApiType } from "@/lib/kie-ai";
 
 export type JobStatus = "pending" | "running" | "succeeded" | "failed" | "timed_out";
+export type ProviderBillingState = "unknown" | "no_charge_confirmed" | "upstream_task_created" | "upstream_success_confirmed" | "upstream_failed_refunded_confirmed" | "upstream_failed_refund_unknown" | "user_refunded" | "manual_review_required";
+export type ReconciliationStatus = "not_required" | "pending_review" | "resolved" | "escalated";
 
 export interface GenerationJob {
   id: string;
