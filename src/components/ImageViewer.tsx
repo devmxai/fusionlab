@@ -72,7 +72,7 @@ const ImageViewer = ({ src, alt = "Result", open, onClose, type = "image" }: Ima
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-xl flex flex-col"
+          className="fixed inset-0 z-[200] bg-background/95 backdrop-blur-xl flex flex-col"
           onClick={(e) => e.target === e.currentTarget && onClose()}
         >
           {/* Content area */}
