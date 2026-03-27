@@ -706,7 +706,7 @@ const StudioPage = () => {
         className="flex flex-col items-center justify-center gap-3 text-center px-4">
         <Sparkles className="w-9 h-9 text-primary opacity-40" />
         <h2 className="text-base font-bold text-foreground/70">{isShootsTool ? "شوتس" : tool.title}</h2>
-        <p className="text-xs text-muted-foreground/60">{isShootsTool ? "ارفع صورة واكتب وصفاً لتوليد زاويتين" : tool.description}</p>
+        <p className="text-xs text-muted-foreground/60">{isShootsTool ? "ارفع صورة لتوليد زاويتين، أو اكتب وصفاً لتوليد 6 صور" : tool.description}</p>
         {!isShootsTool && (
           <span className="text-[10px] text-muted-foreground/50 mt-1 bg-secondary/30 px-3 py-1 rounded-full">
             {currentRatio.label} {resolution ? `• ${resolution.toUpperCase()}` : ""}
