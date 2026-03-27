@@ -279,8 +279,12 @@ const StudioPage = () => {
   const insufficientCredits = estimatedCost > 0 && credits < estimatedCost;
 
   const handleGenerate = async () => {
-    if ((isImageOnlyTool || isShootsTool) && refImages.length === 0) {
+    if (isImageOnlyTool && refImages.length === 0) {
       toast.error("يجب رفع صورة أولاً");
+      return;
+    }
+    if (isShootsTool && refImages.length === 0 && !prompt.trim()) {
+      toast.error("اكتب وصفاً أو ارفع صورة");
       return;
     }
     if (isRemixTool && refImages.length === 0 && !prompt.trim()) {
@@ -702,7 +706,7 @@ const StudioPage = () => {
         className="flex flex-col items-center justify-center gap-3 text-center px-4">
         <Sparkles className="w-9 h-9 text-primary opacity-40" />
         <h2 className="text-base font-bold text-foreground/70">{isShootsTool ? "شوتس" : tool.title}</h2>
-        <p className="text-xs text-muted-foreground/60">{isShootsTool ? "ارفع صورة واكتب وصفاً لتوليد زاويتين" : tool.description}</p>
+        <p className="text-xs text-muted-foreground/60">{isShootsTool ? "ارفع صورة لتوليد زاويتين، أو اكتب وصفاً لتوليد 6 صور" : tool.description}</p>
         {!isShootsTool && (
           <span className="text-[10px] text-muted-foreground/50 mt-1 bg-secondary/30 px-3 py-1 rounded-full">
             {currentRatio.label} {resolution ? `• ${resolution.toUpperCase()}` : ""}
@@ -712,11 +716,12 @@ const StudioPage = () => {
     );
   };
 
-  // For shoots, use a wider aspect ratio to show 2 cards side by side
+  // For shoots/grok, adapt placeholder based on whether image is uploaded
+  const shootsHasImage = isShootsTool && refImages.length > 0;
   const shootsPlaceholderStyle = isShootsTool ? {
     width: "100%",
-    maxWidth: "min(95vw, 700px)",
-    aspectRatio: "2/1",
+    maxWidth: shootsHasImage ? "min(95vw, 700px)" : "min(95vw, 750px)",
+    aspectRatio: shootsHasImage ? "2/1" : "3/2",
     maxHeight: "calc(100dvh - 180px)",
   } : undefined;
 
@@ -1320,7 +1325,7 @@ const StudioPage = () => {
 
             <Button
               onClick={handleGenerate}
-              disabled={loading || !selectedTool || insufficientCredits || (isImageOnlyTool && refImages.length === 0) || (isShootsTool && refImages.length === 0) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
+              disabled={loading || !selectedTool || insufficientCredits || (isImageOnlyTool && refImages.length === 0) || (isShootsTool && refImages.length === 0 && !prompt.trim()) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
               className="shrink-0 rounded-xl gap-2 px-4 h-10 text-xs font-bold shadow-md"
             >
               {isImageOnlyTool ? <Upload className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
