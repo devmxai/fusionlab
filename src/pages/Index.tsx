@@ -158,11 +158,11 @@ const Index = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <HomeHeader />
 
-      <div className="max-w-[1400px] mx-auto">
+      <div className="w-full">
         <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
         <BannerCarousel />
 
-        <main className="px-3 sm:px-6 lg:px-8 pb-8 space-y-10">
+        <main className="px-3 sm:px-6 lg:px-10 xl:px-16 pb-8 space-y-10">
           {showCategorized ? (
             <>
               {!dataLoaded && (
