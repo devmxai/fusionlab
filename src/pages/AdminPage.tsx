@@ -113,7 +113,7 @@ const tabs: { id: Tab; label: string; icon: any; superOnly?: boolean }[] = [
 ];
 
 const AdminPage = () => {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, isSuperAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("dashboard");
   const [users, setUsers] = useState<any[]>([]);
