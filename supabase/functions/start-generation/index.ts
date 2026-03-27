@@ -104,6 +104,21 @@ serve(async (req) => {
     try {
       // ─── TTS Route ───
       if (apiType === "tts" && ttsParams) {
+        // Validate character limit server-side
+        const ttsText = (ttsParams.text || "") as string;
+        // Strip inline tags to count only spoken characters
+        const spokenText = ttsText.replace(/\[(short pause|medium pause|long pause|whispering|shouting|sarcasm|laughing|sigh|fast|extremely fast|robotic|uhm|gasp|groan|scared|curious|bored)\]/gi, "").replace(/\s+/g, " ").trim();
+        const charCount = spokenText.length;
+
+        if (charCount > 5000) {
+          await supabase.rpc("release_credits", { p_reservation_id: reservationId });
+          return jsonRes({
+            success: false,
+            error: "text_too_long",
+            message: `تجاوزت الحد الأقصى (5000 حرف). عدد الأحرف: ${charCount}`,
+          });
+        }
+
         const ttsResponse = await fetch(
           `${supabaseUrl}/functions/v1/gemini-tts`,
           {

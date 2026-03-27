@@ -121,22 +121,43 @@ const AudioStudioPage = () => {
   const { user, credits, refreshCredits } = useAuth();
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Dynamic pricing for TTS
-  const pricingParams = useMemo(() => ({
-    model: "gemini-tts",
-    resolution: null,
-    quality: null,
-    durationSeconds: null,
-    hasAudio: null,
-  }), []);
-
-  const { price } = usePricing(pricingParams);
-  const estimatedCost = price?.credits ?? 2; // fallback to 2 until pricing is set
-  const insufficientCredits = credits < estimatedCost;
+  // ─── Character-based TTS pricing tiers ───
+  const TTS_TIERS = [
+    { maxChars: 500, quality: "short", label: "قصير" },
+    { maxChars: 1500, quality: "medium", label: "متوسط" },
+    { maxChars: 3000, quality: "long", label: "طويل" },
+    { maxChars: 5000, quality: "extended", label: "ممتد" },
+  ];
+  const MAX_TTS_CHARS = 5000;
 
   // ─── State ───
   const [styleInstruction, setStyleInstruction] = useState("");
   const [text, setText] = useState("");
+
+  // Count only spoken characters (exclude emoji tags)
+  const getSpokenCharCount = useCallback((input: string): number => {
+    let clean = input;
+    for (const [emoji] of emojiToTag) clean = clean.split(emoji).join("");
+    return clean.replace(/\s+/g, " ").trim().length;
+  }, []);
+
+  const charCount = useMemo(() => getSpokenCharCount(text), [text, getSpokenCharCount]);
+  const currentTier = TTS_TIERS.find(t => charCount <= t.maxChars) || TTS_TIERS[TTS_TIERS.length - 1];
+  const isOverLimit = charCount > MAX_TTS_CHARS;
+
+  // Dynamic pricing based on character tier
+  const pricingParams = useMemo(() => ({
+    model: "gemini-tts",
+    resolution: null,
+    quality: charCount > 0 ? currentTier.quality : "short",
+    durationSeconds: null,
+    hasAudio: null,
+  }), [charCount, currentTier.quality]);
+
+  const { price } = usePricing(pricingParams);
+  const estimatedCost = price?.credits ?? 2;
+  const insufficientCredits = credits < estimatedCost;
+
   const [selectedVoice, setSelectedVoice] = useState<GeminiVoice>(geminiVoices[0]);
   const [speakingRate, setSpeakingRate] = useState(1.0);
   const [pitch, setPitch] = useState(0);
@@ -168,6 +189,10 @@ const AudioStudioPage = () => {
       toast.error("اكتب النص المراد تحويله إلى صوت");
       return;
     }
+    if (isOverLimit) {
+      toast.error(`تجاوزت الحد الأقصى (${MAX_TTS_CHARS} حرف). عدد الأحرف الحالي: ${charCount}`);
+      return;
+    }
     if (!user) {
       toast.error("يجب تسجيل الدخول أولاً");
       navigate("/auth");
@@ -195,6 +220,7 @@ const AudioStudioPage = () => {
           toolId: "gemini-tts",
           model: "gemini-tts",
           apiType: "tts",
+          quality: currentTier.quality,
           idempotencyKey,
           ttsParams: {
             text: textForBackend,
@@ -448,11 +474,32 @@ const AudioStudioPage = () => {
             <Textarea
               ref={textareaRef}
               value={text}
-              onChange={(e) => setText(tagsToEmojis(e.target.value))}
+              onChange={(e) => {
+                const newText = tagsToEmojis(e.target.value);
+                setText(newText);
+              }}
               placeholder="اكتب النص الذي تريد تحويله إلى صوت..."
-              className="min-h-[120px] bg-card border-border/50 text-sm resize-none focus:border-primary/50"
+              className={`min-h-[120px] bg-card border-border/50 text-sm resize-none focus:border-primary/50 ${isOverLimit ? "border-destructive focus:border-destructive" : ""}`}
               dir="rtl"
             />
+            {/* Character counter & cost indicator */}
+            <div className="flex items-center justify-between text-[10px] px-1">
+              <div className="flex items-center gap-2">
+                <span className={`font-mono ${isOverLimit ? "text-destructive font-bold" : charCount > MAX_TTS_CHARS * 0.8 ? "text-yellow-500" : "text-muted-foreground"}`}>
+                  {charCount.toLocaleString()} / {MAX_TTS_CHARS.toLocaleString()} حرف
+                </span>
+                {charCount > 0 && (
+                  <span className="text-muted-foreground">
+                    ({currentTier.label})
+                  </span>
+                )}
+              </div>
+              {charCount > 0 && (
+                <span className="text-primary font-bold">
+                  {estimatedCost} كريديت
+                </span>
+              )}
+            </div>
             {/* Inline Tags - Emoji Chips */}
             <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
               {inlineTags.map((tag) => (
@@ -525,7 +572,7 @@ const AudioStudioPage = () => {
           <div className="flex gap-2">
             <Button
               onClick={handleGenerate}
-              disabled={loading || !text.trim() || insufficientCredits}
+              disabled={loading || !text.trim() || insufficientCredits || isOverLimit}
               className={`flex-1 gap-2 h-11 rounded-xl text-sm font-bold shadow-md ${insufficientCredits ? "bg-destructive hover:bg-destructive/90" : ""}`}
             >
               {loading ? (
