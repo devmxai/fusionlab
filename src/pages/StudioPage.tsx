@@ -43,12 +43,12 @@ const categoryTitleMap: Record<string, string> = {
 };
 
 const ratioConfig: Record<string, { label: string; cssAspect: string; placeholderMaxW: string }> = {
-  "1:1":  { label: "1:1",   cssAspect: "1/1",  placeholderMaxW: "260px" },
-  "3:4":  { label: "3:4",   cssAspect: "3/4",  placeholderMaxW: "220px" },
-  "4:3":  { label: "4:3",   cssAspect: "4/3",  placeholderMaxW: "320px" },
-  "9:16": { label: "9:16",  cssAspect: "9/16", placeholderMaxW: "180px" },
-  "16:9": { label: "16:9",  cssAspect: "16/9", placeholderMaxW: "340px" },
-  "21:9": { label: "21:9",  cssAspect: "21/9", placeholderMaxW: "360px" },
+  "1:1":  { label: "1:1",   cssAspect: "1/1",  placeholderMaxW: "min(90vw, 480px)" },
+  "3:4":  { label: "3:4",   cssAspect: "3/4",  placeholderMaxW: "min(85vw, 420px)" },
+  "4:3":  { label: "4:3",   cssAspect: "4/3",  placeholderMaxW: "min(92vw, 600px)" },
+  "9:16": { label: "9:16",  cssAspect: "9/16", placeholderMaxW: "min(65vw, 340px)" },
+  "16:9": { label: "16:9",  cssAspect: "16/9", placeholderMaxW: "min(95vw, 700px)" },
+  "21:9": { label: "21:9",  cssAspect: "21/9", placeholderMaxW: "min(95vw, 750px)" },
 };
 
 const StudioPage = () => {
@@ -304,7 +304,7 @@ const StudioPage = () => {
 
     setLoading(true);
     setStatus("جاري التحضير...");
-    setProgress(0);
+    setProgress(1);
     setResultUrls([]);
 
     let reservationId: string | null = null;
@@ -380,7 +380,7 @@ const StudioPage = () => {
 
       // ── Step 3: Start generation (server: auth → entitlement → price → reserve → create task + job record) ──
       setStatus("جاري التحقق والإنشاء...");
-      setProgress((prev) => Math.max(prev, 12));
+      setProgress((prev) => Math.max(prev, 5));
 
       const idempotencyKey = `gen_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const fileType = (isVideoTool || isAvatarTool) ? "video" : "image";
@@ -637,15 +637,37 @@ const StudioPage = () => {
       return (
         <motion.div key="loading" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
           className="flex flex-col items-center justify-center gap-2">
-          <CircularProgress progress={progress} size={90} status={status} />
+          <CircularProgress progress={progress} size={110} status={status} />
         </motion.div>
       );
     }
 
     if (resultUrls.length > 0) {
+      // Multi-image grid (e.g. Grok generating multiple images)
+      if (resultUrls.length > 1 && !isVideoTool) {
+        return (
+          <motion.div key="multi-result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+            className={`w-full h-full grid gap-1.5 ${resultUrls.length === 2 ? "grid-cols-2" : resultUrls.length === 3 ? "grid-cols-2" : "grid-cols-2"}`}>
+            {resultUrls.map((url, i) => (
+              <motion.div key={i}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.08 }}
+                className={`cursor-pointer rounded-xl overflow-hidden border border-border/20 hover:border-primary/40 transition-all ${
+                  resultUrls.length === 3 && i === 2 ? "col-span-2" : ""
+                }`}
+                onClick={() => openViewer(url)}
+              >
+                <img src={url} alt={`Result ${i + 1}`} className="w-full h-full object-cover" />
+              </motion.div>
+            ))}
+          </motion.div>
+        );
+      }
+      // Single result
       return (
         <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-          className="w-full h-full cursor-pointer" onClick={() => !isVideoTool && openViewer(resultUrls[0])}>
+          className="w-full h-full cursor-pointer relative group" onClick={() => !isVideoTool && openViewer(resultUrls[0])}>
           {isVideoTool ? (
             <video src={resultUrls[0]} controls className="w-full h-full object-cover rounded-2xl" />
           ) : (
@@ -658,21 +680,21 @@ const StudioPage = () => {
     if (!selectedTool) {
       return (
         <motion.div key="no-model" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="flex flex-col items-center justify-center gap-2 text-center px-4">
-          <Sparkles className="w-7 h-7 text-primary opacity-40" />
-          <h2 className="text-sm font-bold text-foreground/70">اختر النموذج</h2>
-          <p className="text-[10px] text-muted-foreground/60">اختر نموذج من الأعلى للبدء</p>
+          className="flex flex-col items-center justify-center gap-3 text-center px-4">
+          <Sparkles className="w-9 h-9 text-primary opacity-40" />
+          <h2 className="text-base font-bold text-foreground/70">اختر النموذج</h2>
+          <p className="text-xs text-muted-foreground/60">اختر نموذج من الأعلى للبدء</p>
         </motion.div>
       );
     }
 
     return (
       <motion.div key="placeholder" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="flex flex-col items-center justify-center gap-2 text-center px-4">
-        <Sparkles className="w-7 h-7 text-primary opacity-40" />
-        <h2 className="text-sm font-bold text-foreground/70">{tool.title}</h2>
-        <p className="text-[10px] text-muted-foreground/60">{tool.description}</p>
-        <span className="text-[9px] text-muted-foreground/50 mt-1 bg-secondary/30 px-3 py-0.5 rounded-full">
+        className="flex flex-col items-center justify-center gap-3 text-center px-4">
+        <Sparkles className="w-9 h-9 text-primary opacity-40" />
+        <h2 className="text-base font-bold text-foreground/70">{tool.title}</h2>
+        <p className="text-xs text-muted-foreground/60">{tool.description}</p>
+        <span className="text-[10px] text-muted-foreground/50 mt-1 bg-secondary/30 px-3 py-1 rounded-full">
           {currentRatio.label} {resolution ? `• ${resolution.toUpperCase()}` : ""}
         </span>
       </motion.div>
@@ -915,18 +937,7 @@ const StudioPage = () => {
       </header>
 
       {/* ── Center area ── */}
-      <div className="relative z-0 flex-1 flex flex-col items-center justify-center px-4 min-h-0">
-        {resultUrls.length > 1 && !loading && (
-          <div className="w-full overflow-x-auto flex gap-2 mb-4 scrollbar-hide">
-            {resultUrls.slice(1).map((url, i) => (
-              <div key={i} className="shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-border/50 cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => openViewer(url)}>
-                <img src={url} alt="" className="w-full h-full object-cover" />
-              </div>
-            ))}
-          </div>
-        )}
-
+      <div className="relative z-0 flex-1 flex flex-col items-center justify-center px-4 md:px-8 min-h-0">
         <motion.div
           layout
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -937,6 +948,7 @@ const StudioPage = () => {
             width: "100%",
             maxWidth: currentRatio.placeholderMaxW,
             aspectRatio: currentRatio.cssAspect,
+            maxHeight: "calc(100dvh - 180px)",
             background: resultUrls.length > 0 && !loading ? "transparent" : undefined,
           }}
         >
@@ -952,7 +964,7 @@ const StudioPage = () => {
           {(resultUrls.length === 0 || loading) && (
             <div className="absolute inset-0 bg-secondary/20 pointer-events-none" />
           )}
-          <div className="relative z-10 w-full h-full flex items-center justify-center p-4">
+          <div className="relative z-10 w-full h-full flex items-center justify-center p-2">
             <AnimatePresence mode="wait">
               {renderCardContent()}
             </AnimatePresence>

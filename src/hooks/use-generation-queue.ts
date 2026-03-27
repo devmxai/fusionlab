@@ -52,12 +52,14 @@ interface JobPollListeners {
 /**
  * Smooth simulated progress
  */
-function createSmoothProgress(startFrom = 5) {
+function createSmoothProgress(startFrom = 0) {
   let current = startFrom;
   let phase: "waiting" | "queuing" | "generating" | "finalizing" = "waiting";
+  let tickCount = 0;
 
   return {
     update(providerProgress: number | undefined, state: string | undefined) {
+      tickCount++;
       const s = (state || "").toLowerCase();
       if (["success", "succeeded", "completed", "done"].includes(s)) {
         current = 100;
@@ -76,24 +78,28 @@ function createSmoothProgress(startFrom = 5) {
       }
 
       if (providerProgress && providerProgress > 0) {
-        current = Math.max(current, 30 + (providerProgress / 100) * 65);
+        const mapped = 20 + (providerProgress / 100) * 75;
+        current = Math.max(current, mapped);
         return { progress: Math.min(Math.round(current), 95), phase };
       }
 
-      const maxForPhase = phase === "waiting" ? 25 : phase === "queuing" ? 40 : phase === "generating" ? 90 : 95;
-      const increment = phase === "waiting" ? 0.8 : phase === "queuing" ? 1.2 : phase === "generating" ? 1.5 : 0.5;
+      // Smooth increments: fast early ramp, slowing as we approach ceiling
+      const maxForPhase = phase === "waiting" ? 30 : phase === "queuing" ? 50 : phase === "generating" ? 92 : 95;
+      const baseSpeed = phase === "waiting" ? 1.8 : phase === "queuing" ? 1.5 : phase === "generating" ? 1.2 : 0.4;
 
       if (current < maxForPhase) {
         const remaining = maxForPhase - current;
-        const step = Math.min(increment, remaining * 0.08);
-        current += Math.max(step, 0.2);
+        // Ease-out: faster when far from target, slower near it
+        const step = Math.max(remaining * 0.06, 0.3) * (baseSpeed / 1.5);
+        current += Math.min(step, baseSpeed);
       }
 
       return { progress: Math.min(Math.round(current * 10) / 10, 95), phase };
     },
-    reset(val = 5) {
+    reset(val = 0) {
       current = val;
       phase = "waiting";
+      tickCount = 0;
     },
   };
 }
@@ -297,18 +303,19 @@ export function useGenerationQueue() {
     if (pollingRefs.current.get(job.id)) return;
     pollingRefs.current.set(job.id, true);
 
-    const smooth = createSmoothProgress(Math.max(0, Math.min(job.progress || 0, 95)));
+    const smooth = createSmoothProgress(Math.max(0, Math.min(job.progress || 1, 95)));
     const apiType = (job.api_type || "standard") as ApiType;
     const hasExternalHandlers = Boolean(onSuccess || onFail);
 
     updateJobLocal(job.id, {
       status: "running" as JobStatus,
-      progress: Math.max(0, Math.min(job.progress || 0, 95)),
+      progress: Math.max(1, Math.min(job.progress || 1, 95)),
     });
 
     let latestState = "waiting";
     let latestProgress: number | undefined;
     const progressInterval = setInterval(() => {
+
       const { progress: simProg, phase } = smooth.update(latestProgress, latestState);
       const rounded = Math.round(simProg);
       updateJobLocal(job.id, {
@@ -316,7 +323,7 @@ export function useGenerationQueue() {
         metadata: { ...job.metadata, phaseLabel: phaseLabels[phase] || phase },
       });
       emitPollProgress(job.id, rounded, phaseLabels[phase] || phase, latestState);
-    }, 800);
+    }, 500);
 
     try {
       const result = await pollTask(
