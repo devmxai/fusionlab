@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Users, Crown, Coins, Clock, Shield, Check, X,
   Search, BarChart3, FileText, CreditCard, Tag, History, Settings,
-  ChevronDown, AlertCircle, RefreshCw, Eye, Pencil, Save, PanelTop
+  ChevronDown, AlertCircle, RefreshCw, Eye, Pencil, Save, PanelTop, UserCog
 } from "lucide-react";
 import ContentTab from "@/components/admin/ContentTab";
 import { toast } from "sonner";
