@@ -130,14 +130,18 @@ const AudioStudioPage = () => {
   ];
   const MAX_TTS_CHARS = 5000;
 
+  // ─── State ───
+  const [styleInstruction, setStyleInstruction] = useState("");
+  const [text, setText] = useState("");
+
   // Count only spoken characters (exclude emoji tags)
-  const getSpokenCharCount = (input: string): number => {
+  const getSpokenCharCount = useCallback((input: string): number => {
     let clean = input;
     for (const [emoji] of emojiToTag) clean = clean.split(emoji).join("");
     return clean.replace(/\s+/g, " ").trim().length;
-  };
+  }, []);
 
-  const charCount = useMemo(() => getSpokenCharCount(text), [text]);
+  const charCount = useMemo(() => getSpokenCharCount(text), [text, getSpokenCharCount]);
   const currentTier = TTS_TIERS.find(t => charCount <= t.maxChars) || TTS_TIERS[TTS_TIERS.length - 1];
   const isOverLimit = charCount > MAX_TTS_CHARS;
 
