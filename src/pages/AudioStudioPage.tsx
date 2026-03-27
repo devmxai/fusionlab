@@ -121,13 +121,7 @@ const AudioStudioPage = () => {
   const { user, credits, refreshCredits } = useAuth();
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // ─── Character-based TTS pricing tiers ───
-  const TTS_TIERS = [
-    { maxChars: 500, quality: "short", label: "قصير" },
-    { maxChars: 1500, quality: "medium", label: "متوسط" },
-    { maxChars: 3000, quality: "long", label: "طويل" },
-    { maxChars: 5000, quality: "extended", label: "ممتد" },
-  ];
+  // ─── Per-character TTS pricing ───
   const MAX_TTS_CHARS = 5000;
 
   // ─── State ───
@@ -142,21 +136,21 @@ const AudioStudioPage = () => {
   }, []);
 
   const charCount = useMemo(() => getSpokenCharCount(text), [text, getSpokenCharCount]);
-  const currentTier = TTS_TIERS.find(t => charCount <= t.maxChars) || TTS_TIERS[TTS_TIERS.length - 1];
   const isOverLimit = charCount > MAX_TTS_CHARS;
 
-  // Dynamic pricing based on character tier
+  // Dynamic pricing based on character count
   const pricingParams = useMemo(() => ({
     model: "gemini-tts",
     resolution: null,
-    quality: charCount > 0 ? currentTier.quality : "short",
+    quality: null,
     durationSeconds: null,
     hasAudio: null,
-  }), [charCount, currentTier.quality]);
+    characterCount: charCount > 0 ? charCount : null,
+  }), [charCount]);
 
   const { price } = usePricing(pricingParams);
-  const estimatedCost = price?.credits ?? 2;
-  const insufficientCredits = credits < estimatedCost;
+  const estimatedCost = price?.credits ?? 0;
+  const insufficientCredits = charCount > 0 && credits < estimatedCost;
 
   const [selectedVoice, setSelectedVoice] = useState<GeminiVoice>(geminiVoices[0]);
   const [speakingRate, setSpeakingRate] = useState(1.0);
