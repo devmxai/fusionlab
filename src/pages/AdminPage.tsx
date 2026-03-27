@@ -238,6 +238,46 @@ const AdminPage = () => {
     fetchData();
   };
 
+  const searchUserForRole = async () => {
+    if (!roleSearchQuery.trim()) return;
+    setRoleLoading(true);
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, email, full_name")
+      .ilike("email", `%${roleSearchQuery.trim()}%`)
+      .limit(10);
+    
+    if (data && data.length > 0) {
+      // Fetch roles for these users
+      const userIds = data.map(u => u.id);
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", userIds);
+      
+      const roleMap: Record<string, string> = {};
+      (roles || []).forEach((r: any) => { roleMap[r.user_id] = r.role; });
+      
+      setRoleSearchResults(data.map(u => ({ ...u, role: roleMap[u.id] || "user" })));
+    } else {
+      setRoleSearchResults([]);
+    }
+    setRoleLoading(false);
+  };
+
+  const setUserRole = async (userId: string, role: string) => {
+    const { data, error } = await supabase.rpc("admin_set_role", {
+      p_target_user_id: userId,
+      p_role: role,
+    } as any);
+    if (error) { toast.error(error.message); return; }
+    const res = data as any;
+    if (!res?.success) { toast.error(res?.message || res?.error || "فشلت العملية"); return; }
+    toast.success(`تم تحديث الدور إلى ${role === "admin" ? "مسؤول" : "مستخدم"}`);
+    searchUserForRole();
+    fetchData();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
