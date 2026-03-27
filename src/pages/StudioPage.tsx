@@ -853,7 +853,8 @@ const StudioPage = () => {
               </div>
             )}
 
-          {/* Model dropdown - always visible */}
+          {/* Model dropdown - hidden for shoots */}
+          {!isShootsTool && (
           <div className="relative shrink-0">
             <DropdownBtn id="model" label="النموذج" value={selectedTool?.title || ""} hasValue={!!selectedTool} />
             {openMenu === "model" && (
