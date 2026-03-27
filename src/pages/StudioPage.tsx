@@ -555,7 +555,7 @@ const StudioPage = () => {
       if (reservationId) {
         try {
           await supabase.functions.invoke("complete-generation", {
-            body: { reservationId, status: "failed" },
+            body: { reservationId, status: "failed", errorMessage: "Client-side error before provider response", providerFailState: "pre_provider_error" },
           });
         } catch (releaseErr) {
           console.error("Failed to release credits:", releaseErr);
