@@ -213,7 +213,7 @@ const StudioPage = () => {
 
   const maxImages = isRemixTool
     ? remixMaxImages
-    : isImageOnlyTool ? 1 : 3;
+    : (isImageOnlyTool || isShootsTool) ? 1 : (caps?.maxImages ?? 3);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
