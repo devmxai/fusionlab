@@ -389,6 +389,7 @@ const StudioPage = () => {
       setProgress(25);
 
       const idempotencyKey = `gen_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const fileType = (isVideoTool || isAvatarTool) ? "video" : "image";
 
       const { data: startResult, error: startError } = await supabase.functions.invoke("start-generation", {
         body: {
