@@ -50,7 +50,7 @@ import rmbg2 from "@/assets/cards/rmbg-2.jpg";
 import upscale1 from "@/assets/cards/upscale-1.jpg";
 import upscale2 from "@/assets/cards/upscale-2.jpg";
 
-const imageMap: Record<string, string> = {
+export const imageMap: Record<string, string> = {
   "image-gen": imageGen,
   "skin-enhance": skinEnhance,
   "video-gen": videoGen,
@@ -105,6 +105,7 @@ interface ToolCardOverride {
   image_url: string | null;
   title: string | null;
   description: string | null;
+  updated_at?: string | null;
 }
 
 interface ToolCardProps {
@@ -124,15 +125,38 @@ const categoryStudioMap: Record<string, string> = {
   "رفع الجودة": "/studio/upscale",
 };
 
-const optimizeStorageUrl = (url: string | undefined, width = 400): string | undefined => {
+const appendParam = (url: string, key: string, value: string) => {
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}${key}=${encodeURIComponent(value)}`;
+};
+
+export const optimizeStorageUrl = (
+  url: string | undefined,
+  width = 400,
+  versionKey?: string | null
+): string | undefined => {
   if (!url) return url;
-  if (url.includes("supabase.co/storage/v1/object/public/")) {
-    return url.replace(
+
+  let nextUrl = url;
+
+  if (nextUrl.includes("/storage/v1/object/public/")) {
+    nextUrl = nextUrl.replace(
       "/storage/v1/object/public/",
-      `/storage/v1/render/image/public/`
-    ) + `?width=${width}&quality=75`;
+      "/storage/v1/render/image/public/"
+    );
   }
-  return url;
+
+  if (nextUrl.includes("/storage/v1/render/image/public/")) {
+    nextUrl = appendParam(nextUrl, "width", String(width));
+    nextUrl = appendParam(nextUrl, "quality", "75");
+    nextUrl = appendParam(nextUrl, "format", "origin");
+  }
+
+  if (versionKey) {
+    nextUrl = appendParam(nextUrl, "v", versionKey);
+  }
+
+  return nextUrl;
 };
 
 const ToolCard = ({ tool, index = 0, override, sectionSlug }: ToolCardProps) => {
@@ -142,7 +166,7 @@ const ToolCard = ({ tool, index = 0, override, sectionSlug }: ToolCardProps) => 
   // Priority: 1) CMS override image, 2) section-specific card image, 3) default tool image
   const sectionKey = sectionSlug ? `${sectionSlug}/${tool.id}` : "";
   const rawSrc = override?.image_url || (sectionKey && cardImageMap[sectionKey]) || imageMap[tool.image];
-  const imgSrc = optimizeStorageUrl(rawSrc);
+  const imgSrc = optimizeStorageUrl(rawSrc, 400, override?.updated_at ?? null);
   const title = override?.title || tool.title;
 
   useEffect(() => {
