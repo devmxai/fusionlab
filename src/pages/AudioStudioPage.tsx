@@ -425,7 +425,7 @@ const AudioStudioPage = () => {
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden" dir="rtl">
       {/* Header */}
       <header className="shrink-0 bg-nav-bg/80 backdrop-blur-xl border-b border-border/50 px-4 py-3 z-50">
-        <div className="flex items-center gap-3 max-w-5xl mx-auto">
+        <div className="flex items-center gap-3 w-full">
           <button onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground transition-colors">
             <ArrowRight className="w-5 h-5" />
           </button>
