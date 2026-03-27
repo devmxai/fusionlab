@@ -428,60 +428,85 @@ const StudioPage = () => {
 
       reservationId = startResult.reservationId;
       const taskId = startResult.taskId;
+      const fileType = (isVideoTool || isAvatarTool) ? "video" : "image";
 
-      // ── Step 4: Poll task status ──
-      const result = await pollTask(taskId, (state, prog) => {
-        const m: Record<string, string> = {
-          waiting: "في الانتظار...",
-          queuing: "في قائمة الانتظار...",
-          generating: "جاري التوليد...",
-          success: "تم!",
-          fail: "فشل",
-        };
-        setStatus(m[state] || state);
-        if (prog) {
-          setProgress(30 + (prog / 100) * 70);
-        } else {
-          setProgress(
-            state === "waiting" ? 35 :
-            state === "queuing" ? 45 :
-            state === "generating" ? 65 :
-            state === "success" ? 100 : progress
-          );
-        }
-      }, 120, 3000, false, apiType);
+      // ── Step 4: Create persistent job record + poll via queue ──
+      const job = await createJob({
+        taskId,
+        reservationId,
+        toolId: tool.id,
+        toolName: tool.title,
+        model: tool.model,
+        apiType: apiType || "standard",
+        prompt: prompt || tool.title,
+        fileType,
+        metadata: { aspectRatio, resolution, quality },
+      });
 
-      if (result.resultJson) {
-        const parsed = JSON.parse(result.resultJson);
-        setResultUrls(parsed.resultUrls || []);
-        toast.success("تم التوليد بنجاح!");
-        setProgress(100);
-
-        // ── Step 5: Complete generation (server: settle + save) ──
-        const fileUrl = parsed.resultUrls?.[0];
-        const { data: completeResult, error: completeError } = await supabase.functions.invoke("complete-generation", {
-          body: {
-            reservationId,
-            status: "success",
-            taskId,
-            toolId: tool.id,
-            toolName: tool.title,
-            prompt,
-            fileUrl: fileUrl || "",
-            fileType: (isVideoTool || isAvatarTool) ? "video" : "image",
-            metadata: { aspectRatio, resolution, model: tool.model },
-          },
-        });
-        if (completeError || !completeResult?.success) {
-          console.error("Settlement failed:", completeError || completeResult);
-          toast.error("تم التوليد لكن فشل تأكيد الخصم — سيتم المراجعة تلقائياً");
-        } else {
-          reservationId = null;
-        }
-        await refreshCredits();
-      } else {
-        throw new Error("لم يتم إرجاع نتيجة من التوليد");
+      if (!job) {
+        throw new Error("فشل إنشاء سجل المهمة");
       }
+
+      // Poll via queue (handles smooth progress, DB updates, resume)
+      await pollJob(
+        job,
+        // onSuccess
+        async (resultUrls, completedJob) => {
+          setResultUrls(resultUrls);
+          toast.success("تم التوليد بنجاح!");
+          setProgress(100);
+          setStatus("تم!");
+
+          // Settle credits
+          const fileUrl = resultUrls[0];
+          const { data: completeResult, error: completeError } = await supabase.functions.invoke("complete-generation", {
+            body: {
+              reservationId,
+              status: "success",
+              taskId,
+              toolId: tool.id,
+              toolName: tool.title,
+              prompt,
+              fileUrl: fileUrl || "",
+              fileType,
+              metadata: { aspectRatio, resolution, model: tool.model },
+            },
+          });
+          if (completeError || !completeResult?.success) {
+            console.error("Settlement failed:", completeError || completeResult);
+            toast.error("تم التوليد لكن فشل تأكيد الخصم — سيتم المراجعة تلقائياً");
+          } else {
+            reservationId = null;
+          }
+          await refreshCredits();
+          setLoading(false);
+        },
+        // onFail
+        async (errorMsg, failedJob) => {
+          if (reservationId) {
+            try {
+              await supabase.functions.invoke("complete-generation", {
+                body: { reservationId, status: "failed" },
+              });
+            } catch (releaseErr) {
+              console.error("Failed to release credits:", releaseErr);
+            }
+          }
+          toast.error(errorMsg || "فشل التوليد");
+          setStatus("");
+          setProgress(0);
+          await refreshCredits();
+          setLoading(false);
+        },
+      );
+
+      // Track progress from queue job updates
+      const trackProgress = setInterval(() => {
+        // This will be handled by realtime updates in the queue
+      }, 500);
+
+      // Note: setLoading(false) is handled in onSuccess/onFail callbacks above
+      return;
     } catch (err: unknown) {
       // ── Release reserved credits on failure ──
       if (reservationId) {
@@ -498,7 +523,8 @@ const StudioPage = () => {
       setProgress(0);
       await refreshCredits();
     } finally {
-      setLoading(false);
+      // Only set loading false if we didn't hand off to pollJob
+      // pollJob callbacks handle this
     }
   };
 
