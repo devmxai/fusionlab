@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { User } from "lucide-react";
 import CreditRingAvatar from "@/components/CreditRingAvatar";
 import ProfileSidebar from "@/components/ProfileSidebar";
 import GenerationQueueSidebar from "@/components/GenerationQueueSidebar";
@@ -22,19 +21,18 @@ const HomeHeader = () => {
           ) : (
             <button
               onClick={() => navigate("/auth")}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold"
+              className="w-9 h-9 rounded-full bg-muted/60 border border-border/40 flex items-center justify-center"
             >
-              <User className="w-3.5 h-3.5" />
-              دخول
+              <img src="/logo-icon.png" alt="دخول" className="w-5 h-5 object-contain" />
             </button>
           )}
 
           {/* Center Logo */}
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-            <img src="/logo.jpg" alt="FUSION LAB" className="w-7 h-7 rounded-md" />
             <h1 className="text-lg font-extrabold text-foreground tracking-tight">
               <span className="text-primary">FUSION</span> LAB
             </h1>
+            <img src="/logo-icon.png" alt="FUSION LAB" className="w-6 h-6 object-contain" />
           </div>
 
           {/* Left side (last in RTL): Generation Queue */}
