@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Layers, ChevronLeft, Image, Video, Loader2, Music, CheckCircle2, XCircle, Clock, ExternalLink, Eye } from "lucide-react";
+import { Layers, ChevronLeft, Image, Video, Loader2, Music, CheckCircle2, XCircle, Clock, Eye, X } from "lucide-react";
 import { useQueue } from "@/contexts/GenerationQueueContext";
 import type { GenerationJob } from "@/hooks/use-generation-queue";
+import ImageViewer from "@/components/ImageViewer";
 
 interface GenerationQueueSidebarProps {
   open?: boolean;
@@ -15,9 +16,16 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
   const { jobs, activeCount, unseenCount, markJobSeen } = useQueue();
   const [localOpen, setLocalOpen] = useState(false);
   const [openedAt, setOpenedAt] = useState(0);
+  const [previewJob, setPreviewJob] = useState<GenerationJob | null>(null);
   const isOpen = open || localOpen;
 
-  // Total badge count = active + unseen completed/failed
+  // Only show active + unseen jobs (smart inbox)
+  const visibleJobs = jobs.filter((j) => {
+    if (j.status === "pending" || j.status === "running") return true;
+    if ((j.status === "succeeded" || j.status === "failed" || j.status === "timed_out") && !j.seen_at) return true;
+    return false;
+  });
+
   const badgeCount = activeCount + unseenCount;
 
   const handleOpen = () => { setOpenedAt(Date.now()); setLocalOpen(true); onOpen?.(); };
@@ -36,13 +44,8 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
 
   const statusLabel = (j: GenerationJob) => {
     if (j.status === "succeeded" && !j.seen_at) return "جاهزة للعرض";
-    if (j.status === "succeeded") return "مكتمل";
-    if (j.status === "failed" && j.reconciliation_status === "pending_review") return "فشل - قيد المراجعة";
-    if (j.status === "failed" && j.provider_billing_state === "upstream_failed_refunded_confirmed" && !j.seen_at) return "فشل - تم الاسترداد";
-    if (j.status === "failed" && j.provider_billing_state === "upstream_failed_refund_unknown" && !j.seen_at) return "فشل - الرصيد معلّق";
-    if (j.status === "failed" && !j.seen_at) return "فشل - لم يُشاهد";
-    if (j.status === "failed") return "فشل";
-    if (j.status === "timed_out") return "انتهى الوقت";
+    if (j.status === "failed" && !j.seen_at) return "فشل";
+    if (j.status === "timed_out" && !j.seen_at) return "انتهى الوقت";
     if (j.status === "running") return "جارٍ التوليد";
     if (j.status === "pending") return "بالانتظار";
     return j.status;
@@ -50,9 +53,7 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
 
   const statusColor = (j: GenerationJob) => {
     if (j.status === "succeeded" && !j.seen_at) return "text-green-400 font-bold";
-    if (j.status === "succeeded") return "text-green-400/60";
-    if ((j.status === "failed" || j.status === "timed_out") && !j.seen_at) return "text-destructive font-bold";
-    if (j.status === "failed" || j.status === "timed_out") return "text-destructive/60";
+    if (j.status === "failed" || j.status === "timed_out") return "text-destructive font-bold";
     if (j.status === "running") return "text-primary";
     return "text-muted-foreground";
   };
@@ -60,7 +61,6 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
   const typeIcon = (job: GenerationJob) => {
     if (job.status === "running" || job.status === "pending") return <Loader2 className="w-4 h-4 text-primary animate-spin" />;
     if (job.status === "succeeded" && !job.seen_at) return <CheckCircle2 className="w-4 h-4 text-green-400" />;
-    if (job.status === "succeeded") return <CheckCircle2 className="w-4 h-4 text-green-400/50" />;
     if (job.status === "failed" || job.status === "timed_out") return <XCircle className="w-4 h-4 text-destructive" />;
     if (job.file_type === "video") return <Video className="w-4 h-4 text-muted-foreground" />;
     if (job.file_type === "audio") return <Music className="w-4 h-4 text-muted-foreground" />;
@@ -78,19 +78,26 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
   };
 
   const handleJobClick = async (job: GenerationJob) => {
-    if ((job.status === "succeeded" || job.status === "failed" || job.status === "timed_out") && !job.seen_at) {
+    if (job.status === "succeeded" && !job.seen_at && job.result_url) {
+      // Open preview modal instead of raw link
+      setPreviewJob(job);
+    } else if ((job.status === "failed" || job.status === "timed_out") && !job.seen_at) {
+      // Acknowledge failed job
       await markJobSeen(job.id);
-    }
-    if (job.status === "succeeded" && job.result_url) {
-      window.open(job.result_url, "_blank");
     }
   };
 
-  // Sort: active first, then unseen, then seen
-  const sortedJobs = [...jobs].sort((a, b) => {
+  const handlePreviewClose = async () => {
+    if (previewJob && !previewJob.seen_at) {
+      await markJobSeen(previewJob.id);
+    }
+    setPreviewJob(null);
+  };
+
+  const sortedJobs = [...visibleJobs].sort((a, b) => {
     const priority = (j: GenerationJob) => {
       if (j.status === "pending" || j.status === "running") return 0;
-      if (!j.seen_at) return 1;
+      if (j.status === "succeeded" && !j.seen_at) return 1;
       return 2;
     };
     const pa = priority(a);
@@ -98,6 +105,8 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
     if (pa !== pb) return pa - pb;
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
+
+  const previewType = previewJob?.file_type === "video" ? "video" : previewJob?.file_type === "audio" ? "audio" : "image";
 
   const sidebarLayer = (
     <AnimatePresence>
@@ -139,36 +148,41 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
               {sortedJobs.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full opacity-40">
                   <Layers className="w-10 h-10 text-muted-foreground mb-3" />
-                  <p className="text-xs text-muted-foreground text-center">لا توجد عمليات توليد حالياً</p>
+                  <p className="text-xs text-muted-foreground text-center">لا توجد عمليات حالياً</p>
                   <p className="text-[10px] text-muted-foreground/60 text-center mt-1">ستظهر هنا العمليات قيد الإنجاز</p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {sortedJobs.map((job) => {
                     const isUnseen = (job.status === "succeeded" || job.status === "failed" || job.status === "timed_out") && !job.seen_at;
-                    const isClickable = job.status === "succeeded" || isUnseen;
+                    const isClickable = isUnseen;
 
                     return (
                       <motion.div
                         key={job.id}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20, height: 0 }}
+                        layout
                         className={`p-3 rounded-xl border transition-all ${
-                          isUnseen
-                            ? "bg-primary/5 border-primary/30 ring-1 ring-primary/20"
+                          job.status === "succeeded" && isUnseen
+                            ? "bg-green-500/5 border-green-500/30"
+                            : isUnseen
+                            ? "bg-destructive/5 border-destructive/30"
                             : "bg-secondary/30 border-border/20"
-                        } ${isClickable ? "cursor-pointer hover:bg-secondary/50" : ""}`}
+                        } ${isClickable ? "cursor-pointer hover:bg-secondary/50 active:scale-[0.98]" : ""}`}
                         onClick={() => isClickable && handleJobClick(job)}
                       >
-                        <div className="flex items-start gap-2.5">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                            isUnseen ? "bg-primary/10" : "bg-secondary/60"
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                            job.status === "succeeded" && isUnseen ? "bg-green-500/10" :
+                            isUnseen ? "bg-destructive/10" : "bg-secondary/60"
                           }`}>
                             {typeIcon(job)}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-[11px] text-foreground truncate" dir="ltr">
-                              {job.prompt || job.tool_name || job.model}
+                              {job.tool_name || job.prompt || job.model}
                             </p>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className={`text-[9px] ${statusColor(job)}`}>
@@ -181,32 +195,22 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
                                 {timeAgo(job.created_at)}
                               </span>
                             </div>
-                            {job.status === "failed" && job.error_message && (
-                              <p className="text-[9px] text-destructive/80 mt-1 truncate">{job.error_message}</p>
-                            )}
-                            {job.status === "failed" && job.reconciliation_status === "pending_review" && (
-                              <p className="text-[9px] text-amber-400/80 mt-0.5">⏳ الرصيد معلّق لحين مراجعة حالة المزود</p>
-                            )}
-                            {job.status === "failed" && job.provider_billing_state === "upstream_failed_refunded_confirmed" && (
-                              <p className="text-[9px] text-green-400/80 mt-0.5">✓ تم استرداد الرصيد</p>
-                            )}
-                            {job.status === "succeeded" && !job.seen_at && (
-                              <div className="flex items-center gap-1 mt-1">
-                                <Eye className="w-2.5 h-2.5 text-green-400" />
-                                <span className="text-[9px] text-green-400 font-medium">اضغط لعرض النتيجة</span>
-                              </div>
-                            )}
-                            {job.status === "succeeded" && job.seen_at && job.result_url && (
-                              <a href={job.result_url} target="_blank" rel="noopener noreferrer"
-                                className="text-[9px] text-primary flex items-center gap-0.5 mt-1 hover:underline"
-                                onClick={(e) => e.stopPropagation()}>
-                                <ExternalLink className="w-2.5 h-2.5" /> فتح النتيجة
-                              </a>
-                            )}
                           </div>
 
-                          {isUnseen && (
-                            <div className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0 mt-1 animate-pulse" />
+                          {job.status === "succeeded" && isUnseen && (
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Eye className="w-3 h-3 text-green-400" />
+                              <span className="text-[8px] text-green-400 font-bold">عرض</span>
+                            </div>
+                          )}
+                          {(job.status === "failed" || job.status === "timed_out") && isUnseen && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleJobClick(job); }}
+                              className="flex items-center gap-1 flex-shrink-0 px-2 py-1 rounded-md bg-destructive/10 hover:bg-destructive/20 transition-colors"
+                            >
+                              <X className="w-3 h-3 text-destructive" />
+                              <span className="text-[8px] text-destructive font-bold">تجاهل</span>
+                            </button>
                           )}
                         </div>
 
@@ -230,13 +234,12 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
               )}
             </div>
 
-            {jobs.length > 0 && (
+            {visibleJobs.length > 0 && (
               <div className="px-4 pb-8 pt-3">
                 <p className="text-[10px] text-muted-foreground text-center">
                   {activeCount > 0 && `${activeCount} نشطة`}
                   {activeCount > 0 && unseenCount > 0 && " · "}
                   {unseenCount > 0 && `${unseenCount} جديدة`}
-                  {activeCount === 0 && unseenCount === 0 && `${jobs.length} عملية`}
                 </p>
               </div>
             )}
@@ -263,6 +266,12 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
         )}
       </button>
       {typeof window !== "undefined" ? createPortal(sidebarLayer, document.body) : null}
+      <ImageViewer
+        src={previewJob?.result_url || ""}
+        open={!!previewJob && !!previewJob.result_url}
+        onClose={handlePreviewClose}
+        type={previewType}
+      />
     </>
   );
 };
