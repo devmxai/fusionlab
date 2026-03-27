@@ -801,9 +801,8 @@ const StudioPage = () => {
                     </DropdownMenu>
                   </div>
                 )}
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
 
           {/* Model dropdown - always visible */}
           <div className="relative shrink-0">
