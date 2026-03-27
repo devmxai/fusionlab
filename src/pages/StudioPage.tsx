@@ -45,12 +45,12 @@ const categoryTitleMap: Record<string, string> = {
 };
 
 const ratioConfig: Record<string, { label: string; cssAspect: string; placeholderMaxW: string }> = {
-  "1:1":  { label: "1:1",   cssAspect: "1/1",  placeholderMaxW: "min(90vw, 480px)" },
-  "3:4":  { label: "3:4",   cssAspect: "3/4",  placeholderMaxW: "min(85vw, 420px)" },
-  "4:3":  { label: "4:3",   cssAspect: "4/3",  placeholderMaxW: "min(92vw, 600px)" },
-  "9:16": { label: "9:16",  cssAspect: "9/16", placeholderMaxW: "min(65vw, 340px)" },
-  "16:9": { label: "16:9",  cssAspect: "16/9", placeholderMaxW: "min(95vw, 700px)" },
-  "21:9": { label: "21:9",  cssAspect: "21/9", placeholderMaxW: "min(95vw, 750px)" },
+  "1:1":  { label: "1:1",   cssAspect: "1/1",  placeholderMaxW: "min(92vw, 560px)" },
+  "3:4":  { label: "3:4",   cssAspect: "3/4",  placeholderMaxW: "min(88vw, 480px)" },
+  "4:3":  { label: "4:3",   cssAspect: "4/3",  placeholderMaxW: "min(94vw, 680px)" },
+  "9:16": { label: "9:16",  cssAspect: "9/16", placeholderMaxW: "min(70vw, 400px)" },
+  "16:9": { label: "16:9",  cssAspect: "16/9", placeholderMaxW: "min(96vw, 780px)" },
+  "21:9": { label: "21:9",  cssAspect: "21/9", placeholderMaxW: "min(96vw, 820px)" },
 };
 
 const StudioPage = () => {
@@ -700,11 +700,11 @@ const StudioPage = () => {
       // Single result
       return (
         <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-          className="w-full h-full cursor-pointer relative group" onClick={() => !(isVideoTool || isAvatarTool) && openViewer(resultUrls[0])}>
+          className="w-full h-full cursor-pointer relative group" onClick={() => openViewer(resultUrls[0])}>
           {(isVideoTool || isAvatarTool) ? (
-            <video src={resultUrls[0]} controls autoPlay playsInline className="w-full h-full object-cover rounded-2xl" />
+            <video src={resultUrls[0]} controls autoPlay playsInline className="w-full h-full object-contain rounded-2xl" />
           ) : (
-            <img src={resultUrls[0]} alt="Result" className="w-full h-full object-cover rounded-2xl" />
+            <img src={resultUrls[0]} alt="Result" className="w-full h-full object-contain rounded-2xl" />
           )}
         </motion.div>
       );
@@ -1388,7 +1388,7 @@ const StudioPage = () => {
         </div>
       </div>
 
-      <ImageViewer src={viewerUrl} open={viewerOpen} onClose={() => setViewerOpen(false)} />
+      <ImageViewer src={viewerUrl} open={viewerOpen} onClose={() => setViewerOpen(false)} type={(isVideoTool || isAvatarTool) ? "video" : "image"} />
     </div>
   );
 };
