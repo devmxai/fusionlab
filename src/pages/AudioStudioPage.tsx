@@ -188,6 +188,10 @@ const AudioStudioPage = () => {
       toast.error("اكتب النص المراد تحويله إلى صوت");
       return;
     }
+    if (isOverLimit) {
+      toast.error(`تجاوزت الحد الأقصى (${MAX_TTS_CHARS} حرف). عدد الأحرف الحالي: ${charCount}`);
+      return;
+    }
     if (!user) {
       toast.error("يجب تسجيل الدخول أولاً");
       navigate("/auth");
