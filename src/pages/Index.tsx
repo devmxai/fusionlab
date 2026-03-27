@@ -88,7 +88,7 @@ const SectionSkeleton = ({ count = 5 }: { count?: number }) => (
       <div className="w-4 h-4 rounded bg-secondary shimmer-effect" />
       <div className="h-4 w-20 rounded bg-secondary shimmer-effect" />
     </div>
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
       {Array.from({ length: count }).map((_, i) => (
         <CardSkeleton key={i} />
       ))}
