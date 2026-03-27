@@ -185,7 +185,7 @@ const Index = () => {
                     />
                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                       {tabTools.map((tool, i) => (
-                        <ToolCard key={`${tab.slug}-${tool.id}`} tool={tool} index={i} override={cardOverrides[tool.id]} />
+                        <ToolCard key={`${tab.slug}-${tool.id}`} tool={tool} index={i} override={cardOverrides[tool.id]} sectionSlug={tab.slug} />
                       ))}
                     </div>
                   </section>
