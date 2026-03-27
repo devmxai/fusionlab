@@ -10,6 +10,7 @@ interface CategoryFilterProps {
 const categoryRouteMap: Record<string, string> = {
   "فيديو": "/studio/video",
   "صور": "/studio/images",
+  "شوتس": "/studio/shoots",
   "ريمكس": "/studio/remix",
   "صوت": "/studio/audio",
   "افتار": "/studio/avatar",
