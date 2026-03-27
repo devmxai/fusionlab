@@ -571,7 +571,7 @@ const AudioStudioPage = () => {
           <div className="flex gap-2">
             <Button
               onClick={handleGenerate}
-              disabled={loading || !text.trim() || insufficientCredits}
+              disabled={loading || !text.trim() || insufficientCredits || isOverLimit}
               className={`flex-1 gap-2 h-11 rounded-xl text-sm font-bold shadow-md ${insufficientCredits ? "bg-destructive hover:bg-destructive/90" : ""}`}
             >
               {loading ? (
