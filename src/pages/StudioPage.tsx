@@ -1271,12 +1271,25 @@ const StudioPage = () => {
           {/* Input row */}
           <div className="flex items-center gap-2">
             {/* Upload button (only for models that support image input via maxImages in capabilities) */}
-            {!hasFrameMode && !isRemixTool && !isAvatarTool && !isImageOnlyTool && (caps?.maxImages ?? 0) > 0 && refImages.length < (caps?.maxImages ?? 0) && (
+            {!hasFrameMode && !isRemixTool && !isAvatarTool && !isImageOnlyTool && !isShootsTool && (caps?.maxImages ?? 0) > 0 && refImages.length < (caps?.maxImages ?? 0) && (
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="shrink-0 w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors"
               >
                 <ImageIcon className="w-4 h-4 text-muted-foreground" />
+              </button>
+            )}
+
+            {/* Shoots: always show image upload button */}
+            {isShootsTool && (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className={`shrink-0 h-9 px-3 rounded-lg border flex items-center justify-center gap-1.5 transition-colors ${
+                  refImages.length > 0 ? "bg-primary/10 border-primary/40" : "bg-secondary border-border/50 hover:bg-secondary/80"
+                }`}
+              >
+                <Upload className="w-4 h-4 text-muted-foreground" />
+                <span className="text-[10px] font-semibold text-foreground">{refImages.length > 0 ? "تغيير" : "صورة"}</span>
               </button>
             )}
 
