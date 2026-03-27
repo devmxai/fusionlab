@@ -87,6 +87,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(nextSession?.user ?? null);
 
       if (nextSession?.user) {
+        // Check if user is banned
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("is_banned")
+          .eq("id", nextSession.user.id)
+          .maybeSingle();
+        
+        if (profile?.is_banned) {
+          await supabase.auth.signOut();
+          if (isMounted) {
+            setUser(null);
+            setSession(null);
+            setIsAdmin(false);
+            setIsSuperAdmin(false);
+            setCredits(0);
+            setLoading(false);
+          }
+          return;
+        }
+
         await Promise.all([
           checkAdmin(nextSession.user.id),
           refreshCredits(nextSession.user.id),

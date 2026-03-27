@@ -450,6 +450,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          is_banned: boolean | null
           phone_number: string | null
           phone_verified: boolean | null
           updated_at: string
@@ -460,6 +461,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          is_banned?: boolean | null
           phone_number?: string | null
           phone_verified?: boolean | null
           updated_at?: string
@@ -470,6 +472,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          is_banned?: boolean | null
           phone_number?: string | null
           phone_verified?: boolean | null
           updated_at?: string
@@ -718,6 +721,14 @@ export type Database = {
         Args: { p_days?: number; p_plan_id: string; p_target_user_id: string }
         Returns: Json
       }
+      admin_ban_user: {
+        Args: { p_ban: boolean; p_target_user_id: string }
+        Returns: Json
+      }
+      admin_cancel_subscription: {
+        Args: { p_target_user_id: string }
+        Returns: Json
+      }
       admin_grant_credits: {
         Args: {
           p_amount: number
@@ -730,6 +741,7 @@ export type Database = {
         Args: { p_approve: boolean; p_trial_id: string }
         Returns: Json
       }
+      admin_reset_credits: { Args: { p_target_user_id: string }; Returns: Json }
       admin_set_role: {
         Args: {
           p_role: Database["public"]["Enums"]["app_role"]
