@@ -695,16 +695,36 @@ const StudioPage = () => {
                   </div>
                 )}
 
-                {/* Resolution */}
+                {/* Resolution with Plan Gating */}
                 {showRes && (
                   <div className="relative shrink-0">
                     <DropdownBtn id="resolution" label="الدقة" value={resolution.toUpperCase()} hasValue={!!selectedTool} />
                     <DropdownMenu id="resolution">
-                      {caps!.resolutions!.map((r) => (
-                        <DropdownItem key={r} selected={resolution === r} onClick={() => { setResolution(r); setOpenMenu(null); }}>
-                          {r.toUpperCase()}
-                        </DropdownItem>
-                      ))}
+                      {caps!.resolutions!.map((r) => {
+                        const access = checkAccess(r, null, null);
+                        const locked = !access.available;
+                        return (
+                          <button key={r}
+                            disabled={locked}
+                            onClick={() => { if (!locked) { setResolution(r); setOpenMenu(null); } }}
+                            className={`w-full px-3.5 py-2.5 rounded-lg text-right text-sm font-semibold transition-colors flex items-center justify-between gap-2 ${
+                              locked
+                                ? "opacity-50 cursor-not-allowed text-muted-foreground"
+                                : resolution === r
+                                ? "bg-primary/10 text-primary"
+                                : "text-foreground hover:bg-secondary/50"
+                            }`}
+                          >
+                            <span>{r.toUpperCase()}</span>
+                            {locked && (
+                              <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                                <Lock className="w-2.5 h-2.5" />
+                                {access.requiredPlanLabel}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </DropdownMenu>
                   </div>
                 )}
