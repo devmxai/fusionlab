@@ -57,6 +57,7 @@ const dropdownAnim = {
 
 const StudioPage = () => {
   const { category } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const remixSlotInputRef = useRef<HTMLInputElement>(null);
