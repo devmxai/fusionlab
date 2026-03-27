@@ -98,6 +98,11 @@ const ModelCardsManager = () => {
   const addableTools = availableTools.filter(t => !usedToolIds.has(t.id));
 
   const uploadImage = async (file: File): Promise<string | null> => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("يرجى رفع صورة فقط");
+      return null;
+    }
+
     setUploading(true);
     try {
       const compressed = await compressImage(file, {
@@ -422,7 +427,7 @@ const ModelCardsManager = () => {
             <label className="flex items-center gap-2 px-3 py-1.5 bg-secondary rounded-lg cursor-pointer hover:bg-secondary/80 transition-colors">
               <Upload className="w-3 h-3" />
               <span className="text-[10px] font-semibold">{uploading ? "رفع..." : "رفع صورة/فيديو"}</span>
-              <input type="file" accept="image/*,video/*" className="hidden" onChange={async e => {
+              <input type="file" accept="image/*" className="hidden" onChange={async e => {
                 const file = e.target.files?.[0];
                 if (!file) return;
                 const url = await uploadImage(file);
@@ -469,7 +474,7 @@ const ModelCardsManager = () => {
                     <label className="flex items-center gap-2 px-3 py-1.5 bg-secondary rounded-lg cursor-pointer hover:bg-secondary/80 transition-colors">
                       <Upload className="w-3 h-3" />
                       <span className="text-[10px] font-semibold">{uploading ? "رفع..." : "استبدال الصورة"}</span>
-                      <input type="file" accept="image/*,video/*" className="hidden" onChange={async e => {
+                      <input type="file" accept="image/*" className="hidden" onChange={async e => {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         const url = await uploadImage(file);

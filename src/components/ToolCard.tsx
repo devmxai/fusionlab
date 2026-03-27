@@ -134,7 +134,7 @@ const appendParam = (url: string, key: string, value: string) => {
 
 export const optimizeStorageUrl = (
   url: string | undefined,
-  width = 400,
+  width = 360,
   versionKey?: string | null
 ): string | undefined => {
   if (!url) return url;
@@ -151,7 +151,7 @@ export const optimizeStorageUrl = (
   if (nextUrl.includes("/storage/v1/render/image/public/")) {
     nextUrl = appendParam(nextUrl, "width", String(width));
     nextUrl = appendParam(nextUrl, "quality", "75");
-    nextUrl = appendParam(nextUrl, "format", "origin");
+    nextUrl = appendParam(nextUrl, "format", "webp");
   }
 
   if (versionKey) {
@@ -171,8 +171,8 @@ const ToolCard = ({
 }: ToolCardProps) => {
   const [imgLoaded, setImgLoaded] = useState(false);
   const navigate = useNavigate();
-  const shouldEagerLoad = eagerLoad ?? index < 12;
-  const shouldHighPriority = highPriority ?? index < 4;
+  const shouldEagerLoad = eagerLoad ?? false;
+  const shouldHighPriority = highPriority ?? false;
 
   // Priority: 1) CMS override image, 2) section-specific card image, 3) default tool image
   const sectionKey = sectionSlug ? `${sectionSlug}/${tool.id}` : "";
@@ -210,6 +210,7 @@ const ToolCard = ({
             alt={title}
             className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
             loading={shouldEagerLoad ? "eager" : "lazy"}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 360px"
             decoding="async"
             fetchPriority={shouldHighPriority ? "high" : "auto"}
             onLoad={() => setImgLoaded(true)}
