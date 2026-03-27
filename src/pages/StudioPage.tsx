@@ -51,13 +51,6 @@ const ratioConfig: Record<string, { label: string; cssAspect: string; placeholde
   "21:9": { label: "21:9",  cssAspect: "21/9", placeholderMaxW: "360px" },
 };
 
-const dropdownAnim = {
-  initial: { opacity: 0, y: -8, scale: 0.96 },
-  animate: { opacity: 1, y: 0, scale: 1 },
-  exit: { opacity: 0, y: -8, scale: 0.96 },
-  transition: { duration: 0.18, ease: "easeOut" as const },
-};
-
 const StudioPage = () => {
   const { category } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -104,7 +97,7 @@ const StudioPage = () => {
 
   // Dropdown open states
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [expandedProvider, setExpandedProvider] = useState<string | null>(null);
+  const [modelSubPage, setModelSubPage] = useState<string | null>(null);
   const headerRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -112,6 +105,7 @@ const StudioPage = () => {
     const handleClick = (e: MouseEvent) => {
       if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
         setOpenMenu(null);
+        setModelSubPage(null);
       }
     };
     document.addEventListener("mousedown", handleClick);
@@ -586,7 +580,14 @@ const StudioPage = () => {
   // ── Dropdown Button Component ──
   const DropdownBtn = ({ id, label, value, hasValue }: { id: string; label: string; value: string; hasValue: boolean }) => (
     <button
-      onClick={() => setOpenMenu(openMenu === id ? null : id)}
+      onClick={() => {
+        if (openMenu === id) {
+          setOpenMenu(null);
+        } else {
+          setOpenMenu(id);
+          if (id === "model") setModelSubPage(null);
+        }
+      }}
       className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border transition-all duration-200 ${
         hasValue
           ? "bg-primary/10 border-primary/50"
@@ -601,17 +602,19 @@ const StudioPage = () => {
   );
 
   // ── Dropdown Menu Component ──
-  const DropdownMenu = ({ id, children, minW = "min-w-[120px]" }: { id: string; children: React.ReactNode; minW?: string }) => (
-    <AnimatePresence>
-      {openMenu === id && (
-        <motion.div {...dropdownAnim}
-          className={`absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] ${minW}`}
-        >
-          <div className="max-h-72 overflow-y-auto p-1.5">{children}</div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
+  const DropdownMenu = ({ id, children, minW = "min-w-[120px]" }: { id: string; children: React.ReactNode; minW?: string }) => {
+    if (openMenu !== id) return null;
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
+        className={`absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] ${minW}`}
+      >
+        <div className="max-h-72 overflow-y-auto p-1.5">{children}</div>
+      </motion.div>
+    );
+  };
 
   const DropdownItem = ({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: React.ReactNode }) => (
     <button onClick={onClick}
@@ -680,10 +683,10 @@ const StudioPage = () => {
       {/* ── Header / App Bar ── */}
       <header ref={headerRef} className="relative shrink-0 bg-card/90 backdrop-blur-xl border-b border-border/30 z-[120] rounded-b-2xl shadow-lg">
         <div className="flex items-center gap-2 px-3 py-2.5 max-w-3xl mx-auto flex-row-reverse relative">
-          {/* Back button - left side visually */}
+          {/* Back button - pinned to left edge */}
           <button
             onClick={() => navigate("/")}
-            className="shrink-0 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all"
+            className="shrink-0 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all absolute left-3 top-1/2 -translate-y-1/2"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -812,84 +815,102 @@ const StudioPage = () => {
           {/* Model dropdown - always visible */}
           <div className="relative shrink-0">
             <DropdownBtn id="model" label="النموذج" value={selectedTool?.title || ""} hasValue={!!selectedTool} />
-            <DropdownMenu id="model" minW="min-w-[220px]">
-              {(() => {
-                // Group tools by provider
-                const groups: { provider: string; tools: AITool[] }[] = [];
-                categoryTools.forEach((t) => {
-                  const existing = groups.find((g) => g.provider === t.provider);
-                  if (existing) existing.tools.push(t);
-                  else groups.push({ provider: t.provider, tools: [t] });
-                });
+            {openMenu === "model" && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+                className="absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-2xl shadow-2xl overflow-hidden z-[220] min-w-[260px] w-[280px]"
+              >
+                <div className="max-h-[380px] overflow-y-auto">
+                  {(() => {
+                    // Group tools by provider
+                    const groups: { provider: string; tools: AITool[] }[] = [];
+                    categoryTools.forEach((t) => {
+                      const existing = groups.find((g) => g.provider === t.provider);
+                      if (existing) existing.tools.push(t);
+                      else groups.push({ provider: t.provider, tools: [t] });
+                    });
 
-                return groups.map((group) => {
-                  // Single model provider - show directly
-                  if (group.tools.length === 1) {
-                    const t = group.tools[0];
-                    return (
-                      <button key={t.id}
-                        onClick={() => handleSelectModel(t)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-right transition-colors ${
-                          tool.id === t.id ? "bg-primary/10" : "hover:bg-secondary/50"
-                        }`}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-semibold truncate ${tool.id === t.id ? "text-primary" : "text-foreground"}`}>{t.title}</p>
-                        </div>
-                        {t.isPro && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary shrink-0">PRO</span>}
-                      </button>
-                    );
-                  }
-
-                  // Multi-model provider - collapsible group
-                  const isExpanded = expandedProvider === group.provider;
-                  const hasSelectedInGroup = group.tools.some((t) => tool.id === t.id);
-                  return (
-                    <div key={group.provider}>
-                      <button
-                        onClick={() => setExpandedProvider(isExpanded ? null : group.provider)}
-                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right transition-colors ${
-                          hasSelectedInGroup ? "bg-primary/5" : "hover:bg-secondary/50"
-                        }`}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-bold truncate ${hasSelectedInGroup ? "text-primary" : "text-foreground"}`}>{group.provider}</p>
-                          <p className="text-[10px] text-muted-foreground">{group.tools.length} نماذج</p>
-                        </div>
-                        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
-                      </button>
-                      <AnimatePresence>
-                        {isExpanded && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2, ease: "easeOut" }}
-                            className="overflow-hidden"
+                    // Sub-page mode: showing models of a specific provider
+                    if (modelSubPage) {
+                      const group = groups.find((g) => g.provider === modelSubPage);
+                      if (!group) return null;
+                      return (
+                        <div className="p-2">
+                          {/* Sub-page header with back */}
+                          <button
+                            onClick={() => setModelSubPage(null)}
+                            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-right hover:bg-secondary/40 transition-colors mb-1"
                           >
-                            <div className="pr-3 border-r border-primary/15 mr-3 mt-0.5 mb-1 space-y-0.5">
-                              {group.tools.map((t) => (
-                                <button key={t.id}
-                                  onClick={() => handleSelectModel(t)}
-                                  className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-right transition-colors ${
-                                    tool.id === t.id ? "bg-primary/10" : "hover:bg-secondary/50"
-                                  }`}
-                                >
-                                  <div className="flex-1 min-w-0">
-                                    <p className={`text-[11px] font-semibold truncate ${tool.id === t.id ? "text-primary" : "text-foreground"}`}>{t.title}</p>
-                                  </div>
-                                  {t.isPro && <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary shrink-0">PRO</span>}
-                                </button>
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  );
-                });
-              })()}
-            </DropdownMenu>
+                            <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-xs font-bold text-primary flex-1">{group.provider}</span>
+                            <span className="text-[10px] text-muted-foreground">{group.tools.length} نماذج</span>
+                          </button>
+                          <div className="h-px bg-border/30 mx-2 mb-1" />
+                          <div className="space-y-0.5">
+                            {group.tools.map((t) => (
+                              <button key={t.id}
+                                onClick={() => { handleSelectModel(t); setModelSubPage(null); }}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right transition-colors ${
+                                  tool.id === t.id ? "bg-primary/10" : "hover:bg-secondary/40"
+                                }`}
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-sm font-semibold truncate ${tool.id === t.id ? "text-primary" : "text-foreground"}`}>{t.title}</p>
+                                </div>
+                                {t.isPro && <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-primary/15 text-primary shrink-0">PRO</span>}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Main page: list providers
+                    return (
+                      <div className="p-2 space-y-0.5">
+                        {groups.map((group) => {
+                          if (group.tools.length === 1) {
+                            const t = group.tools[0];
+                            return (
+                              <button key={t.id}
+                                onClick={() => handleSelectModel(t)}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right transition-colors ${
+                                  tool.id === t.id ? "bg-primary/10" : "hover:bg-secondary/40"
+                                }`}
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-sm font-semibold truncate ${tool.id === t.id ? "text-primary" : "text-foreground"}`}>{t.title}</p>
+                                </div>
+                                {t.isPro && <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-primary/15 text-primary shrink-0">PRO</span>}
+                              </button>
+                            );
+                          }
+
+                          // Multi-model provider: navigate to sub-page on click
+                          const hasSelectedInGroup = group.tools.some((t) => tool.id === t.id);
+                          return (
+                            <button key={group.provider}
+                              onClick={() => setModelSubPage(group.provider)}
+                              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right transition-colors ${
+                                hasSelectedInGroup ? "bg-primary/5" : "hover:bg-secondary/40"
+                              }`}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-sm font-bold truncate ${hasSelectedInGroup ? "text-primary" : "text-foreground"}`}>{group.provider}</p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">{group.tools.length} نماذج</p>
+                              </div>
+                              <ChevronDown className="w-4 h-4 text-muted-foreground -rotate-90" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </motion.div>
+            )}
           </div>
         </div>
       </header>
