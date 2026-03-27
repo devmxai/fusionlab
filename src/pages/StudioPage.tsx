@@ -30,6 +30,7 @@ const categorySlugMap: Record<string, string> = {
   avatar: "افتار",
   "remove-bg": "حذف الخلفية",
   upscale: "رفع الجودة",
+  shoots: "شوتس",
 };
 
 const categoryTitleMap: Record<string, string> = {
@@ -40,6 +41,7 @@ const categoryTitleMap: Record<string, string> = {
   avatar: "استديو الأفتار",
   "remove-bg": "حذف الخلفية",
   upscale: "رفع الجودة",
+  shoots: "شوتس",
 };
 
 const ratioConfig: Record<string, { label: string; cssAspect: string; placeholderMaxW: string }> = {
