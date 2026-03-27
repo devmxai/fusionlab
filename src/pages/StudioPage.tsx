@@ -716,11 +716,12 @@ const StudioPage = () => {
     );
   };
 
-  // For shoots, use a wider aspect ratio to show 2 cards side by side
+  // For shoots/grok, adapt placeholder based on whether image is uploaded
+  const shootsHasImage = isShootsTool && refImages.length > 0;
   const shootsPlaceholderStyle = isShootsTool ? {
     width: "100%",
-    maxWidth: "min(95vw, 700px)",
-    aspectRatio: "2/1",
+    maxWidth: shootsHasImage ? "min(95vw, 700px)" : "min(95vw, 750px)",
+    aspectRatio: shootsHasImage ? "2/1" : "3/2",
     maxHeight: "calc(100dvh - 180px)",
   } : undefined;
 
