@@ -136,6 +136,7 @@ export type Database = {
           prompt: string | null
           reservation_id: string | null
           result_url: string | null
+          seen_at: string | null
           status: string
           task_id: string | null
           tool_id: string
@@ -156,6 +157,7 @@ export type Database = {
           prompt?: string | null
           reservation_id?: string | null
           result_url?: string | null
+          seen_at?: string | null
           status?: string
           task_id?: string | null
           tool_id: string
@@ -176,6 +178,7 @@ export type Database = {
           prompt?: string | null
           reservation_id?: string | null
           result_url?: string | null
+          seen_at?: string | null
           status?: string
           task_id?: string | null
           tool_id?: string
