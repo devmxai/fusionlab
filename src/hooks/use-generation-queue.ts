@@ -296,7 +296,7 @@ export function useGenerationQueue() {
       .eq("id", jobId);
 
     // Insert into generations (library) only if succeeded and has result
-    if (job && job.status === "succeeded" && job.result_url && user) {
+    if (job && getEffectiveStatus(job) === "succeeded" && job.result_url && user) {
       await (supabase as any)
         .from("generations")
         .insert({
