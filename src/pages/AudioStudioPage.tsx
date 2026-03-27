@@ -509,6 +509,17 @@ const AudioStudioPage = () => {
           <button onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground transition-colors">
             <ArrowRight className="w-5 h-5" />
           </button>
+          <button
+            onClick={() => setLibrarySidebarOpen(true)}
+            className="w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors relative"
+          >
+            <Library className="w-4 h-4 text-muted-foreground" />
+            {audioLibrary.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[8px] font-bold flex items-center justify-center">
+                {audioLibrary.length}
+              </span>
+            )}
+          </button>
           <h1 className="text-base font-bold text-foreground">استوديو الصوت</h1>
           <div className="mr-auto flex items-center gap-2">
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium">
@@ -516,7 +527,7 @@ const AudioStudioPage = () => {
             </span>
             <button
               onClick={() => setSidebarOpen(true)}
-              className="w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors"
+              className="w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors lg:hidden"
             >
               <Menu className="w-4 h-4 text-muted-foreground" />
             </button>
