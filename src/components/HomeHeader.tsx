@@ -30,9 +30,12 @@ const HomeHeader = () => {
           )}
 
           {/* Center Logo */}
-          <h1 className="text-lg font-extrabold text-foreground tracking-tight">
-            <span className="text-primary">FUSION</span> LAB
-          </h1>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
+            <img src="/logo.jpg" alt="FUSION LAB" className="w-7 h-7 rounded-md" />
+            <h1 className="text-lg font-extrabold text-foreground tracking-tight">
+              <span className="text-primary">FUSION</span> LAB
+            </h1>
+          </div>
 
           {/* Left side (last in RTL): Generation Queue */}
           <GenerationQueueSidebar items={[]} open={queueOpen} onOpen={() => setQueueOpen(true)} onClose={() => setQueueOpen(false)} />
