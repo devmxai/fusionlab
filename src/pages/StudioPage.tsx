@@ -108,6 +108,7 @@ const StudioPage = () => {
     const handleClick = (e: MouseEvent) => {
       if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
         setOpenMenu(null);
+        setModelSubPage(null);
       }
     };
     document.addEventListener("mousedown", handleClick);
