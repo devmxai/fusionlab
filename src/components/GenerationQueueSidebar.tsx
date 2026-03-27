@@ -79,18 +79,19 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
 
   const handleJobClick = async (job: GenerationJob) => {
     if (job.status === "succeeded" && !job.seen_at && job.result_url) {
-      // Open preview modal instead of raw link
-      setPreviewJob(job);
+      // Mark as seen immediately so it disappears from the list
+      await markJobSeen(job.id);
+      // Close sidebar first, then show preview
+      setLocalOpen(false);
+      onClose?.();
+      // Small delay to let sidebar close animation start
+      setTimeout(() => setPreviewJob(job), 200);
     } else if ((job.status === "failed" || job.status === "timed_out") && !job.seen_at) {
-      // Acknowledge failed job
       await markJobSeen(job.id);
     }
   };
 
-  const handlePreviewClose = async () => {
-    if (previewJob && !previewJob.seen_at) {
-      await markJobSeen(previewJob.id);
-    }
+  const handlePreviewClose = () => {
     setPreviewJob(null);
   };
 
