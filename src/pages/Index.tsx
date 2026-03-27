@@ -281,7 +281,7 @@ const Index = () => {
       </div>
 
       <footer className="border-t border-border/20 mt-12 bg-secondary/10">
-        <div className="max-w-[1400px] mx-auto px-6 py-10 grid grid-cols-2 sm:grid-cols-4 gap-8" dir="ltr">
+        <div className="px-6 sm:px-10 lg:px-16 py-10 grid grid-cols-2 sm:grid-cols-4 gap-8" dir="ltr">
           <div>
             <h4 className="text-xs font-bold text-foreground mb-4 tracking-wider uppercase">Products</h4>
             <ul className="space-y-2.5">
