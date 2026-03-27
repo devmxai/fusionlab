@@ -389,6 +389,7 @@ const AudioStudioPage = () => {
         }
 
         await refreshCredits();
+        await fetchAudioLibrary();
       } else {
         throw new Error("لم يتم توليد صوت");
       }
