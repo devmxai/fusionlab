@@ -323,7 +323,7 @@ export function useGenerationQueue() {
         metadata: { ...job.metadata, phaseLabel: phaseLabels[phase] || phase },
       });
       emitPollProgress(job.id, rounded, phaseLabels[phase] || phase, latestState);
-    }, 800);
+    }, 500);
 
     try {
       const result = await pollTask(
