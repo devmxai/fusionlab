@@ -22,44 +22,51 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePricing } from "@/hooks/use-pricing";
 
-// ─── Official Gemini Voices ───
+// ─── Official Gemini Voices (all 30) ───
 interface GeminiVoice {
   name: string;
   label: string;
   gender: "male" | "female";
+  trait: string;
   description: string;
 }
 
 const GEMINI_FLASH_TTS_MODEL = "gemini-2.5-flash-preview-tts";
 
 const geminiVoices: GeminiVoice[] = [
-  // ─── Male Voices (14) ───
-  { name: "Puck", label: "Puck", gender: "male", description: "صوت شاب ديناميكي ومرن" },
-  { name: "Charon", label: "Charon", gender: "male", description: "صوت عميق وهادئ" },
-  { name: "Orus", label: "Orus", gender: "male", description: "صوت واضح ومهني" },
-  { name: "Achird", label: "Achird", gender: "male", description: "صوت دافئ وطبيعي" },
-  { name: "Algenib", label: "Algenib", gender: "male", description: "صوت قوي وواثق" },
-  { name: "Alnilam", label: "Alnilam", gender: "male", description: "صوت رصين ومتزن" },
-  { name: "Fenrir", label: "Fenrir", gender: "male", description: "صوت حاد وجريء" },
-  { name: "Gacrux", label: "Gacrux", gender: "male", description: "صوت ناضج ومستقر" },
-  { name: "Iapetus", label: "Iapetus", gender: "male", description: "صوت واضح ومتوازن" },
-  { name: "Rasalgethi", label: "Rasalgethi", gender: "male", description: "صوت عميق ومؤثر" },
-  { name: "Sadachbia", label: "Sadachbia", gender: "male", description: "صوت هادئ ولطيف" },
-  { name: "Sadaltager", label: "Sadaltager", gender: "male", description: "صوت طبيعي وسلس" },
-  { name: "Schedar", label: "Schedar", gender: "male", description: "صوت قوي ورسمي" },
-  { name: "Umbriel", label: "Umbriel", gender: "male", description: "صوت ثابت ومحايد" },
-  { name: "Zubenelgenubi", label: "Zubenelgenubi", gender: "male", description: "صوت متميز وفريد" },
-  // ─── Female Voices (10) ───
-  { name: "Kore", label: "Kore", gender: "female", description: "صوت أنثوي دافئ" },
-  { name: "Leda", label: "Leda", gender: "female", description: "صوت ناعم وراقي" },
-  { name: "Zephyr", label: "Zephyr", gender: "female", description: "صوت حيوي ومرح" },
-  { name: "Aoede", label: "Aoede", gender: "female", description: "صوت غني ومعبّر" },
-  { name: "Achernar", label: "Achernar", gender: "female", description: "صوت هادئ ومريح" },
-  { name: "Elara", label: "Elara", gender: "female", description: "صوت صافي ورقيق" },
-  { name: "Laomedeia", label: "Laomedeia", gender: "female", description: "صوت أنيق ومتزن" },
-  { name: "Pulcherrima", label: "Pulcherrima", gender: "female", description: "صوت جميل وناعم" },
-  { name: "Sulafat", label: "Sulafat", gender: "female", description: "صوت مميز وجذاب" },
-  { name: "Vindemiatrix", label: "Vindemiatrix", gender: "female", description: "صوت قوي وأنثوي" },
+  // ─── Male Voices (17) ───
+  { name: "Puck", label: "حيدر", gender: "male", trait: "حيوي", description: "صوت شاب حماسي ومفعم بالطاقة" },
+  { name: "Charon", label: "كريم", gender: "male", trait: "إخباري", description: "صوت عميق ورصين للسرد والأخبار" },
+  { name: "Fenrir", label: "باسل", gender: "male", trait: "متحمس", description: "صوت حاد وجريء مليء بالحماس" },
+  { name: "Orus", label: "عمر", gender: "male", trait: "حازم", description: "صوت واضح ومهني وحازم" },
+  { name: "Achird", label: "سامر", gender: "male", trait: "ودود", description: "صوت دافئ وودود وقريب من المستمع" },
+  { name: "Algenib", label: "ثامر", gender: "male", trait: "خشن", description: "صوت غليظ وخشن ذو طابع قوي" },
+  { name: "Alnilam", label: "فاضل", gender: "male", trait: "صارم", description: "صوت رسمي وصارم ومتماسك" },
+  { name: "Iapetus", label: "ياسر", gender: "male", trait: "صافي", description: "صوت صافي ونقي ومتوازن" },
+  { name: "Umbriel", label: "رائد", gender: "male", trait: "مريح", description: "صوت هادئ ومسترخي ومريح للسمع" },
+  { name: "Gacrux", label: "أبو حسن", gender: "male", trait: "ناضج", description: "صوت ناضج وعميق بخبرة واضحة" },
+  { name: "Rasalgethi", label: "منير", gender: "male", trait: "معلوماتي", description: "صوت واثق مناسب للشرح والتعليم" },
+  { name: "Schedar", label: "وليد", gender: "male", trait: "متزن", description: "صوت ثابت ومتزن ومحايد" },
+  { name: "Sadachbia", label: "مصطفى", gender: "male", trait: "نشيط", description: "صوت حيوي ونشيط ومبتهج" },
+  { name: "Sadaltager", label: "طارق", gender: "male", trait: "عارف", description: "صوت حكيم ومتمكن وواسع المعرفة" },
+  { name: "Zubenelgenubi", label: "علي", gender: "male", trait: "عفوي", description: "صوت عفوي وطبيعي للمحادثات اليومية" },
+  { name: "Enceladus", label: "همام", gender: "male", trait: "هامس", description: "صوت ناعم وهامس ذو نفس عميق" },
+  { name: "Algieba", label: "نبيل", gender: "male", trait: "ناعم", description: "صوت أنيق وناعم وسلس" },
+
+  // ─── Female Voices (13) ───
+  { name: "Kore", label: "زينب", gender: "female", trait: "حازمة", description: "صوت أنثوي قوي وحازم وواثق" },
+  { name: "Zephyr", label: "نور", gender: "female", trait: "مشرقة", description: "صوت مشرق وحيوي مليء بالنشاط" },
+  { name: "Leda", label: "سارة", gender: "female", trait: "شابة", description: "صوت شبابي ناعم ومفعم بالحيوية" },
+  { name: "Aoede", label: "ريم", gender: "female", trait: "منعشة", description: "صوت منعش وخفيف كنسيم الصباح" },
+  { name: "Achernar", label: "هديل", gender: "female", trait: "ناعمة", description: "صوت ناعم وهادئ ومريح جداً" },
+  { name: "Pulcherrima", label: "مريم", gender: "female", trait: "جريئة", description: "صوت أنثوي جريء وواضح ومباشر" },
+  { name: "Vindemiatrix", label: "لمى", gender: "female", trait: "رقيقة", description: "صوت رقيق ولطيف وهادئ" },
+  { name: "Sulafat", label: "دانية", gender: "female", trait: "دافئة", description: "صوت دافئ وحنون ومطمئن" },
+  { name: "Laomedeia", label: "فرح", gender: "female", trait: "مبتهجة", description: "صوت مبتهج ومتفائل ومرح" },
+  { name: "Autonoe", label: "آلاء", gender: "female", trait: "ساطعة", description: "صوت ساطع وواضح ونقي" },
+  { name: "Callirrhoe", label: "رغد", gender: "female", trait: "مسترخية", description: "صوت مسترخي وطبيعي وعفوي" },
+  { name: "Despina", label: "جنى", gender: "female", trait: "سلسة", description: "صوت سلس وانسيابي وراقي" },
+  { name: "Erinome", label: "حلا", gender: "female", trait: "واضحة", description: "صوت واضح ونظيف ودقيق النطق" },
 ];
 
 // ─── Enhancement Presets ───
@@ -127,6 +134,8 @@ const AudioStudioPage = () => {
   // ─── State ───
   const [styleInstruction, setStyleInstruction] = useState("");
   const [text, setText] = useState("");
+  const [voiceGenderTab, setVoiceGenderTab] = useState<"male" | "female">("male");
+  const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
 
   // Count only spoken characters (exclude emoji tags)
   const getSpokenCharCount = useCallback((input: string): number => {
@@ -158,14 +167,13 @@ const AudioStudioPage = () => {
   const [stability, setStability] = useState(0.7);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [previewing, setPreviewing] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
 
-  const maleVoices = geminiVoices.filter((v) => v.gender === "male");
-  const femaleVoices = geminiVoices.filter((v) => v.gender === "female");
+  const maleVoices = useMemo(() => geminiVoices.filter((v) => v.gender === "male"), []);
+  const femaleVoices = useMemo(() => geminiVoices.filter((v) => v.gender === "female"), []);
 
   const base64ToAudioUrl = (base64: string, mimeType: string): string => {
     const byteCharacters = atob(base64);

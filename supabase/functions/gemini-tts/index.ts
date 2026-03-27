@@ -10,10 +10,11 @@ const corsHeaders = {
 const GEMINI_API = "https://generativelanguage.googleapis.com/v1beta/models";
 const MODEL = "gemini-2.5-flash-preview-tts";
 const OFFICIAL_GEMINI_FLASH_TTS_VOICES = new Set([
-  "Achernar", "Achird", "Algenib", "Alnilam", "Aoede",
-  "Charon", "Elara", "Fenrir", "Gacrux", "Iapetus",
-  "Kore", "Laomedeia", "Leda", "Orus", "Pulcherrima",
-  "Puck", "Rasalgethi", "Sadachbia", "Sadaltager", "Schedar",
+  "Achernar", "Achird", "Algenib", "Algieba", "Alnilam", "Aoede",
+  "Autonoe", "Callirrhoe", "Charon", "Despina", "Enceladus",
+  "Erinome", "Fenrir", "Gacrux", "Iapetus", "Kore",
+  "Laomedeia", "Leda", "Orus", "Puck", "Pulcherrima",
+  "Rasalgethi", "Sadachbia", "Sadaltager", "Schedar",
   "Sulafat", "Umbriel", "Vindemiatrix", "Zephyr", "Zubenelgenubi",
 ]);
 
