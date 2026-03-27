@@ -141,9 +141,9 @@ export function useGenerationQueue() {
       metadata: params.metadata || {},
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("generation_jobs")
-      .insert(jobRecord as any)
+      .insert(jobRecord)
       .select()
       .single();
 
