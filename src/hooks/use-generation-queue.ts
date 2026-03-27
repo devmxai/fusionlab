@@ -519,18 +519,25 @@ export function useGenerationQueue() {
     };
   }, [user]);
 
-  // Auto-resume polling for pending/running jobs
+  // Auto-resume polling for genuinely active jobs only
   useEffect(() => {
     jobs.forEach((job) => {
-      if (
-        (job.status === "pending" || job.status === "running") &&
-        job.task_id &&
-        !pollingRefs.current.get(job.id)
-      ) {
+      const eff = getEffectiveStatus(job);
+      const isActive = eff === "pending" || eff === "running";
+
+      if (isActive && job.task_id && !pollingRefs.current.get(job.id)) {
         pollJob(job);
       }
+
+      // Self-heal: if DB status is active but effective is terminal, fix DB once
+      if (!isActive && (job.status === "pending" || job.status === "running") && !selfHealedRef.current.has(job.id)) {
+        selfHealedRef.current.add(job.id);
+        const healUpdates: Record<string, unknown> = { status: eff, progress: 100 };
+        if (!job.completed_at) healUpdates.completed_at = new Date().toISOString();
+        updateJobDB(job.id, healUpdates);
+      }
     });
-  }, [jobs, pollJob]);
+  }, [jobs, pollJob, updateJobDB]);
 
   const activeJobs = jobs.filter((j) => j.status === "pending" || j.status === "running");
   const completedJobs = jobs.filter((j) => j.status === "succeeded");
