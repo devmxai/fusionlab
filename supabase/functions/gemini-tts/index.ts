@@ -126,38 +126,47 @@ async function handleTTSRequest(
     );
   }
 
-  const { spokenText, directives: tagDirectives } = extractTagDirectives(text);
+  const spokenText = normalizeText(text);
 
   if (!spokenText) {
     return new Response(
-      JSON.stringify({ error: "Text contains tags only. Please add spoken text." }),
+      JSON.stringify({ error: "Text is empty." }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  const directionParts: string[] = [];
-  directionParts.push("تحدث بشكل طبيعي تماماً كمتحدث عربي أصلي مع تعبيرات عاطفية واقعية ووقفات طبيعية.");
-  directionParts.push("تحدث باللغة العربية فقط بنطق عربي أصيل وطبيعي.");
-  directionParts.push("لا تنطق علامات التحكم حرفياً؛ نفّذها كتعليمات أداء فقط.");
+  // Build prompt using Director's Notes pattern (official Gemini TTS approach)
+  // Stage directions like *يضحك*, *بسخرية*, pauses via "..." are kept inline
+  const promptParts: string[] = [];
+  promptParts.push("# AUDIO PROFILE");
+  promptParts.push("متحدث عربي أصلي بأداء طبيعي وتعبيرات عاطفية واقعية.");
+  
+  promptParts.push("\n## DIRECTOR'S NOTES");
+  promptParts.push("اللغة: العربية فقط بنطق أصيل وطبيعي.");
 
   if (dialectHint) {
-    directionParts.push(`اللهجة المطلوبة: ${dialectHint}.`);
+    promptParts.push(`اللهجة: ${dialectHint}.`);
   } else {
-    directionParts.push("تحدث بلهجة عراقية عامية طبيعية.");
+    promptParts.push("اللهجة: عراقية عامية طبيعية.");
   }
 
-  if (emotionHint) directionParts.push(`المشاعر: ${emotionHint}.`);
-  if (toneHint) directionParts.push(`النبرة: ${toneHint}.`);
-  if (styleInstruction) directionParts.push(`أسلوب الأداء: ${styleInstruction}`);
-  if (stability < 0.5) directionParts.push("اسمح بتنوع صوتي أكثر وتعبير أقوى.");
-  if (stability > 0.8) directionParts.push("حافظ على نبرة صوت ثابتة ومتسقة.");
+  if (styleInstruction) promptParts.push(`الأسلوب: ${styleInstruction}`);
+  if (emotionHint) promptParts.push(`المشاعر: ${emotionHint}.`);
+  if (toneHint) promptParts.push(`النبرة: ${toneHint}.`);
+  
+  if (speakingRate > 1.3) promptParts.push("الإيقاع: سريع ونشيط.");
+  else if (speakingRate < 0.8) promptParts.push("الإيقاع: بطيء ومتأنٍ.");
+  
+  if (stability < 0.5) promptParts.push("التنوع: اسمح بتنوع صوتي أكثر وتعبير عاطفي أقوى.");
+  if (stability > 0.8) promptParts.push("الثبات: حافظ على نبرة صوت ثابتة ومتسقة.");
 
-  if (tagDirectives.length) {
-    directionParts.push("التزم بتوجيهات الأداء المحلية التالية بدقة وبشكل مسموع دون نطق أسماء العلامات:");
-    directionParts.push(...tagDirectives);
-  }
+  // Inline stage directions guidance
+  promptParts.push("\nالنص يحتوي على توجيهات أداء مضمنة بين نجمتين مثل *يضحك* أو *بسخرية*. نفّذها كأداء صوتي حقيقي (ضحك فعلي، نبرة ساخرة، همس حقيقي) ولا تنطق الكلمات بين النجمتين. النقاط المتتالية ... تعني وقفة صامتة.");
 
-  const fullPrompt = directionParts.join("\n") + "\n\n---\n\n" + spokenText;
+  promptParts.push("\n## TRANSCRIPT");
+  promptParts.push(spokenText);
+
+  const fullPrompt = promptParts.join("\n");
   const contents = [{ parts: [{ text: fullPrompt }] }];
 
   const requestBody = {
