@@ -102,6 +102,18 @@ export const tools: AITool[] = [
     model: "grok-imagine/text-to-image",
   },
 
+  // ─── Shoots (Grok Image-to-Image: 2 angle shots from 1 image) ───
+  {
+    id: "grok-shoots",
+    title: "Grok Shoots",
+    provider: "xAI",
+    description: "توليد زاويتين مختلفتين من صورة واحدة",
+    image: "angles",
+    isPro: false,
+    category: "شوتس",
+    model: "grok-imagine/text-to-image",
+  },
+
   // ─── Remix / Image Edit Models ───
   {
     id: "nano-banana-edit",
