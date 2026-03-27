@@ -158,9 +158,6 @@ const AudioStudioPage = () => {
   const estimatedCost = price?.credits ?? 2;
   const insufficientCredits = credits < estimatedCost;
 
-  // ─── State ───
-  const [styleInstruction, setStyleInstruction] = useState("");
-  const [text, setText] = useState("");
   const [selectedVoice, setSelectedVoice] = useState<GeminiVoice>(geminiVoices[0]);
   const [speakingRate, setSpeakingRate] = useState(1.0);
   const [pitch, setPitch] = useState(0);
