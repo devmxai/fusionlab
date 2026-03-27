@@ -60,6 +60,17 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
+  // Safe JSON parser for external API responses
+  const safeJson = async (response: Response, label: string) => {
+    const text = await response.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      console.error(`${label}: non-JSON response (status ${response.status}):`, text.slice(0, 200));
+      return { error: `Provider returned non-JSON response (HTTP ${response.status})`, code: response.status };
+    }
+  };
+
   try {
     const body = await req.json();
     const { action } = body;
