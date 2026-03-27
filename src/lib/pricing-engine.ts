@@ -17,10 +17,11 @@ export interface PricingParams {
 
 export interface PricingResult {
   credits: number;
-  priceUnit: "per_generation" | "per_second";
+  priceUnit: "per_generation" | "per_second" | "per_character";
   status: "active" | "pending_review" | "not_found";
   displayName?: string;
   ruleId?: string;
+  perCharRate?: number;
 }
 
 interface PricingRule {
