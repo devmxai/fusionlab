@@ -681,16 +681,32 @@ const StudioPage = () => {
                   </div>
                 )}
 
-                {/* Quality / Mode */}
+                {/* Quality / Mode with Plan Gating */}
                 {showQuality && (
                   <div className="relative shrink-0">
                     <DropdownBtn id="quality" label="الجودة" value={quality.toUpperCase()} hasValue={!!selectedTool} />
                     <DropdownMenu id="quality">
-                      {caps!.qualities!.map((q) => (
-                        <DropdownItem key={q} selected={quality === q} onClick={() => { setQuality(q); setOpenMenu(null); }}>
-                          {q.toUpperCase()}
-                        </DropdownItem>
-                      ))}
+                      {caps!.qualities!.map((q) => {
+                        const access = checkAccess(null, q, null);
+                        const locked = !access.available;
+                        return (
+                          <button key={q}
+                            disabled={locked}
+                            onClick={() => { if (!locked) { setQuality(q); setOpenMenu(null); } }}
+                            className={`w-full px-3.5 py-2.5 rounded-lg text-right text-sm font-semibold transition-colors flex items-center justify-between gap-2 ${
+                              locked ? "opacity-50 cursor-not-allowed text-muted-foreground"
+                                : quality === q ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary/50"
+                            }`}
+                          >
+                            <span>{q.toUpperCase()}</span>
+                            {locked && (
+                              <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                                <Lock className="w-2.5 h-2.5" />{access.requiredPlanLabel}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </DropdownMenu>
                   </div>
                 )}
