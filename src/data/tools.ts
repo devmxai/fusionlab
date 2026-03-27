@@ -564,7 +564,7 @@ export function buildModelInput(
     return {
       image_url: extraParams?.image_url || (imageUrls?.[0] ?? ""),
       audio_url: extraParams?.audio_url || "",
-      prompt: prompt || "",
+      prompt: prompt || "talking head avatar",
     };
   }
 
@@ -572,7 +572,7 @@ export function buildModelInput(
     return {
       image_url: extraParams?.image_url || (imageUrls?.[0] ?? ""),
       audio_url: extraParams?.audio_url || "",
-      prompt: prompt || "",
+      prompt: prompt || "lip sync avatar speaking naturally",
       resolution: (extraParams?.resolution as string) || "480p",
     };
   }
