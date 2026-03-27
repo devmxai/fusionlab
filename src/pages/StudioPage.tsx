@@ -906,7 +906,7 @@ const StudioPage = () => {
       {/* ── Center area ── */}
       <div className="relative z-0 flex-1 flex flex-col items-center justify-center px-4 min-h-0">
         {resultUrls.length > 1 && !loading && (
-          <div className="w-full max-w-3xl overflow-x-auto flex gap-2 mb-4 scrollbar-hide">
+          <div className="w-full overflow-x-auto flex gap-2 mb-4 scrollbar-hide">
             {resultUrls.slice(1).map((url, i) => (
               <div key={i} className="shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-border/50 cursor-pointer hover:border-primary/50 transition-colors"
                 onClick={() => openViewer(url)}>
