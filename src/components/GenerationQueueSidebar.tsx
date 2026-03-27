@@ -184,6 +184,12 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
                             {job.status === "failed" && job.error_message && (
                               <p className="text-[9px] text-destructive/80 mt-1 truncate">{job.error_message}</p>
                             )}
+                            {job.status === "failed" && job.reconciliation_status === "pending_review" && (
+                              <p className="text-[9px] text-amber-400/80 mt-0.5">⏳ الرصيد معلّق لحين مراجعة حالة المزود</p>
+                            )}
+                            {job.status === "failed" && job.provider_billing_state === "upstream_failed_refunded_confirmed" && (
+                              <p className="text-[9px] text-green-400/80 mt-0.5">✓ تم استرداد الرصيد</p>
+                            )}
                             {job.status === "succeeded" && !job.seen_at && (
                               <div className="flex items-center gap-1 mt-1">
                                 <Eye className="w-2.5 h-2.5 text-green-400" />
