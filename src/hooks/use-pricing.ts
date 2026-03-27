@@ -33,6 +33,7 @@ export function usePricing(params: PricingParams | null) {
     params?.quality,
     params?.durationSeconds,
     params?.hasAudio,
+    params?.characterCount,
   ]);
 
   return { price: result, loading };

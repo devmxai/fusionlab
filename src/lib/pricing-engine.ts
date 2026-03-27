@@ -174,6 +174,7 @@ function buildResult(rule: PricingRule, params: PricingParams): PricingResult {
     status: rule.status as "active" | "pending_review",
     displayName: rule.display_name || undefined,
     ruleId: rule.id,
+    perCharRate: rule.price_unit === "per_character" ? rule.price_credits : undefined,
   };
 }
 
