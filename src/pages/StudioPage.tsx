@@ -72,6 +72,7 @@ const StudioPage = () => {
 
   const { user, credits, refreshCredits } = useAuth();
   const { createJob, pollJob } = useQueue();
+  const { checkAccess } = usePlanGating(selectedTool?.model || null);
   const categoryName = category ? categorySlugMap[category] : undefined;
 
   const categoryTools = useMemo(
