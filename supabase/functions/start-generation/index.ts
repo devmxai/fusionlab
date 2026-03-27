@@ -31,7 +31,6 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    // Service-role client for inserting job records (bypasses RLS)
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -41,21 +40,9 @@ serve(async (req) => {
 
     const body = await req.json();
     const {
-      toolId,
-      toolName,
-      model,
-      apiType,
-      input,
-      resolution,
-      quality,
-      durationSeconds,
-      hasAudio,
-      characterCount,
-      idempotencyKey,
-      prompt,
-      fileType,
-      jobMetadata,
-      ttsParams,
+      toolId, toolName, model, apiType, input, resolution, quality,
+      durationSeconds, hasAudio, characterCount, idempotencyKey,
+      prompt, fileType, jobMetadata, ttsParams,
     } = body;
 
     if (!toolId || !model) {
@@ -75,15 +62,10 @@ serve(async (req) => {
     const { data: reserveResult, error: reserveError } = await supabase.rpc(
       "validate_and_reserve",
       {
-        p_model: model,
-        p_tool_id: toolId,
-        p_resolution: resolution || null,
-        p_quality: quality || null,
-        p_duration_seconds: durationSeconds || null,
-        p_has_audio: hasAudio ?? null,
-        p_idempotency_key: idempotencyKey || null,
-        p_generation_type: generationType,
-        p_character_count: serverCharCount,
+        p_model: model, p_tool_id: toolId, p_resolution: resolution || null,
+        p_quality: quality || null, p_duration_seconds: durationSeconds || null,
+        p_has_audio: hasAudio ?? null, p_idempotency_key: idempotencyKey || null,
+        p_generation_type: generationType, p_character_count: serverCharCount,
       }
     );
 
@@ -95,11 +77,8 @@ serve(async (req) => {
     const resData = reserveResult as Record<string, unknown>;
     if (!resData?.success) {
       return jsonRes({
-        success: false,
-        error: resData?.error || "validation_failed",
-        details: resData?.details || null,
-        balance: resData?.balance,
-        required: resData?.required,
+        success: false, error: resData?.error || "validation_failed",
+        details: resData?.details || null, balance: resData?.balance, required: resData?.required,
       });
     }
 
@@ -121,6 +100,7 @@ serve(async (req) => {
         const charCount = spokenText.length;
 
         if (charCount > 5000) {
+          // Pre-provider failure: safe to refund
           await supabase.rpc("release_credits", { p_reservation_id: reservationId });
           return jsonRes({
             success: false, error: "text_too_long",
@@ -129,8 +109,7 @@ serve(async (req) => {
         }
 
         const ttsResponse = await fetch(`${supabaseUrl}/functions/v1/gemini-tts`, {
-          method: "POST",
-          headers: internalHeaders,
+          method: "POST", headers: internalHeaders,
           body: JSON.stringify({ action: "synthesize", ...ttsParams }),
         });
 
@@ -138,6 +117,7 @@ serve(async (req) => {
 
         if (!ttsResponse.ok || ttsData?.error) {
           console.error("TTS provider error:", JSON.stringify(ttsData));
+          // TTS is synchronous — if it fails, no upstream charge happened
           await supabase.rpc("release_credits", { p_reservation_id: reservationId });
           return jsonRes({
             success: false, error: "provider_error",
@@ -148,14 +128,13 @@ serve(async (req) => {
         return jsonRes({
           success: true, reservationId, creditsCharged,
           apiType: "tts", plan: resData.plan,
-          audioBase64: ttsData.audioBase64,
-          mimeType: ttsData.mimeType,
-          voiceName: ttsData.voiceName,
+          audioBase64: ttsData.audioBase64, mimeType: ttsData.mimeType, voiceName: ttsData.voiceName,
         });
       }
 
       // ─── KIE.AI Routes ───
       if (!input) {
+        // Pre-provider failure: safe to refund
         await supabase.rpc("release_credits", { p_reservation_id: reservationId });
         return jsonRes({ success: false, error: "missing_fields", message: "Missing input for non-TTS generation" });
       }
@@ -170,8 +149,7 @@ serve(async (req) => {
         : { action: kieAction, ...input };
 
       const kieResponse = await fetch(`${supabaseUrl}/functions/v1/kie-ai`, {
-        method: "POST",
-        headers: internalHeaders,
+        method: "POST", headers: internalHeaders,
         body: JSON.stringify(kieBody),
       });
 
@@ -179,6 +157,7 @@ serve(async (req) => {
 
       if (!kieResponse.ok || (kieData?.code !== 200 && !kieData?.data?.taskId)) {
         console.error("KIE.AI provider error:", JSON.stringify(kieData));
+        // Provider rejected BEFORE creating a task — safe to refund
         await supabase.rpc("release_credits", { p_reservation_id: reservationId });
         return jsonRes({
           success: false, error: "provider_error",
@@ -188,6 +167,7 @@ serve(async (req) => {
 
       const taskId = kieData?.data?.taskId;
       if (!taskId) {
+        // No taskId returned — provider didn't create a task — safe to refund
         await supabase.rpc("release_credits", { p_reservation_id: reservationId });
         return jsonRes({
           success: false, error: "no_task_id",
@@ -195,9 +175,14 @@ serve(async (req) => {
         });
       }
 
-      // ── 4. Create persistent job record SERVER-SIDE ──
-      // This is the critical fix: the job record is created here on the server
-      // so it can never be lost even if the client navigates away.
+      // ══════════════════════════════════════════════════════════════════
+      // CRITICAL POINT: taskId exists — upstream task was created.
+      // From here on, NO automatic refund is allowed.
+      // If job record creation fails, we mark for reconciliation instead.
+      // ══════════════════════════════════════════════════════════════════
+
+      const now = new Date().toISOString();
+
       const { data: jobRecord, error: jobError } = await supabaseAdmin
         .from("generation_jobs")
         .insert({
@@ -213,45 +198,78 @@ serve(async (req) => {
           status: "pending",
           progress: 0,
           metadata: jobMetadata || {},
+          // Provider billing tracking
+          provider_billing_state: "upstream_task_created",
+          upstream_task_created_at: now,
+          reconciliation_status: "not_required",
         })
         .select("id")
         .single();
 
       if (jobError) {
-        console.error("Failed to create job record:", jobError);
-        // CRITICAL: If we can't create a queue record, the user will lose visibility.
-        // Release credits and fail the request to maintain consistency.
+        console.error("CRITICAL: Failed to create job record after upstream task created:", jobError);
+        // ══════════════════════════════════════════════════════════════
+        // DO NOT REFUND HERE. The upstream task exists and may charge us.
+        // Instead, create a reconciliation record so admin can review.
+        // ══════════════════════════════════════════════════════════════
+
+        // Attempt to create a minimal reconciliation record
         try {
-          await supabase.rpc("release_credits", { p_reservation_id: reservationId });
-        } catch (releaseErr) {
-          console.error("Failed to release credits after job record failure:", releaseErr);
+          await supabaseAdmin.from("generation_jobs").insert({
+            user_id: user.id,
+            task_id: taskId,
+            reservation_id: reservationId,
+            tool_id: toolId,
+            tool_name: toolName || null,
+            model,
+            api_type: apiType || "standard",
+            prompt: prompt || null,
+            file_type: fileType || "image",
+            status: "failed",
+            progress: 0,
+            metadata: { ...(jobMetadata || {}), recovery_attempt: true, original_error: jobError.message },
+            provider_billing_state: "upstream_task_created",
+            upstream_task_created_at: now,
+            reconciliation_status: "pending_review",
+            reconciliation_notes: `Job record insert failed on first attempt. TaskId: ${taskId}. Reservation: ${reservationId}. Credits NOT refunded — upstream task may have been charged.`,
+            error_message: "خطأ في إنشاء سجل المتابعة. يرجى مراجعة الإدارة.",
+          });
+        } catch (recoveryErr) {
+          console.error("CRITICAL: Recovery insert also failed:", recoveryErr);
+          // Last resort: at least the reservation exists in credit_reservations
+          // Admin can reconcile via reservation_id + task_id in logs
         }
+
         return jsonRes({
           success: false,
           error: "job_record_failed",
-          message: "Failed to create tracking record. Credits have been refunded.",
+          message: "حدث خطأ في إنشاء سجل المتابعة. تم تسجيل المشكلة وسيتم مراجعتها من الإدارة. الرصيد لن يُسترد تلقائياً لحين التأكد من حالة المزود.",
+          taskId, // Return taskId so client can potentially track
+          reservationId,
         }, 500);
       }
 
       console.log("Generation started:", JSON.stringify({
         taskId, reservationId, creditsCharged, model, apiType,
-        jobId: jobRecord?.id || "failed_to_create",
+        jobId: jobRecord?.id, billingState: "upstream_task_created",
       }));
 
       return jsonRes({
-        success: true,
-        taskId,
-        reservationId,
-        creditsCharged,
-        apiType: apiType || "standard",
-        plan: resData.plan,
+        success: true, taskId, reservationId, creditsCharged,
+        apiType: apiType || "standard", plan: resData.plan,
         jobId: jobRecord?.id || null,
       });
+
     } catch (providerErr) {
+      // This catch is for network/transport errors calling the provider
+      // We DON'T KNOW if the provider received our request or not
+      // If we hadn't gotten a taskId yet, safe to refund
+      // But since we're in the outer catch here, we haven't gotten to taskId handling
+      // Safe to refund since provider call itself failed before response
       try {
         await supabase.rpc("release_credits", { p_reservation_id: reservationId });
       } catch (releaseErr) {
-        console.error("Failed to release credits after provider error:", releaseErr);
+        console.error("Failed to release credits after provider transport error:", releaseErr);
       }
       throw providerErr;
     }

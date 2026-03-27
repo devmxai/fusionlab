@@ -7,6 +7,52 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+/**
+ * KIE.AI failure codes that CONFIRM no upstream charge / refund issued.
+ * These are the ONLY failure states where automatic user refund is safe.
+ * 
+ * Based on KIE.AI API documentation:
+ * - Task rejected before processing (queue rejection, validation failure)
+ * - Provider explicitly confirms refund (code 531, etc.)
+ */
+const CONFIRMED_REFUND_FAILURE_PATTERNS = [
+  // Task never started processing
+  "task_not_found",
+  "task_rejected",
+  "invalid_task",
+  "validation_failed",
+  "queue_rejected",
+  // Provider explicitly confirmed refund
+  "refunded",
+  "credits_refunded",
+  "no_charge",
+  "billing_reversed",
+];
+
+/**
+ * Check if a failure message/code indicates a confirmed provider refund
+ */
+function isConfirmedProviderRefund(
+  errorMessage: string | null | undefined,
+  providerStatusCode: string | null | undefined,
+  failState: string | null | undefined,
+): boolean {
+  const combined = [errorMessage, providerStatusCode, failState]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  // Check against known refund patterns
+  for (const pattern of CONFIRMED_REFUND_FAILURE_PATTERNS) {
+    if (combined.includes(pattern)) return true;
+  }
+
+  // KIE code 531 = confirmed refund
+  if (providerStatusCode === "531") return true;
+
+  return false;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -39,15 +85,10 @@ serve(async (req) => {
 
     const body = await req.json();
     const {
-      reservationId,
-      status,
-      taskId,
-      toolId,
-      toolName,
-      prompt,
-      fileUrl,
-      fileType,
-      metadata,
+      reservationId, status, taskId, toolId, toolName,
+      prompt, fileUrl, fileType, metadata,
+      // Provider billing fields from client polling
+      providerStatusCode, providerStatusMessage, providerFailState,
     } = body;
 
     if (!reservationId || !status) {
@@ -88,11 +129,7 @@ serve(async (req) => {
         }
       }
 
-      // NOTE: We no longer insert into "generations" here.
-      // The library entry is created when the user views the result from the queue (markJobSeen).
-      // This ensures the library only contains items the user has actually seen/acknowledged.
-
-      // ── Update job record to succeeded (server-authoritative) ──
+      // ── Update job record to succeeded with billing confirmation ──
       await supabaseAdmin
         .from("generation_jobs")
         .update({
@@ -101,43 +138,95 @@ serve(async (req) => {
           result_url: fileUrl || null,
           completed_at: now,
           updated_at: now,
+          provider_billing_state: "upstream_success_confirmed",
+          upstream_terminal_at: now,
+          provider_status_code: providerStatusCode || "success",
+          provider_status_message: providerStatusMessage || null,
         })
         .eq("reservation_id", reservationId);
 
-      console.log("Generation completed:", JSON.stringify({ reservationId, taskId, toolId }));
+      console.log("Generation completed:", JSON.stringify({ reservationId, taskId, toolId, billingState: "upstream_success_confirmed" }));
       return jsonRes({ success: true, action: "settled" });
 
     } else if (status === "failed") {
-      // ── Release credits ──
-      const { data: releaseData, error: releaseError } = await supabase.rpc("release_credits", {
-        p_reservation_id: reservationId,
-      });
+      const errorMessage = body.errorMessage || "Generation failed";
 
-      if (releaseError) {
-        console.error("Release RPC transport error:", releaseError);
-        return jsonRes({ success: false, error: "release_failed", message: releaseError.message }, 500);
-      }
+      // ══════════════════════════════════════════════════════════════════
+      // CRITICAL: Determine if this is a confirmed refund or unknown
+      // ══════════════════════════════════════════════════════════════════
+      const isRefundConfirmed = isConfirmedProviderRefund(
+        errorMessage,
+        providerStatusCode,
+        providerFailState,
+      );
 
-      if (!releaseData?.success) {
-        const bizError = releaseData?.error || "unknown_release_error";
-        if (bizError !== "already_processed") {
-          return jsonRes({ success: false, error: bizError, details: releaseData }, 422);
+      if (isRefundConfirmed) {
+        // ── CONFIRMED REFUND: Safe to release credits ──
+        const { data: releaseData, error: releaseError } = await supabase.rpc("release_credits", {
+          p_reservation_id: reservationId,
+        });
+
+        if (releaseError) {
+          console.error("Release RPC transport error:", releaseError);
+          return jsonRes({ success: false, error: "release_failed", message: releaseError.message }, 500);
         }
+
+        if (!releaseData?.success) {
+          const bizError = releaseData?.error || "unknown_release_error";
+          if (bizError !== "already_processed") {
+            return jsonRes({ success: false, error: bizError, details: releaseData }, 422);
+          }
+        }
+
+        // Update job record with confirmed refund state
+        await supabaseAdmin
+          .from("generation_jobs")
+          .update({
+            status: "failed",
+            error_message: errorMessage,
+            completed_at: now,
+            updated_at: now,
+            provider_billing_state: "upstream_failed_refunded_confirmed",
+            provider_refund_confirmed_at: now,
+            upstream_terminal_at: now,
+            provider_status_code: providerStatusCode || null,
+            provider_status_message: providerStatusMessage || null,
+            reconciliation_status: "not_required",
+          })
+          .eq("reservation_id", reservationId);
+
+        console.log("Generation failed (refund confirmed), credits released:", JSON.stringify({ reservationId, providerStatusCode }));
+        return jsonRes({ success: true, action: "released", refundConfirmed: true });
+
+      } else {
+        // ── UNCONFIRMED REFUND: Do NOT release credits automatically ──
+        // Mark for admin reconciliation
+        await supabaseAdmin
+          .from("generation_jobs")
+          .update({
+            status: "failed",
+            error_message: errorMessage,
+            completed_at: now,
+            updated_at: now,
+            provider_billing_state: "upstream_failed_refund_unknown",
+            upstream_terminal_at: now,
+            provider_status_code: providerStatusCode || null,
+            provider_status_message: providerStatusMessage || null,
+            reconciliation_status: "pending_review",
+            reconciliation_notes: `فشل التوليد بدون تأكيد استرداد من المزود. الكود: ${providerStatusCode || "N/A"}. الرسالة: ${errorMessage}. يحتاج مراجعة يدوية.`,
+          })
+          .eq("reservation_id", reservationId);
+
+        console.log("Generation failed (refund UNCONFIRMED), credits HELD:", JSON.stringify({
+          reservationId, providerStatusCode, errorMessage,
+        }));
+        return jsonRes({
+          success: true,
+          action: "held_for_reconciliation",
+          refundConfirmed: false,
+          message: "فشل التوليد. الرصيد معلّق لحين مراجعة حالة المزود.",
+        });
       }
-
-      // ── Update job record to failed ──
-      await supabaseAdmin
-        .from("generation_jobs")
-        .update({
-          status: "failed",
-          error_message: body.errorMessage || "Generation failed",
-          completed_at: now,
-          updated_at: now,
-        })
-        .eq("reservation_id", reservationId);
-
-      console.log("Generation failed, credits released:", JSON.stringify({ reservationId }));
-      return jsonRes({ success: true, action: "released" });
     }
 
     return jsonRes({ success: false, error: "Invalid status. Use: success, failed" }, 400);

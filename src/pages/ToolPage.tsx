@@ -270,7 +270,7 @@ const ToolPage = () => {
       if (reservationId) {
         try {
           await supabase.functions.invoke("complete-generation", {
-            body: { reservationId, status: "failed" },
+            body: { reservationId, status: "failed", errorMessage: err instanceof Error ? err.message : "Unknown error", providerFailState: "client_polling_error" },
           });
         } catch (releaseErr) {
           console.error("Failed to release credits:", releaseErr);

@@ -303,7 +303,7 @@ const AudioStudioPage = () => {
       if (reservationId) {
         try {
           await supabase.functions.invoke("complete-generation", {
-            body: { reservationId, status: "failed" },
+            body: { reservationId, status: "failed", errorMessage: err instanceof Error ? err.message : "Unknown error", providerFailState: "tts_error" },
           });
         } catch (releaseErr) {
           console.error("Failed to release credits:", releaseErr);

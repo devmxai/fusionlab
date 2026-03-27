@@ -492,6 +492,11 @@ const StudioPage = () => {
         updated_at: new Date().toISOString(),
         completed_at: null,
         seen_at: null,
+        provider_billing_state: "upstream_task_created" as const,
+        reconciliation_status: "not_required" as const,
+        provider_status_code: null,
+        provider_status_message: null,
+        reconciliation_notes: null,
       };
 
       // Poll via queue
@@ -532,7 +537,10 @@ const StudioPage = () => {
           if (reservationId) {
             try {
               await supabase.functions.invoke("complete-generation", {
-                body: { reservationId, status: "failed", errorMessage: errorMsg },
+                body: {
+                  reservationId, status: "failed", errorMessage: errorMsg,
+                  providerStatusCode: null, providerFailState: errorMsg,
+                },
               });
             } catch (releaseErr) {
               console.error("Failed to release credits:", releaseErr);
@@ -552,7 +560,7 @@ const StudioPage = () => {
       if (reservationId) {
         try {
           await supabase.functions.invoke("complete-generation", {
-            body: { reservationId, status: "failed" },
+            body: { reservationId, status: "failed", errorMessage: "Client-side error before provider response", providerFailState: "pre_provider_error" },
           });
         } catch (releaseErr) {
           console.error("Failed to release credits:", releaseErr);
