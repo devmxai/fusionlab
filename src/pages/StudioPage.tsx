@@ -8,6 +8,7 @@ import { uploadFileBase64 } from "@/lib/kie-ai";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueue } from "@/contexts/GenerationQueueContext";
+import type { GenerationJob } from "@/hooks/use-generation-queue";
 import { usePlanGating } from "@/hooks/use-plan-gating";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
