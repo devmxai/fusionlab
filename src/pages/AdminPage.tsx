@@ -96,18 +96,19 @@ const PlanCard = ({ plan, onSaved }: { plan: any; onSaved: () => void }) => {
   );
 };
 
-type Tab = "dashboard" | "users" | "subscriptions" | "plans" | "pricing" | "ledger" | "trials" | "audit" | "generations" | "content";
+type Tab = "dashboard" | "users" | "subscriptions" | "plans" | "pricing" | "ledger" | "trials" | "audit" | "generations" | "content" | "roles";
 
-const tabs: { id: Tab; label: string; icon: any }[] = [
+const tabs: { id: Tab; label: string; icon: any; superOnly?: boolean }[] = [
   { id: "dashboard", label: "لوحة التحكم", icon: BarChart3 },
   { id: "users", label: "المستخدمون", icon: Users },
+  { id: "roles", label: "إدارة الأدوار", icon: UserCog, superOnly: true },
   { id: "subscriptions", label: "الاشتراكات", icon: Crown },
   { id: "plans", label: "الخطط", icon: CreditCard },
-  { id: "pricing", label: "التسعير", icon: Tag },
+  { id: "pricing", label: "التسعير", icon: Tag, superOnly: true },
   { id: "ledger", label: "سجل الكريدت", icon: FileText },
   { id: "trials", label: "التجارب", icon: Clock },
   { id: "generations", label: "التوليدات", icon: RefreshCw },
-  { id: "audit", label: "سجل العمليات", icon: History },
+  { id: "audit", label: "سجل العمليات", icon: History, superOnly: true },
   { id: "content", label: "المحتوى", icon: PanelTop },
 ];
 
