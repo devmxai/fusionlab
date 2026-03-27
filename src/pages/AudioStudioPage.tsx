@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,11 +10,12 @@ import {
   Play,
   Pause,
   Download,
-  Send,
+  Trash2,
   Volume2,
   Mic,
   Sparkles,
   Loader2,
+  Library,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -172,11 +173,90 @@ const AudioStudioPage = () => {
   const [pitch, setPitch] = useState(0);
   const [stability, setStability] = useState(0.7);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [librarySidebarOpen, setLibrarySidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
+
+  // ─── Audio Library State ───
+  interface AudioGeneration {
+    id: string;
+    tool_id: string;
+    tool_name: string | null;
+    prompt: string | null;
+    file_url: string;
+    file_type: string;
+    created_at: string;
+  }
+  const [audioLibrary, setAudioLibrary] = useState<AudioGeneration[]>([]);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [playingLibId, setPlayingLibId] = useState<string | null>(null);
+  const [deletingLibId, setDeletingLibId] = useState<string | null>(null);
+  const libAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const fetchAudioLibrary = useCallback(async () => {
+    if (!user) return;
+    setLibraryLoading(true);
+    const { data } = await supabase
+      .from("generations")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("file_type", "audio")
+      .order("created_at", { ascending: false });
+    setAudioLibrary((data as AudioGeneration[]) || []);
+    setLibraryLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    if (user) fetchAudioLibrary();
+  }, [user, fetchAudioLibrary]);
+
+  const handleLibPlay = (item: AudioGeneration) => {
+    if (playingLibId === item.id) {
+      libAudioRef.current?.pause();
+      setPlayingLibId(null);
+      return;
+    }
+    if (libAudioRef.current) libAudioRef.current.pause();
+    const audio = new Audio(item.file_url);
+    libAudioRef.current = audio;
+    audio.play();
+    setPlayingLibId(item.id);
+    audio.onended = () => setPlayingLibId(null);
+  };
+
+  const handleLibDownload = async (item: AudioGeneration) => {
+    try {
+      const res = await fetch(item.file_url);
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `audio_${item.id.slice(0, 6)}.wav`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      toast.error("فشل في التحميل");
+    }
+  };
+
+  const handleLibDelete = async (item: AudioGeneration) => {
+    setDeletingLibId(item.id);
+    try {
+      const urlParts = item.file_url.split("/generations/");
+      if (urlParts[1]) {
+        await supabase.storage.from("generations").remove([decodeURIComponent(urlParts[1])]);
+      }
+      await supabase.from("generations").delete().eq("id", item.id);
+      setAudioLibrary((prev) => prev.filter((g) => g.id !== item.id));
+      toast.success("تم الحذف");
+    } catch {
+      toast.error("فشل في الحذف");
+    } finally {
+      setDeletingLibId(null);
+    }
+  };
 
   const maleVoices = useMemo(() => geminiVoices.filter((v) => v.gender === "male"), []);
   const femaleVoices = useMemo(() => geminiVoices.filter((v) => v.gender === "female"), []);
@@ -309,6 +389,7 @@ const AudioStudioPage = () => {
         }
 
         await refreshCredits();
+        await fetchAudioLibrary();
       } else {
         throw new Error("لم يتم توليد صوت");
       }
@@ -429,6 +510,17 @@ const AudioStudioPage = () => {
           <button onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground transition-colors">
             <ArrowRight className="w-5 h-5" />
           </button>
+          <button
+            onClick={() => setLibrarySidebarOpen(true)}
+            className="w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors relative"
+          >
+            <Library className="w-4 h-4 text-muted-foreground" />
+            {audioLibrary.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[8px] font-bold flex items-center justify-center">
+                {audioLibrary.length}
+              </span>
+            )}
+          </button>
           <h1 className="text-base font-bold text-foreground">استوديو الصوت</h1>
           <div className="mr-auto flex items-center gap-2">
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium">
@@ -436,7 +528,7 @@ const AudioStudioPage = () => {
             </span>
             <button
               onClick={() => setSidebarOpen(true)}
-              className="w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors"
+              className="w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors lg:hidden"
             >
               <Menu className="w-4 h-4 text-muted-foreground" />
             </button>
@@ -826,6 +918,103 @@ const AudioStudioPage = () => {
                   </div>
                   <Slider value={[pitch]} onValueChange={([v]) => setPitch(v)} min={-10} max={10} step={1} />
                 </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ─── Audio Library Sidebar (slides from LEFT) ─── */}
+      <AnimatePresence>
+        {librarySidebarOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60]"
+              onClick={() => setLibrarySidebarOpen(false)}
+            />
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-card/95 backdrop-blur-xl border-r border-border/50 z-[70] flex flex-col rounded-tr-2xl rounded-br-2xl overflow-hidden"
+            >
+              {/* Library Header */}
+              <div className="shrink-0 px-4 py-4 border-b border-border/30 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <Library className="w-4 h-4 text-primary" />
+                  مكتبة الأصوات
+                </h2>
+                <button onClick={() => setLibrarySidebarOpen(false)} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Library Content */}
+              <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2 scrollbar-hide" dir="rtl">
+                {libraryLoading ? (
+                  <div className="flex items-center justify-center py-10">
+                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  </div>
+                ) : audioLibrary.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 opacity-50">
+                    <Volume2 className="w-10 h-10 text-muted-foreground mb-2" />
+                    <p className="text-xs text-muted-foreground">لا توجد أصوات مولدة</p>
+                    <p className="text-[10px] text-muted-foreground/60 mt-1">ستظهر هنا بعد التوليد</p>
+                  </div>
+                ) : (
+                  audioLibrary.map((item) => (
+                    <div
+                      key={item.id}
+                      className="bg-secondary/30 border border-border/20 rounded-xl p-3 space-y-2"
+                    >
+                      {/* Info */}
+                      <div className="flex items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] text-primary font-medium">{item.tool_name || "Gemini TTS"}</p>
+                          {item.prompt && (
+                            <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5">{item.prompt}</p>
+                          )}
+                          <p className="text-[9px] text-muted-foreground/60 mt-0.5">
+                            {new Date(item.created_at).toLocaleDateString("ar-IQ", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        </div>
+                      </div>
+                      {/* Actions */}
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleLibPlay(item)}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+                            playingLibId === item.id
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-secondary hover:bg-secondary/80 text-foreground"
+                          }`}
+                        >
+                          {playingLibId === item.id ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                          {playingLibId === item.id ? "إيقاف" : "تشغيل"}
+                        </button>
+                        <button
+                          onClick={() => handleLibDownload(item)}
+                          className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
+                          title="تحميل"
+                        >
+                          <Download className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
+                        <button
+                          onClick={() => handleLibDelete(item)}
+                          disabled={deletingLibId === item.id}
+                          className="p-2 rounded-lg bg-destructive/10 hover:bg-destructive/20 transition-colors disabled:opacity-50"
+                          title="حذف"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </motion.div>
           </>
