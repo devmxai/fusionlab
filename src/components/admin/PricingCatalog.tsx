@@ -31,6 +31,12 @@ interface ModelAccess {
   category: string | null;
 }
 
+interface PricingRuleAccess {
+  pricing_rule_id: string;
+  min_plan: string;
+  is_active: boolean;
+}
+
 const PLAN_OPTIONS = [
   { value: "free", label: "تجريبي", icon: Zap, color: "text-green-400 bg-green-500/15" },
   { value: "starter", label: "Starter", icon: Shield, color: "text-blue-400 bg-blue-500/15" },
@@ -54,43 +60,56 @@ const mapCategory = (rule: PricingRule): string => {
   if (gt === "text-to-video" || gt.includes("video")) return "video";
   if (gt === "text-to-image" || gt.includes("text-to-image")) return "image";
   if (gt === "image-to-image" || gt.includes("remix") || gt.includes("kontext")) return "remix";
-  if (gt === "tts" || gt.includes("audio") || gt.includes("tts")) return "audio";
+  if (gt === "tts" || gt.includes("audio")) return "audio";
   if (gt === "avatar" || gt.includes("avatar") || gt.includes("animate")) return "avatar";
   if (gt === "remove-bg" || gt.includes("remove")) return "remove-bg";
   if (gt === "upscale" || gt.includes("upscale")) return "upscale";
-  return "image"; // fallback
+  return "image";
 };
 
 const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
   const [rules, setRules] = useState<PricingRule[]>([]);
   const [modelAccess, setModelAccess] = useState<ModelAccess[]>([]);
+  const [ruleAccess, setRuleAccess] = useState<PricingRuleAccess[]>([]);
+
   const [editingPrice, setEditingPrice] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
+
   const [activeTab, setActiveTab] = useState("video");
   const [search, setSearch] = useState("");
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => {
+    fetchAll();
+  }, []);
 
   const fetchAll = async () => {
-    const [rulesRes, accessRes] = await Promise.all([
+    const db = supabase as any;
+    const [rulesRes, accessRes, ruleAccessRes] = await Promise.all([
       supabase.from("pricing_rules").select("*").order("model"),
       supabase.from("model_access").select("*"),
+      db.from("pricing_rule_access").select("pricing_rule_id,min_plan,is_active"),
     ]);
+
     setRules((rulesRes.data || []) as PricingRule[]);
     setModelAccess((accessRes.data || []) as ModelAccess[]);
+    setRuleAccess((ruleAccessRes.data || []) as PricingRuleAccess[]);
   };
 
-  const getAccess = (model: string) => modelAccess.find((a) => a.model === model);
-  const getModelPlan = (model: string) => getAccess(model)?.min_plan || "free";
+  const getModelAccess = (model: string) => modelAccess.find((a) => a.model === model);
+  const getRuleAccess = (ruleId: string) => ruleAccess.find((a) => a.pricing_rule_id === ruleId);
 
-  // ── Filtered rules ──
+  const getRulePlan = (rule: PricingRule) => {
+    const variantPlan = getRuleAccess(rule.id)?.min_plan;
+    if (variantPlan) return variantPlan;
+    return getModelAccess(rule.model)?.min_plan || "free";
+  };
+
   const filtered = useMemo(() => {
     let list = rules;
-    // Category filter — always applied (no "all" tab)
     list = list.filter((r) => mapCategory(r) === activeTab);
-    // Search
+
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter(
@@ -98,13 +117,13 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
           (r.display_name || r.model).toLowerCase().includes(q) ||
           r.provider.toLowerCase().includes(q) ||
           (r.resolution || "").toLowerCase().includes(q) ||
-          (r.quality || "").toLowerCase().includes(q)
+          (r.quality || "").toLowerCase().includes(q),
       );
     }
-    return list;
-  }, [rules, modelAccess, activeTab, search]);
 
-  // ── Badges ──
+    return list;
+  }, [rules, activeTab, search]);
+
   const planBadge = (plan: string) => {
     const p = PLAN_OPTIONS.find((o) => o.value === plan) || PLAN_OPTIONS[0];
     return (
@@ -122,63 +141,92 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
       <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400">مراجعة</span>
     );
 
-  // ── Save price ──
   const savePrice = async (ruleId: string) => {
     const val = parseFloat(editValue);
-    if (isNaN(val) || val < 0) { toast.error("أدخل قيمة صحيحة"); return; }
-    setSavingId(ruleId);
+    if (isNaN(val) || val < 0) {
+      toast.error("أدخل قيمة صحيحة");
+      return;
+    }
+
+    setSavingId(`price:${ruleId}`);
     const { error } = await supabase
       .from("pricing_rules")
       .update({ price_credits: val, updated_at: new Date().toISOString() })
       .eq("id", ruleId);
+
     setSavingId(null);
-    if (error) { toast.error("فشل الحفظ"); return; }
+    if (error) {
+      toast.error("فشل الحفظ");
+      return;
+    }
+
     toast.success("تم تحديث السعر");
     setEditingPrice(null);
     setRules((prev) => prev.map((r) => (r.id === ruleId ? { ...r, price_credits: val } : r)));
     onDataChanged?.();
   };
 
-  // ── Toggle status ──
   const toggleStatus = async (rule: PricingRule) => {
     const newStatus = rule.status === "active" ? "pending_review" : "active";
-    setSavingId(rule.id);
+    setSavingId(`status:${rule.id}`);
+
     const { error } = await supabase
       .from("pricing_rules")
       .update({ status: newStatus, updated_at: new Date().toISOString() })
       .eq("id", rule.id);
+
     setSavingId(null);
-    if (error) { toast.error("فشل التحديث"); return; }
+    if (error) {
+      toast.error("فشل التحديث");
+      return;
+    }
+
     toast.success(newStatus === "active" ? "تم التفعيل" : "تم التعليق");
     setRules((prev) => prev.map((r) => (r.id === rule.id ? { ...r, status: newStatus } : r)));
     onDataChanged?.();
   };
 
-  // ── Update min_plan ──
-  const updateModelPlan = async (model: string, newPlan: string) => {
-    setSavingId(model);
-    const existing = modelAccess.find((a) => a.model === model);
+  // ✅ Per-variant update (pricing rule id), not full model family
+  const updateRulePlan = async (rule: PricingRule, newPlan: string) => {
+    const db = supabase as any;
+    const saveKey = `plan:${rule.id}`;
+    setSavingId(saveKey);
+
+    const existing = ruleAccess.find((a) => a.pricing_rule_id === rule.id);
     let error;
+
     if (existing) {
-      ({ error } = await supabase.from("model_access").update({ min_plan: newPlan }).eq("model", model));
+      ({ error } = await db
+        .from("pricing_rule_access")
+        .update({ min_plan: newPlan, is_active: true, updated_at: new Date().toISOString() })
+        .eq("pricing_rule_id", rule.id));
     } else {
-      const rule = rules.find((r) => r.model === model);
-      ({ error } = await supabase.from("model_access").insert({
-        model, min_plan: newPlan,
-        display_name: rule?.display_name || model,
-        provider: rule?.provider || "unknown",
+      ({ error } = await db.from("pricing_rule_access").insert({
+        pricing_rule_id: rule.id,
+        min_plan: newPlan,
         is_active: true,
       }));
     }
+
     setSavingId(null);
-    if (error) { toast.error("فشل التحديث"); return; }
-    toast.success(`تم تحديث الخطة`);
+    if (error) {
+      toast.error("فشل تحديث الخطة");
+      return;
+    }
+
+    toast.success("تم تحديث خطة هذا النموذج المحدد فقط");
     setEditingPlan(null);
-    setModelAccess((prev) => {
-      const idx = prev.findIndex((a) => a.model === model);
-      if (idx >= 0) { const u = [...prev]; u[idx] = { ...u[idx], min_plan: newPlan }; return u; }
-      return [...prev, { model, min_plan: newPlan, display_name: null, is_active: true, category: null }];
+
+    setRuleAccess((prev) => {
+      const idx = prev.findIndex((a) => a.pricing_rule_id === rule.id);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = { ...updated[idx], min_plan: newPlan, is_active: true };
+        return updated;
+      }
+      return [...prev, { pricing_rule_id: rule.id, min_plan: newPlan, is_active: true }];
     });
+
     onDataChanged?.();
   };
 
@@ -189,11 +237,10 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
       counts[cat] = (counts[cat] || 0) + 1;
     }
     return counts;
-  }, [rules, modelAccess]);
+  }, [rules]);
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-lg font-bold text-foreground">كتالوج التسعير</h2>
         <span className="text-xs text-muted-foreground">
@@ -201,7 +248,6 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
         </span>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
         <Input
@@ -212,7 +258,6 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
         />
       </div>
 
-      {/* Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
         {CATEGORY_TABS.map((tab) => {
           const count = tabCounts[tab.id] || 0;
@@ -230,9 +275,11 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
               <tab.icon className="w-3.5 h-3.5" />
               {tab.label}
               {count > 0 && (
-                <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
-                  isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
-                }`}>
+                <span
+                  className={`text-[9px] px-1.5 py-0.5 rounded-full ${
+                    isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+                  }`}
+                >
                   {count}
                 </span>
               )}
@@ -241,7 +288,6 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
         })}
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto bg-card rounded-xl border border-border/50">
         <table className="w-full text-xs" dir="rtl">
           <thead>
@@ -266,11 +312,16 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
                   </td>
                 </tr>
               )}
+
               {filtered.map((r) => {
                 const isEditingThisPrice = editingPrice === r.id;
-                const isSaving = savingId === r.id;
-                const isEditingThisPlan = editingPlan === r.model;
-                const currentPlan = getModelPlan(r.model);
+                const isEditingThisPlan = editingPlan === r.id;
+
+                const isSavingPrice = savingId === `price:${r.id}`;
+                const isSavingPlan = savingId === `plan:${r.id}`;
+                const isSavingStatus = savingId === `status:${r.id}`;
+
+                const currentPlan = getRulePlan(r);
 
                 return (
                   <motion.tr
@@ -283,17 +334,12 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
                       r.status === "pending_review" ? "bg-amber-500/5" : ""
                     }`}
                   >
-                    {/* Model */}
                     <td className="py-2.5 px-3">
-                      <span className="font-semibold text-foreground text-[11px]">
-                        {r.display_name || r.model}
-                      </span>
+                      <span className="font-semibold text-foreground text-[11px]">{r.display_name || r.model}</span>
                     </td>
 
-                    {/* Provider */}
                     <td className="py-2.5 px-3 text-muted-foreground">{r.provider}</td>
 
-                    {/* Resolution */}
                     <td className="py-2.5 px-3">
                       {r.resolution ? (
                         <span className="px-1.5 py-0.5 rounded bg-secondary text-foreground text-[10px] font-medium">
@@ -304,7 +350,6 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
                       )}
                     </td>
 
-                    {/* Quality */}
                     <td className="py-2.5 px-3">
                       {r.quality ? (
                         <span className="px-1.5 py-0.5 rounded bg-secondary text-foreground text-[10px] font-medium">
@@ -315,12 +360,10 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
                       )}
                     </td>
 
-                    {/* Duration */}
                     <td className="py-2.5 px-3 text-muted-foreground">
                       {r.duration_seconds ? `${r.duration_seconds}s` : "—"}
                     </td>
 
-                    {/* Price (editable) */}
                     <td className="py-2.5 px-3">
                       {isEditingThisPrice ? (
                         <div className="flex items-center gap-1">
@@ -336,16 +379,26 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
                               if (e.key === "Escape") setEditingPrice(null);
                             }}
                           />
-                          <button onClick={() => savePrice(r.id)} disabled={isSaving} className="p-0.5 text-green-400 hover:text-green-300">
+                          <button
+                            onClick={() => savePrice(r.id)}
+                            disabled={isSavingPrice}
+                            className="p-0.5 text-green-400 hover:text-green-300"
+                          >
                             <Check className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => setEditingPrice(null)} className="p-0.5 text-muted-foreground hover:text-foreground">
+                          <button
+                            onClick={() => setEditingPrice(null)}
+                            className="p-0.5 text-muted-foreground hover:text-foreground"
+                          >
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ) : (
                         <button
-                          onClick={() => { setEditingPrice(r.id); setEditValue(String(r.price_credits)); }}
+                          onClick={() => {
+                            setEditingPrice(r.id);
+                            setEditValue(String(r.price_credits));
+                          }}
                           className="group flex items-center gap-1 font-bold text-primary hover:text-primary/80 transition-colors"
                         >
                           {r.price_credits}
@@ -354,44 +407,51 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
                       )}
                     </td>
 
-                    {/* Unit */}
                     <td className="py-2.5 px-3 text-muted-foreground text-[10px]">
                       {r.price_unit === "per_second" ? "/ثانية" : "/توليد"}
                     </td>
 
-                    {/* Plan (editable) */}
                     <td className="py-2.5 px-3">
                       {isEditingThisPlan ? (
                         <div className="flex items-center gap-0.5 flex-wrap">
                           {PLAN_OPTIONS.map((opt) => (
                             <button
                               key={opt.value}
-                              disabled={isSaving}
-                              onClick={() => updateModelPlan(r.model, opt.value)}
+                              disabled={isSavingPlan}
+                              onClick={() => updateRulePlan(r, opt.value)}
                               className={`text-[8px] font-bold px-1.5 py-1 rounded transition-colors ${
                                 currentPlan === opt.value
-                                  ? opt.color + " ring-1 ring-current"
+                                  ? `${opt.color} ring-1 ring-current`
                                   : "bg-secondary text-muted-foreground hover:text-foreground"
                               }`}
                             >
                               {opt.label}
                             </button>
                           ))}
-                          <button onClick={() => setEditingPlan(null)} className="p-0.5 text-muted-foreground hover:text-foreground">
+                          <button
+                            onClick={() => setEditingPlan(null)}
+                            className="p-0.5 text-muted-foreground hover:text-foreground"
+                          >
                             <X className="w-3 h-3" />
                           </button>
                         </div>
                       ) : (
-                        <button onClick={() => setEditingPlan(r.model)} className="flex items-center gap-1 hover:opacity-80 transition-opacity">
+                        <button
+                          onClick={() => setEditingPlan(r.id)}
+                          className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+                        >
                           {planBadge(currentPlan)}
                           <Pencil className="w-2.5 h-2.5 text-muted-foreground" />
                         </button>
                       )}
                     </td>
 
-                    {/* Status */}
                     <td className="py-2.5 px-3">
-                      <button onClick={() => toggleStatus(r)} disabled={isSaving} className="hover:opacity-80 transition-opacity">
+                      <button
+                        onClick={() => toggleStatus(r)}
+                        disabled={isSavingStatus}
+                        className="hover:opacity-80 transition-opacity"
+                      >
                         {statusBadge(r.status)}
                       </button>
                     </td>
