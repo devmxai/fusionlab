@@ -51,12 +51,7 @@ const ratioConfig: Record<string, { label: string; cssAspect: string; placeholde
   "21:9": { label: "21:9",  cssAspect: "21/9", placeholderMaxW: "360px" },
 };
 
-const dropdownAnim = {
-  initial: { opacity: 0, y: -8, scale: 0.96 },
-  animate: { opacity: 1, y: 0, scale: 1 },
-  exit: { opacity: 0, y: -8, scale: 0.96 },
-  transition: { duration: 0.18, ease: "easeOut" as const },
-};
+// No more dropdownAnim - we use a stable overlay approach
 
 const StudioPage = () => {
   const { category } = useParams();
