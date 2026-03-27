@@ -81,13 +81,23 @@ const ModelCardsManager = () => {
 
   const uploadImage = async (file: File): Promise<string | null> => {
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `model-cards/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("cms-content").upload(path, file);
-    setUploading(false);
-    if (error) { toast.error("فشل الرفع: " + error.message); return null; }
-    const { data } = supabase.storage.from("cms-content").getPublicUrl(path);
-    return data.publicUrl;
+    try {
+      const compressed = await compressImage(file, { maxWidth: 800, maxHeight: 1200, quality: 0.82, maxSizeKB: 250 });
+      const ext = compressed.name.split(".").pop() || "webp";
+      const path = `model-cards/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("cms-content").upload(path, compressed, {
+        cacheControl: "31536000",
+        contentType: compressed.type,
+      });
+      setUploading(false);
+      if (error) { toast.error("فشل الرفع: " + error.message); return null; }
+      const { data } = supabase.storage.from("cms-content").getPublicUrl(path);
+      return data.publicUrl;
+    } catch {
+      setUploading(false);
+      toast.error("فشل ضغط الصورة");
+      return null;
+    }
   };
 
   // Sync all tools for this tab
