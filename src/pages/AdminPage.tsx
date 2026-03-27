@@ -485,6 +485,87 @@ const AdminPage = () => {
             </div>
           )}
 
+          {/* Roles Management (Super Admin Only) */}
+          {tab === "roles" && isSuperAdmin && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-bold text-foreground">إدارة الأدوار</h2>
+              <p className="text-xs text-muted-foreground">ابحث بالإيميل لتعيين مستخدم كمسؤول ثانوي أو إزالة صلاحياته</p>
+              
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    value={roleSearchQuery}
+                    onChange={(e) => setRoleSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && searchUserForRole()}
+                    placeholder="أدخل الإيميل للبحث..."
+                    className="pr-10 bg-card text-xs"
+                    dir="ltr"
+                  />
+                </div>
+                <Button size="sm" className="text-xs" onClick={searchUserForRole} disabled={roleLoading}>
+                  {roleLoading ? "جاري البحث..." : "بحث"}
+                </Button>
+              </div>
+
+              {roleSearchResults.length > 0 && (
+                <div className="space-y-2">
+                  {roleSearchResults.map((u) => (
+                    <div key={u.id} className="bg-card rounded-xl border border-border/50 p-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-sm font-bold text-primary">
+                        {(u.full_name || u.email)?.[0]?.toUpperCase() || "?"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">{u.full_name || "بدون اسم"}</p>
+                        <p className="text-[10px] text-muted-foreground truncate" dir="ltr">{u.email}</p>
+                        <div className="mt-1">
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                            u.role === "super_admin" ? "bg-primary/20 text-primary" :
+                            u.role === "admin" ? "bg-green-500/15 text-green-400" :
+                            "bg-secondary text-muted-foreground"
+                          }`}>
+                            {u.role === "super_admin" ? "مسؤول رئيسي" : u.role === "admin" ? "مسؤول ثانوي" : "مستخدم"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        {u.role === "super_admin" ? (
+                          <p className="text-[9px] text-muted-foreground">لا يمكن التعديل</p>
+                        ) : u.role === "admin" ? (
+                          <Button size="sm" variant="outline" className="text-[10px] h-7" onClick={() => setUserRole(u.id, "user")}>
+                            <X className="w-3 h-3 ml-1" /> إزالة الصلاحية
+                          </Button>
+                        ) : (
+                          <Button size="sm" className="text-[10px] h-7" onClick={() => setUserRole(u.id, "admin")}>
+                            <Shield className="w-3 h-3 ml-1" /> تعيين مسؤول
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {roleSearchResults.length === 0 && roleSearchQuery && !roleLoading && (
+                <p className="text-xs text-muted-foreground text-center py-6">لم يتم العثور على مستخدم بهذا الإيميل</p>
+              )}
+
+              <div className="mt-6 bg-card rounded-xl border border-border/50 p-4 space-y-2">
+                <h3 className="text-sm font-bold text-foreground">الفرق بين الأدوار</h3>
+                <div className="space-y-2 text-[11px]">
+                  <div className="flex items-start gap-2">
+                    <span className="px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold shrink-0">مسؤول رئيسي</span>
+                    <span className="text-muted-foreground">صلاحيات كاملة: إدارة الأدوار، التسعير، سجل العمليات، وجميع الميزات</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 font-bold shrink-0">مسؤول ثانوي</span>
+                    <span className="text-muted-foreground">إدارة الاشتراكات، توزيع الكريدت، تعديل المحتوى والواجهة</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Subscriptions */}
           {tab === "subscriptions" && (
             <div className="space-y-3">
