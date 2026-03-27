@@ -99,7 +99,7 @@ export function useGenerationQueue() {
   // Fetch active jobs from DB
   const fetchJobs = useCallback(async () => {
     if (!user) return;
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("generation_jobs")
       .select("*")
       .eq("user_id", user.id)
