@@ -676,7 +676,7 @@ const StudioPage = () => {
 
     if (resultUrls.length > 0) {
       // Multi-image grid (e.g. Grok generating multiple images or Shoots)
-      if (resultUrls.length > 1 && !isVideoTool) {
+      if (resultUrls.length > 1 && !isVideoTool && !isAvatarTool) {
         const cols = resultUrls.length <= 2 ? "grid-cols-2" : resultUrls.length <= 4 ? "grid-cols-2" : "grid-cols-3";
         return (
           <motion.div key="multi-result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
