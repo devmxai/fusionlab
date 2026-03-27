@@ -183,11 +183,13 @@ const StudioPage = () => {
   const isUpscaleTool = category === "upscale";
   const isRemixTool = category === "remix";
   const isAvatarTool = category === "avatar";
+  const isShootsTool = category === "shoots";
   const isAvatarAudioModel = isAvatarTool && !!tool && (tool.inputType === "avatar");
   const isAvatarAnimateModel = isAvatarTool && !!tool && (tool.inputType === "animate");
   const isFluxKontext = !!tool && tool.isFluxKontextApi === true;
   const hasFrameMode = !!(caps?.frameMode || tool?.frameMode);
   const frameMode = caps?.frameMode || tool?.frameMode;
+  const isGrokImage = !!tool && tool.model === "grok-imagine/text-to-image" && !isShootsTool;
 
   // Remix image limits from capabilities
   const remixMaxImages = isRemixTool ? (caps?.maxImages ?? 3) : 0;
