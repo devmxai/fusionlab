@@ -953,6 +953,7 @@ const StudioPage = () => {
               </motion.div>
             )}
           </div>
+          )}
         </div>
       </header>
 
