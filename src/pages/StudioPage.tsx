@@ -383,7 +383,7 @@ const StudioPage = () => {
       const input = buildModelInput(tool.model, prompt, aspectRatio, resolution, imageUrls, extraParams);
       const apiType = isFluxKontext ? "flux-kontext" : (tool.isVeoApi ? "veo" : "standard");
 
-      // ── Step 3: Start generation (server: auth → entitlement → price → reserve → create task) ──
+      // ── Step 3: Start generation (server: auth → entitlement → price → reserve → create task + job record) ──
       setStatus("جاري التحقق والإنشاء...");
       setProgress(25);
 
@@ -392,6 +392,7 @@ const StudioPage = () => {
       const { data: startResult, error: startError } = await supabase.functions.invoke("start-generation", {
         body: {
           toolId: tool.id,
+          toolName: tool.title,
           model: tool.model,
           apiType,
           input,
@@ -400,6 +401,9 @@ const StudioPage = () => {
           durationSeconds: videoDuration ? parseInt(videoDuration) : null,
           hasAudio: false,
           idempotencyKey,
+          prompt: prompt || tool.title,
+          fileType,
+          jobMetadata: { aspectRatio, resolution, quality },
         },
       });
 
@@ -429,37 +433,76 @@ const StudioPage = () => {
 
       reservationId = startResult.reservationId;
       const taskId = startResult.taskId;
-      const fileType = (isVideoTool || isAvatarTool) ? "video" : "image";
+      const fileType2 = (isVideoTool || isAvatarTool) ? "video" : "image";
 
-      // ── Step 4: Create persistent job record + poll via queue ──
-      const job = await createJob({
-        taskId,
-        reservationId,
-        toolId: tool.id,
-        toolName: tool.title,
-        model: tool.model,
-        apiType: apiType || "standard",
-        prompt: prompt || tool.title,
-        fileType,
-        metadata: { aspectRatio, resolution, quality },
-      });
+      // Job was created server-side. Refresh jobs list to pick it up,
+      // then find it and start polling.
+      await fetchJobs();
 
+      // Find the job by reservation_id (most reliable)
+      const findJob = () => {
+        // Small delay to let realtime deliver the INSERT event
+        return new Promise<GenerationJob | null>((resolve) => {
+          // Try immediately from the response jobId
+          const jobId = startResult.jobId;
+          if (jobId) {
+            (supabase as any)
+              .from("generation_jobs")
+              .select("*")
+              .eq("id", jobId)
+              .single()
+              .then(({ data }: any) => resolve(data as GenerationJob | null));
+          } else {
+            // Fallback: find by reservation_id
+            (supabase as any)
+              .from("generation_jobs")
+              .select("*")
+              .eq("reservation_id", reservationId)
+              .single()
+              .then(({ data }: any) => resolve(data as GenerationJob | null));
+          }
+        });
+      };
+
+      const job = await findJob();
       if (!job) {
-        throw new Error("فشل إنشاء سجل المهمة");
+        console.error("Job record not found after server creation");
+        // Continue with polling anyway using a synthetic job
       }
 
-      // Poll via queue (handles smooth progress, DB updates, resume)
+      const jobForPolling: GenerationJob = job || {
+        id: startResult.jobId || "temp",
+        user_id: user.id,
+        task_id: taskId,
+        reservation_id: reservationId,
+        tool_id: tool.id,
+        tool_name: tool.title,
+        model: tool.model,
+        api_type: apiType || "standard",
+        prompt: prompt || tool.title,
+        file_type: fileType2,
+        status: "pending" as const,
+        progress: 0,
+        result_url: null,
+        error_message: null,
+        metadata: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        completed_at: null,
+        seen_at: null,
+      };
+
+      // Poll via queue
       await pollJob(
-        job,
+        jobForPolling,
         // onSuccess
-        async (resultUrls, completedJob) => {
-          setResultUrls(resultUrls);
+        async (urls, completedJob) => {
+          setResultUrls(urls);
           toast.success("تم التوليد بنجاح!");
           setProgress(100);
           setStatus("تم!");
 
-          // Settle credits
-          const fileUrl = resultUrls[0];
+          const fileUrl = urls[0];
           const { data: completeResult, error: completeError } = await supabase.functions.invoke("complete-generation", {
             body: {
               reservationId,
@@ -469,7 +512,7 @@ const StudioPage = () => {
               toolName: tool.title,
               prompt,
               fileUrl: fileUrl || "",
-              fileType,
+              fileType: fileType2,
               metadata: { aspectRatio, resolution, model: tool.model },
             },
           });
@@ -487,7 +530,7 @@ const StudioPage = () => {
           if (reservationId) {
             try {
               await supabase.functions.invoke("complete-generation", {
-                body: { reservationId, status: "failed" },
+                body: { reservationId, status: "failed", errorMessage: errorMsg },
               });
             } catch (releaseErr) {
               console.error("Failed to release credits:", releaseErr);
@@ -501,12 +544,6 @@ const StudioPage = () => {
         },
       );
 
-      // Track progress from queue job updates
-      const trackProgress = setInterval(() => {
-        // This will be handled by realtime updates in the queue
-      }, 500);
-
-      // Note: setLoading(false) is handled in onSuccess/onFail callbacks above
       return;
     } catch (err: unknown) {
       // ── Release reserved credits on failure ──
