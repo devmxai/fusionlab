@@ -30,19 +30,27 @@ const CategoryFilter = ({ selected, onSelect }: CategoryFilterProps) => {
   };
 
   return (
-    <div className="flex gap-2 overflow-x-auto scrollbar-hide py-3 px-3 sm:px-6 lg:px-8 justify-center">
-      {categories.map((cat) => (
-        <button
+    <div
+      className="flex gap-2 overflow-x-auto scrollbar-hide py-3 px-4 sm:px-6 lg:px-8 lg:justify-center"
+      dir="rtl"
+      style={{ WebkitOverflowScrolling: "touch" }}
+    >
+      {categories.map((cat, i) => (
+        <motion.button
           key={cat}
           onClick={() => handleClick(cat)}
-          className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: i * 0.04, type: "spring", stiffness: 300, damping: 20 }}
+          whileTap={{ scale: 0.93 }}
+          className={`whitespace-nowrap shrink-0 px-5 py-2 rounded-full text-xs font-semibold transition-colors ${
             selected === cat
-              ? "bg-primary text-primary-foreground"
+              ? "bg-primary text-primary-foreground shadow-[0_0_12px_hsl(var(--primary)/0.35)]"
               : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
           }`}
         >
           {cat}
-        </button>
+        </motion.button>
       ))}
     </div>
   );
