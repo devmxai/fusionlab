@@ -320,25 +320,24 @@ serve(async (req) => {
       }
 
       const previewRawText = previewText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟";
-      const { spokenText: previewSpokenText, directives: previewTagDirectives } = extractTagDirectives(previewRawText);
 
       const previewParts: string[] = [];
-      previewParts.push("تحدث بشكل طبيعي تماماً كمتحدث عربي أصلي مع تعبيرات عاطفية واقعية.");
-      previewParts.push("تحدث باللغة العربية فقط بنطق عربي أصيل وطبيعي.");
-      previewParts.push("لا تنطق علامات التحكم حرفياً؛ نفّذها كتعليمات أداء فقط.");
-      if (prevDialect) previewParts.push(`اللهجة المطلوبة: ${prevDialect}.`);
-      else previewParts.push("تحدث بلهجة عراقية عامية طبيعية.");
+      previewParts.push("# AUDIO PROFILE");
+      previewParts.push("متحدث عربي أصلي بأداء طبيعي.");
+      previewParts.push("\n## DIRECTOR'S NOTES");
+      previewParts.push("اللغة: العربية فقط بنطق أصيل.");
+      if (prevDialect) previewParts.push(`اللهجة: ${prevDialect}.`);
+      else previewParts.push("اللهجة: عراقية عامية طبيعية.");
+      if (prevStyle) previewParts.push(`الأسلوب: ${prevStyle}`);
       if (prevEmotion) previewParts.push(`المشاعر: ${prevEmotion}.`);
       if (prevTone) previewParts.push(`النبرة: ${prevTone}.`);
-      if (prevStyle) previewParts.push(`أسلوب الأداء: ${prevStyle}`);
-      if (prevStability < 0.5) previewParts.push("اسمح بتنوع صوتي أكثر.");
-      if (prevStability > 0.8) previewParts.push("حافظ على نبرة صوت ثابتة.");
-      if (previewTagDirectives.length) {
-        previewParts.push("التزم بتوجيهات الأداء المحلية التالية بدقة وبشكل مسموع دون نطق أسماء العلامات:");
-        previewParts.push(...previewTagDirectives);
-      }
+      if (prevStability < 0.5) previewParts.push("التنوع: تعبير عاطفي أقوى.");
+      if (prevStability > 0.8) previewParts.push("الثبات: نبرة ثابتة.");
 
-      const previewPrompt = previewParts.join("\n") + "\n\n---\n\n" + (previewSpokenText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟");
+      previewParts.push("\n## TRANSCRIPT");
+      previewParts.push(normalizeText(previewRawText));
+
+      const previewPrompt = previewParts.join("\n");
 
       const requestBody = {
         contents: [{ parts: [{ text: previewPrompt }] }],
