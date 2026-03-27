@@ -290,7 +290,7 @@ const AdminPage = () => {
           <h1 className="text-sm font-bold text-foreground">لوحة الإدارة</h1>
         </div>
         <nav className="flex-1 p-2 space-y-0.5">
-          {tabs.map((t) => (
+          {visibleTabs.map((t) => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
                 tab === t.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
