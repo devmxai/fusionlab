@@ -36,39 +36,39 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
 
   // Docs: aspect_ratio 1:1,1:4,1:8,2:3,3:2,3:4,4:1,4:3,4:5,5:4,8:1,9:16,16:9,21:9,auto | resolution 1K,2K,4K | image_input up to 14
   "nano-banana-2": {
-    aspectRatios: ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
+    aspectRatios: ["1:1", "3:4", "4:3", "9:16", "16:9", "21:9"],
     resolutions: ["1K", "2K", "4K"],
     maxImages: 14,
   },
 
   // Docs: aspect_ratio 1:1,2:3,3:2,3:4,4:3,4:5,5:4,9:16,16:9,21:9,auto | resolution 1K,2K,4K | image_input up to 8
   "nano-banana-pro": {
-    aspectRatios: ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
+    aspectRatios: ["1:1", "3:4", "4:3", "9:16", "16:9", "21:9"],
     resolutions: ["1K", "2K", "4K"],
     maxImages: 8,
   },
 
   // Docs: aspect_ratio 1:1,4:3,3:4,16:9,9:16,2:3,3:2,21:9 | quality basic,high
   "seedream/5-lite-text-to-image": {
-    aspectRatios: ["1:1", "4:3", "3:4", "16:9", "9:16", "2:3", "3:2", "21:9"],
+    aspectRatios: ["1:1", "3:4", "4:3", "9:16", "16:9"],
     qualities: ["basic", "high"],
   },
 
   // Docs: aspect_ratio 1:1,4:3,3:4,16:9,9:16,2:3,3:2,21:9 | quality basic,high
   "seedream/4.5-text-to-image": {
-    aspectRatios: ["1:1", "4:3", "3:4", "16:9", "9:16", "2:3", "3:2", "21:9"],
+    aspectRatios: ["1:1", "3:4", "4:3", "9:16", "16:9"],
     qualities: ["basic", "high"],
   },
 
   // Docs: aspect_ratio 1:1,4:3,3:4,16:9,9:16,3:2,2:3 | resolution 1K,2K
   "flux-2/pro-text-to-image": {
-    aspectRatios: ["1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3"],
+    aspectRatios: ["1:1", "3:4", "4:3", "9:16", "16:9"],
     resolutions: ["1K", "2K"],
   },
 
   // Docs: aspect_ratio 2:3,3:2,1:1,16:9,9:16 | no resolution, no quality
   "grok-imagine/text-to-image": {
-    aspectRatios: ["1:1", "2:3", "3:2", "16:9", "9:16"],
+    aspectRatios: ["1:1", "3:4", "9:16", "16:9"],
   },
 
   // ─── Remix / Image Edit Models ───
