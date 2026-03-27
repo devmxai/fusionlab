@@ -826,16 +826,28 @@ export type Database = {
         }
         Returns: Json
       }
-      server_calculate_price: {
-        Args: {
-          p_duration_seconds?: number
-          p_has_audio?: boolean
-          p_model: string
-          p_quality?: string
-          p_resolution?: string
-        }
-        Returns: Json
-      }
+      server_calculate_price:
+        | {
+            Args: {
+              p_duration_seconds?: number
+              p_has_audio?: boolean
+              p_model: string
+              p_quality?: string
+              p_resolution?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_character_count?: number
+              p_duration_seconds?: number
+              p_has_audio?: boolean
+              p_model: string
+              p_quality?: string
+              p_resolution?: string
+            }
+            Returns: Json
+          }
       settle_credits: {
         Args: { p_reservation_id: string; p_task_id?: string }
         Returns: Json
@@ -855,6 +867,20 @@ export type Database = {
           }
         | {
             Args: {
+              p_duration_seconds?: number
+              p_generation_type?: string
+              p_has_audio?: boolean
+              p_idempotency_key?: string
+              p_model: string
+              p_quality?: string
+              p_resolution?: string
+              p_tool_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_character_count?: number
               p_duration_seconds?: number
               p_generation_type?: string
               p_has_audio?: boolean
