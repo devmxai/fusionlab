@@ -137,6 +137,7 @@ const StudioPage = () => {
   }, [selectedTool, resolution, quality, videoDuration]);
 
   const { price } = usePricing(pricingParams);
+  const { checkAccess } = usePlanGating(selectedTool?.model || null);
 
   // Reset settings when model changes
   const handleSelectModel = (t: AITool) => {
