@@ -582,7 +582,14 @@ const StudioPage = () => {
   // ── Dropdown Button Component ──
   const DropdownBtn = ({ id, label, value, hasValue }: { id: string; label: string; value: string; hasValue: boolean }) => (
     <button
-      onClick={() => setOpenMenu(openMenu === id ? null : id)}
+      onClick={() => {
+        if (openMenu === id) {
+          setOpenMenu(null);
+        } else {
+          setOpenMenu(id);
+          if (id === "model") setModelSubPage(null);
+        }
+      }}
       className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border transition-all duration-200 ${
         hasValue
           ? "bg-primary/10 border-primary/50"
