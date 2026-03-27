@@ -676,7 +676,7 @@ const StudioPage = () => {
 
     if (resultUrls.length > 0) {
       // Multi-image grid (e.g. Grok generating multiple images or Shoots)
-      if (resultUrls.length > 1 && !isVideoTool) {
+      if (resultUrls.length > 1 && !isVideoTool && !isAvatarTool) {
         const cols = resultUrls.length <= 2 ? "grid-cols-2" : resultUrls.length <= 4 ? "grid-cols-2" : "grid-cols-3";
         return (
           <motion.div key="multi-result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
@@ -700,9 +700,9 @@ const StudioPage = () => {
       // Single result
       return (
         <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-          className="w-full h-full cursor-pointer relative group" onClick={() => !isVideoTool && openViewer(resultUrls[0])}>
-          {isVideoTool ? (
-            <video src={resultUrls[0]} controls className="w-full h-full object-cover rounded-2xl" />
+          className="w-full h-full cursor-pointer relative group" onClick={() => !(isVideoTool || isAvatarTool) && openViewer(resultUrls[0])}>
+          {(isVideoTool || isAvatarTool) ? (
+            <video src={resultUrls[0]} controls autoPlay playsInline className="w-full h-full object-cover rounded-2xl" />
           ) : (
             <img src={resultUrls[0]} alt="Result" className="w-full h-full object-cover rounded-2xl" />
           )}
