@@ -380,7 +380,7 @@ const StudioPage = () => {
 
       // ── Step 3: Start generation (server: auth → entitlement → price → reserve → create task + job record) ──
       setStatus("جاري التحقق والإنشاء...");
-      setProgress((prev) => Math.max(prev, 12));
+      setProgress((prev) => Math.max(prev, 5));
 
       const idempotencyKey = `gen_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const fileType = (isVideoTool || isAvatarTool) ? "video" : "image";
