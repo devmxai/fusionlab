@@ -113,6 +113,8 @@ interface ToolCardProps {
   index?: number;
   override?: ToolCardOverride;
   sectionSlug?: string;
+  eagerLoad?: boolean;
+  highPriority?: boolean;
 }
 
 const categoryStudioMap: Record<string, string> = {
@@ -159,7 +161,14 @@ export const optimizeStorageUrl = (
   return nextUrl;
 };
 
-const ToolCard = ({ tool, index = 0, override, sectionSlug }: ToolCardProps) => {
+const ToolCard = ({
+  tool,
+  index = 0,
+  override,
+  sectionSlug,
+  eagerLoad = false,
+  highPriority = false,
+}: ToolCardProps) => {
   const [imgLoaded, setImgLoaded] = useState(false);
   const navigate = useNavigate();
 
@@ -198,9 +207,9 @@ const ToolCard = ({ tool, index = 0, override, sectionSlug }: ToolCardProps) => 
             src={imgSrc}
             alt={title}
             className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
-            loading={index < 12 ? "eager" : "lazy"}
+            loading={eagerLoad ? "eager" : "lazy"}
             decoding="async"
-            fetchPriority={index < 4 ? "high" : "auto"}
+            fetchPriority={highPriority ? "high" : "auto"}
             onLoad={() => setImgLoaded(true)}
             onError={() => setImgLoaded(true)}
           />
