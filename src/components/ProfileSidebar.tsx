@@ -363,7 +363,6 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
   const renderLibraryView = () => {
     const images = generations.filter(g => g.file_type?.startsWith("image"));
     const videos = generations.filter(g => g.file_type?.startsWith("video"));
-    const audio = generations.filter(g => g.file_type?.startsWith("audio"));
     const displayItems = generations.slice(0, 20);
 
     return (
@@ -383,11 +382,10 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
           onTouchMove={(e) => e.stopPropagation()}
           onWheel={(e) => e.stopPropagation()}>
           {/* Stats */}
-          <motion.div custom={1} variants={bounceIn} className="grid grid-cols-3 gap-2">
+          <motion.div custom={1} variants={bounceIn} className="grid grid-cols-2 gap-2">
             {[
               { icon: Image, label: "صور", count: images.length },
               { icon: Video, label: "فيديو", count: videos.length },
-              { icon: Music, label: "صوت", count: audio.length },
             ].map((stat) => (
               <div key={stat.label} className="p-2.5 rounded-xl bg-secondary/30 border border-border/20 text-center">
                 <stat.icon className="w-4 h-4 text-primary mx-auto mb-1" />
