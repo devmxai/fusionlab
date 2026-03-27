@@ -1388,7 +1388,7 @@ const StudioPage = () => {
         </div>
       </div>
 
-      <ImageViewer src={viewerUrl} open={viewerOpen} onClose={() => setViewerOpen(false)} />
+      <ImageViewer src={viewerUrl} open={viewerOpen} onClose={() => setViewerOpen(false)} type={(isVideoTool || isAvatarTool) ? "video" : "image"} />
     </div>
   );
 };
