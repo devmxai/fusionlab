@@ -9,18 +9,9 @@ interface GenerationQueueContextValue {
   activeJobs: GenerationJob[];
   completedJobs: GenerationJob[];
   failedJobs: GenerationJob[];
+  unseenJobs: GenerationJob[];
   activeCount: number;
-  createJob: (params: {
-    taskId: string;
-    reservationId: string;
-    toolId: string;
-    toolName: string;
-    model: string;
-    apiType: string;
-    prompt: string;
-    fileType: string;
-    metadata?: Record<string, unknown>;
-  }) => Promise<GenerationJob | null>;
+  unseenCount: number;
   pollJob: (
     job: GenerationJob,
     onSuccess?: (resultUrls: string[], job: GenerationJob) => void,
@@ -28,6 +19,7 @@ interface GenerationQueueContextValue {
   ) => Promise<void>;
   fetchJobs: () => Promise<void>;
   updateJobLocal: (jobId: string, updates: Partial<GenerationJob>) => void;
+  markJobSeen: (jobId: string) => Promise<void>;
 }
 
 const GenerationQueueContext = createContext<GenerationQueueContextValue | null>(null);

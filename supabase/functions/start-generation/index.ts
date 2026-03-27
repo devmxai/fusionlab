@@ -31,6 +31,8 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
+    // Service-role client for inserting job records (bypasses RLS)
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -40,6 +42,7 @@ serve(async (req) => {
     const body = await req.json();
     const {
       toolId,
+      toolName,
       model,
       apiType,
       input,
@@ -49,7 +52,9 @@ serve(async (req) => {
       hasAudio,
       characterCount,
       idempotencyKey,
-      // TTS-specific fields
+      prompt,
+      fileType,
+      jobMetadata,
       ttsParams,
     } = body;
 
@@ -57,11 +62,9 @@ serve(async (req) => {
       return jsonRes({ success: false, error: "missing_fields", message: "Missing required fields: toolId, model" });
     }
 
-    // Determine generation type for entitlement checks
     const generationType = apiType === "tts" ? "audio" : "default";
 
-    // ── 2. Validate entitlement + calculate price + reserve credits (atomic) ──
-    // For TTS, calculate server-side character count
+    // ── 2. Validate entitlement + calculate price + reserve credits ──
     let serverCharCount: number | null = null;
     if (apiType === "tts" && ttsParams?.text) {
       const ttsText = (ttsParams.text || "") as string;
@@ -103,43 +106,33 @@ serve(async (req) => {
     const reservationId = resData.reservation_id as string;
     const creditsCharged = resData.credits_charged as number;
 
-    // Internal caller header for downstream provider functions
     const internalHeaders = {
       "Content-Type": "application/json",
       Authorization: authHeader,
       "x-internal-caller": serviceRoleKey,
     };
 
-    // ── 3. Route to appropriate provider ──
+    // ── 3. Route to provider ──
     try {
       // ─── TTS Route ───
       if (apiType === "tts" && ttsParams) {
-        // Validate character limit server-side
         const ttsText = (ttsParams.text || "") as string;
-        // Strip inline tags to count only spoken characters
         const spokenText = ttsText.replace(/\[(short pause|medium pause|long pause|whispering|shouting|sarcasm|laughing|sigh|fast|extremely fast|robotic|uhm|gasp|groan|scared|curious|bored)\]/gi, "").replace(/\s+/g, " ").trim();
         const charCount = spokenText.length;
 
         if (charCount > 5000) {
           await supabase.rpc("release_credits", { p_reservation_id: reservationId });
           return jsonRes({
-            success: false,
-            error: "text_too_long",
+            success: false, error: "text_too_long",
             message: `تجاوزت الحد الأقصى (5000 حرف). عدد الأحرف: ${charCount}`,
           });
         }
 
-        const ttsResponse = await fetch(
-          `${supabaseUrl}/functions/v1/gemini-tts`,
-          {
-            method: "POST",
-            headers: internalHeaders,
-            body: JSON.stringify({
-              action: "synthesize",
-              ...ttsParams,
-            }),
-          }
-        );
+        const ttsResponse = await fetch(`${supabaseUrl}/functions/v1/gemini-tts`, {
+          method: "POST",
+          headers: internalHeaders,
+          body: JSON.stringify({ action: "synthesize", ...ttsParams }),
+        });
 
         const ttsData = await ttsResponse.json();
 
@@ -147,22 +140,14 @@ serve(async (req) => {
           console.error("TTS provider error:", JSON.stringify(ttsData));
           await supabase.rpc("release_credits", { p_reservation_id: reservationId });
           return jsonRes({
-            success: false,
-            error: "provider_error",
+            success: false, error: "provider_error",
             message: ttsData?.error || "TTS generation failed",
           });
         }
 
-        // TTS returns audio directly (no taskId polling needed)
-        console.log("TTS generation completed:", JSON.stringify({ reservationId, creditsCharged, model }));
-
         return jsonRes({
-          success: true,
-          reservationId,
-          creditsCharged,
-          apiType: "tts",
-          plan: resData.plan,
-          // Pass audio data back to client
+          success: true, reservationId, creditsCharged,
+          apiType: "tts", plan: resData.plan,
           audioBase64: ttsData.audioBase64,
           mimeType: ttsData.mimeType,
           voiceName: ttsData.voiceName,
@@ -180,19 +165,15 @@ serve(async (req) => {
       else if (apiType === "flux-kontext") kieAction = "flux-kontext-create";
       else kieAction = "create";
 
-      const kieBody =
-        kieAction === "create"
-          ? { action: kieAction, model, input }
-          : { action: kieAction, ...input };
+      const kieBody = kieAction === "create"
+        ? { action: kieAction, model, input }
+        : { action: kieAction, ...input };
 
-      const kieResponse = await fetch(
-        `${supabaseUrl}/functions/v1/kie-ai`,
-        {
-          method: "POST",
-          headers: internalHeaders,
-          body: JSON.stringify(kieBody),
-        }
-      );
+      const kieResponse = await fetch(`${supabaseUrl}/functions/v1/kie-ai`, {
+        method: "POST",
+        headers: internalHeaders,
+        body: JSON.stringify(kieBody),
+      });
 
       const kieData = await kieResponse.json();
 
@@ -200,8 +181,7 @@ serve(async (req) => {
         console.error("KIE.AI provider error:", JSON.stringify(kieData));
         await supabase.rpc("release_credits", { p_reservation_id: reservationId });
         return jsonRes({
-          success: false,
-          error: "provider_error",
+          success: false, error: "provider_error",
           message: kieData?.msg || kieData?.error || "Failed to create task",
         });
       }
@@ -210,14 +190,42 @@ serve(async (req) => {
       if (!taskId) {
         await supabase.rpc("release_credits", { p_reservation_id: reservationId });
         return jsonRes({
-          success: false,
-          error: "no_task_id",
+          success: false, error: "no_task_id",
           message: "Provider did not return a task ID",
         });
       }
 
-      // ── 4. Success ──
-      console.log("Generation started:", JSON.stringify({ taskId, reservationId, creditsCharged, model, apiType }));
+      // ── 4. Create persistent job record SERVER-SIDE ──
+      // This is the critical fix: the job record is created here on the server
+      // so it can never be lost even if the client navigates away.
+      const { data: jobRecord, error: jobError } = await supabaseAdmin
+        .from("generation_jobs")
+        .insert({
+          user_id: user.id,
+          task_id: taskId,
+          reservation_id: reservationId,
+          tool_id: toolId,
+          tool_name: toolName || null,
+          model,
+          api_type: apiType || "standard",
+          prompt: prompt || null,
+          file_type: fileType || "image",
+          status: "pending",
+          progress: 0,
+          metadata: jobMetadata || {},
+        })
+        .select("id")
+        .single();
+
+      if (jobError) {
+        console.error("Failed to create job record:", jobError);
+        // Don't fail the whole generation — the task is already running
+      }
+
+      console.log("Generation started:", JSON.stringify({
+        taskId, reservationId, creditsCharged, model, apiType,
+        jobId: jobRecord?.id || "failed_to_create",
+      }));
 
       return jsonRes({
         success: true,
@@ -226,6 +234,7 @@ serve(async (req) => {
         creditsCharged,
         apiType: apiType || "standard",
         plan: resData.plan,
+        jobId: jobRecord?.id || null,
       });
     } catch (providerErr) {
       try {
