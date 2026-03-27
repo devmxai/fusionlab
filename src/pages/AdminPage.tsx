@@ -11,6 +11,7 @@ import {
   ChevronDown, AlertCircle, RefreshCw, Eye, Pencil, Save, PanelTop, UserCog
 } from "lucide-react";
 import ContentTab from "@/components/admin/ContentTab";
+import PricingCatalog from "@/components/admin/PricingCatalog";
 import UserManagement from "@/components/admin/UserManagement";
 import { toast } from "sonner";
 
@@ -568,46 +569,7 @@ const AdminPage = () => {
 
           {/* Pricing Catalog */}
           {tab === "pricing" && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <h2 className="text-lg font-bold text-foreground">كتالوج التسعير</h2>
-                {stats.pendingPricing > 0 && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400">
-                    {stats.pendingPricing} بانتظار المراجعة
-                  </span>
-                )}
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-border/50 text-muted-foreground">
-                      <th className="text-right py-2 px-2 font-semibold">النموذج</th>
-                      <th className="text-right py-2 px-2 font-semibold">المزود</th>
-                      <th className="text-right py-2 px-2 font-semibold">الدقة</th>
-                      <th className="text-right py-2 px-2 font-semibold">الجودة</th>
-                      <th className="text-right py-2 px-2 font-semibold">المدة</th>
-                      <th className="text-right py-2 px-2 font-semibold">السعر</th>
-                      <th className="text-right py-2 px-2 font-semibold">الوحدة</th>
-                      <th className="text-right py-2 px-2 font-semibold">الحالة</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pricingRules.map((r) => (
-                      <tr key={r.id} className={`border-b border-border/20 hover:bg-secondary/30 ${r.status === "pending_review" ? "bg-amber-500/5" : ""}`}>
-                        <td className="py-2 px-2 font-semibold text-foreground">{r.display_name || r.model}</td>
-                        <td className="py-2 px-2 text-muted-foreground">{r.provider}</td>
-                        <td className="py-2 px-2 text-muted-foreground">{r.resolution || "—"}</td>
-                        <td className="py-2 px-2 text-muted-foreground">{r.quality || "—"}</td>
-                        <td className="py-2 px-2 text-muted-foreground">{r.duration_seconds ? `${r.duration_seconds}s` : "—"}</td>
-                        <td className="py-2 px-2 font-bold text-primary">{r.price_credits}</td>
-                        <td className="py-2 px-2 text-muted-foreground">{r.price_unit === "per_second" ? "/ثانية" : "/توليد"}</td>
-                        <td className="py-2 px-2">{statusBadge(r.status)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <PricingCatalog onDataChanged={fetchData} />
           )}
 
           {/* Credit Ledger */}
