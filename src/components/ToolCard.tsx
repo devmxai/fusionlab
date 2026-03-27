@@ -166,11 +166,13 @@ const ToolCard = ({
   index = 0,
   override,
   sectionSlug,
-  eagerLoad = false,
-  highPriority = false,
+  eagerLoad,
+  highPriority,
 }: ToolCardProps) => {
   const [imgLoaded, setImgLoaded] = useState(false);
   const navigate = useNavigate();
+  const shouldEagerLoad = eagerLoad ?? index < 12;
+  const shouldHighPriority = highPriority ?? index < 4;
 
   // Priority: 1) CMS override image, 2) section-specific card image, 3) default tool image
   const sectionKey = sectionSlug ? `${sectionSlug}/${tool.id}` : "";
@@ -207,9 +209,9 @@ const ToolCard = ({
             src={imgSrc}
             alt={title}
             className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
-            loading={eagerLoad ? "eager" : "lazy"}
+            loading={shouldEagerLoad ? "eager" : "lazy"}
             decoding="async"
-            fetchPriority={highPriority ? "high" : "auto"}
+            fetchPriority={shouldHighPriority ? "high" : "auto"}
             onLoad={() => setImgLoaded(true)}
             onError={() => setImgLoaded(true)}
           />
