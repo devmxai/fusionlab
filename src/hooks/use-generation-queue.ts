@@ -39,6 +39,14 @@ export interface GenerationJob {
 }
 
 type PollProgressCallback = (progress: number, phaseLabel: string, state: string) => void;
+type PollSuccessCallback = (resultUrls: string[], job: GenerationJob) => void;
+type PollFailCallback = (error: string, job: GenerationJob) => void;
+
+interface JobPollListeners {
+  success: Set<PollSuccessCallback>;
+  fail: Set<PollFailCallback>;
+  progress: Set<PollProgressCallback>;
+}
 
 /**
  * Smooth simulated progress
@@ -100,6 +108,7 @@ export function useGenerationQueue() {
   const { user } = useAuth();
   const [jobs, setJobs] = useState<GenerationJob[]>([]);
   const pollingRefs = useRef<Map<string, boolean>>(new Map());
+  const pollListenersRef = useRef<Map<string, JobPollListeners>>(new Map());
 
   // Fetch jobs from DB (include recent completed for "unseen" tracking)
   const fetchJobs = useCallback(async () => {
@@ -187,6 +196,63 @@ export function useGenerationQueue() {
     }
   }, [updateJobDB]);
 
+  const registerPollListeners = useCallback((
+    jobId: string,
+    onSuccess?: PollSuccessCallback,
+    onFail?: PollFailCallback,
+    onProgress?: PollProgressCallback,
+  ) => {
+    if (!onSuccess && !onFail && !onProgress) return;
+
+    const existing = pollListenersRef.current.get(jobId) || {
+      success: new Set<PollSuccessCallback>(),
+      fail: new Set<PollFailCallback>(),
+      progress: new Set<PollProgressCallback>(),
+    };
+
+    if (onSuccess) existing.success.add(onSuccess);
+    if (onFail) existing.fail.add(onFail);
+    if (onProgress) existing.progress.add(onProgress);
+
+    pollListenersRef.current.set(jobId, existing);
+  }, []);
+
+  const emitPollProgress = useCallback((jobId: string, progress: number, phaseLabel: string, state: string) => {
+    const listeners = pollListenersRef.current.get(jobId);
+    if (!listeners) return;
+    listeners.progress.forEach((cb) => {
+      try {
+        cb(progress, phaseLabel, state);
+      } catch (e) {
+        console.warn("poll progress listener failed", e);
+      }
+    });
+  }, []);
+
+  const emitPollSuccess = useCallback((jobId: string, urls: string[], job: GenerationJob) => {
+    const listeners = pollListenersRef.current.get(jobId);
+    if (!listeners) return;
+    listeners.success.forEach((cb) => {
+      try {
+        cb(urls, job);
+      } catch (e) {
+        console.warn("poll success listener failed", e);
+      }
+    });
+  }, []);
+
+  const emitPollFail = useCallback((jobId: string, message: string, job: GenerationJob) => {
+    const listeners = pollListenersRef.current.get(jobId);
+    if (!listeners) return;
+    listeners.fail.forEach((cb) => {
+      try {
+        cb(message, job);
+      } catch (e) {
+        console.warn("poll fail listener failed", e);
+      }
+    });
+  }, []);
+
   // Mark a job as seen AND move to library (generations table)
   const markJobSeen = useCallback(async (jobId: string) => {
     const now = new Date().toISOString();
@@ -226,6 +292,7 @@ export function useGenerationQueue() {
     onProgress?: PollProgressCallback,
   ) => {
     if (!job.task_id) return;
+    registerPollListeners(job.id, onSuccess, onFail, onProgress);
     if (pollingRefs.current.get(job.id)) return;
     pollingRefs.current.set(job.id, true);
 
@@ -247,7 +314,7 @@ export function useGenerationQueue() {
         progress: rounded,
         metadata: { ...job.metadata, phaseLabel: phaseLabels[phase] || phase },
       });
-      onProgress?.(rounded, phaseLabels[phase] || phase, latestState);
+      emitPollProgress(job.id, rounded, phaseLabels[phase] || phase, latestState);
     }, 800);
 
     try {
@@ -259,7 +326,7 @@ export function useGenerationQueue() {
           const { progress: simProg } = smooth.update(prog, state);
           const rounded = Math.round(simProg);
           updateJobDB(job.id, { progress: rounded, status: "running" });
-          onProgress?.(rounded, phaseLabels[state] || state, state);
+          emitPollProgress(job.id, rounded, phaseLabels[state] || state, state);
         },
         180,
         3000,
@@ -296,7 +363,7 @@ export function useGenerationQueue() {
           completed_at: now,
           metadata: { ...job.metadata, phaseLabel: phaseLabels.finalizing },
         });
-        onProgress?.(100, phaseLabels.finalizing, "success");
+        emitPollProgress(job.id, 100, phaseLabels.finalizing, "success");
 
         if (!hasExternalHandlers) {
           try {
@@ -311,7 +378,7 @@ export function useGenerationQueue() {
           }
         }
 
-        onSuccess?.(urls, job);
+        emitPollSuccess(job.id, urls, job);
       } else {
         throw new Error("No result returned");
       }
@@ -327,7 +394,7 @@ export function useGenerationQueue() {
         updated_at: now,
         completed_at: now,
       });
-      onProgress?.(Math.max(Math.round(job.progress || 0), 0), msg, "fail");
+      emitPollProgress(job.id, Math.max(Math.round(job.progress || 0), 0), msg, "fail");
 
       if (!hasExternalHandlers) {
         try {
@@ -341,11 +408,20 @@ export function useGenerationQueue() {
         }
       }
 
-      onFail?.(msg, job);
+      emitPollFail(job.id, msg, job);
     } finally {
       pollingRefs.current.delete(job.id);
+      pollListenersRef.current.delete(job.id);
     }
-  }, [updateJobLocal, updateJobDB, finalizeJobServer]);
+  }, [
+    updateJobLocal,
+    updateJobDB,
+    finalizeJobServer,
+    registerPollListeners,
+    emitPollProgress,
+    emitPollSuccess,
+    emitPollFail,
+  ]);
 
   // Fetch on mount
   useEffect(() => {

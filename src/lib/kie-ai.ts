@@ -93,6 +93,14 @@ export async function getFluxKontextTaskStatus(taskId: string): Promise<TaskResu
 
 export type ApiType = "standard" | "veo" | "flux-kontext";
 
+type TerminalError = Error & { terminal?: boolean };
+
+function createTerminalError(message: string): TerminalError {
+  const err = new Error(message) as TerminalError;
+  err.terminal = true;
+  return err;
+}
+
 export async function pollTask(
   taskId: string,
   onProgress?: (state: string, progress?: number) => void,
@@ -117,11 +125,14 @@ export async function pollTask(
       onProgress?.(result.state || "waiting", result.progress);
 
       if (result.state === "success") return result;
-      if (result.state === "fail") throw new Error(result.failMsg || "Task failed");
+      if (result.state === "fail") {
+        throw createTerminalError(result.failMsg || "Task failed");
+      }
     } catch (err) {
-      // If it's a definitive failure (not a transient polling error), rethrow
-      const msg = err instanceof Error ? err.message : "";
-      if (msg.includes("Task failed") || msg.includes("fail")) throw err;
+      // If it's a definitive failure (provider terminal state), rethrow immediately
+      if (err instanceof Error && (err as TerminalError).terminal) throw err;
+
+      const msg = err instanceof Error ? err.message : "Unknown polling error";
       // Transient error — log and continue polling
       console.warn(`Poll attempt ${i + 1} failed:`, msg);
     }

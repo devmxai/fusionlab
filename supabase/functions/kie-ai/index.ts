@@ -15,6 +15,119 @@ const BILLABLE_ACTIONS = new Set(["create", "veo-create", "flux-kontext-create"]
 // Non-billable actions (upload, status, credits) remain accessible to authenticated users
 const INTERNAL_SECRET = "x-internal-caller";
 
+function normalizeProviderState(taskData: Record<string, any>): string {
+  const successFlag = taskData?.successFlag ?? taskData?.response?.successFlag;
+  if (successFlag === 1) return "success";
+  if (successFlag === 2 || successFlag === 3) return "fail";
+
+  const raw = String(
+    taskData?.status
+      ?? taskData?.state
+      ?? taskData?.response?.status
+      ?? taskData?.response?.state
+      ?? ""
+  ).toLowerCase();
+
+  if (["success", "succeeded", "completed", "done", "finish", "finished"].includes(raw)) return "success";
+  if (["fail", "failed", "error", "cancelled", "canceled", "timeout", "timed_out"].includes(raw)) return "fail";
+  if (["processing", "running", "in_progress", "generating"].includes(raw)) return "generating";
+  if (["queuing", "queued", "queue", "submitted", "pending"].includes(raw)) return "queuing";
+  return "waiting";
+}
+
+function extractResultUrls(taskData: Record<string, any>): string[] {
+  const out = new Set<string>();
+
+  const tryParseJsonString = (value: unknown): boolean => {
+    if (typeof value !== "string") return false;
+    const trimmed = value.trim();
+    if (!trimmed || (!trimmed.startsWith("{") && !trimmed.startsWith("["))) return false;
+    try {
+      const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+      collect(parsed?.resultUrls);
+      collect(parsed?.resultImageUrls);
+      collect(parsed?.resultImageUrl);
+      collect(parsed?.resultVideoUrl);
+      collect(parsed?.videoUrl);
+      collect(parsed?.resultUrl);
+      collect(parsed?.output);
+      collect(parsed?.outputUrl);
+      collect(parsed?.url);
+      collect(parsed);
+      return true;
+    } catch {
+      // ignore invalid JSON-like strings
+      return false;
+    }
+  };
+
+  const collect = (value: unknown) => {
+    if (!value) return;
+    if (typeof value === "string") {
+      const parsed = tryParseJsonString(value);
+      if (parsed) return;
+      if (value.trim()) out.add(value.trim());
+      return;
+    }
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (typeof item === "string" && item.trim()) {
+          out.add(item.trim());
+        } else if (item && typeof item === "object") {
+          const obj = item as Record<string, unknown>;
+          const candidate = [obj.url, obj.imageUrl, obj.videoUrl, obj.resultUrl].find((x) => typeof x === "string");
+          if (typeof candidate === "string" && candidate.trim()) out.add(candidate.trim());
+        }
+      }
+      return;
+    }
+    if (typeof value === "object") {
+      const obj = value as Record<string, unknown>;
+      const nested = [obj.url, obj.imageUrl, obj.videoUrl, obj.resultUrl];
+      nested.forEach(collect);
+    }
+  };
+
+  const candidates = [
+    taskData?.response?.resultUrls,
+    taskData?.response?.resultJson,
+    taskData?.response?.resultImageUrls,
+    taskData?.response?.images,
+    taskData?.response?.output,
+    taskData?.response?.urls,
+    taskData?.resultJson,
+    taskData?.resultUrls,
+    taskData?.resultImageUrls,
+    taskData?.images,
+    taskData?.output,
+    taskData?.response?.resultImageUrl,
+    taskData?.response?.originImageUrl,
+    taskData?.response?.resultVideoUrl,
+    taskData?.response?.videoUrl,
+    taskData?.response?.resultUrl,
+    taskData?.response?.outputUrl,
+    taskData?.resultImageUrl,
+    taskData?.originImageUrl,
+    taskData?.resultVideoUrl,
+    taskData?.videoUrl,
+    taskData?.resultUrl,
+    taskData?.outputUrl,
+  ];
+
+  candidates.forEach(collect);
+  return Array.from(out);
+}
+
+function extractFailMessage(taskData: Record<string, any>, fallback: string): string {
+  const msg = taskData?.response?.errorMessage
+    || taskData?.response?.message
+    || taskData?.errorMessage
+    || taskData?.failMsg
+    || taskData?.msg
+    || fallback;
+  return String(msg);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -140,17 +253,13 @@ serve(async (req) => {
       const data = await safeJson(response, "Veo status");
       if (data?.code === 200 && data?.data) {
         const veoData = data.data;
-        const successFlag = veoData.successFlag ?? veoData.response?.successFlag;
-        let state: string;
-        if (successFlag === 1) state = "success";
-        else if (successFlag === 2 || successFlag === 3) state = "fail";
-        else state = "generating";
+        const state = normalizeProviderState(veoData);
         const result: Record<string, unknown> = { taskId: veoData.taskId, state };
-        if (state === "success" && veoData.response) {
-          result.resultJson = JSON.stringify({ resultUrls: veoData.response.resultUrls || [] });
+        if (state === "success") {
+          result.resultJson = JSON.stringify({ resultUrls: extractResultUrls(veoData) });
         }
         if (state === "fail") {
-          result.failMsg = veoData.response?.errorMessage || veoData.errorMessage || "Veo generation failed";
+          result.failMsg = extractFailMessage(veoData, "Veo generation failed");
         }
         return jsonRes({ code: 200, data: result });
       }
@@ -191,18 +300,13 @@ serve(async (req) => {
       const data = await safeJson(response, "Flux Kontext status");
       if (data?.code === 200 && data?.data) {
         const fkData = data.data;
-        const successFlag = fkData.successFlag ?? fkData.response?.successFlag;
-        let state: string;
-        if (successFlag === 1) state = "success";
-        else if (successFlag === 2 || successFlag === 3) state = "fail";
-        else state = "generating";
+        const state = normalizeProviderState(fkData);
         const result: Record<string, unknown> = { taskId: fkData.taskId, state };
-        if (state === "success" && fkData.response) {
-          const resultUrl = fkData.response.resultImageUrl || fkData.response.originImageUrl;
-          result.resultJson = JSON.stringify({ resultUrls: resultUrl ? [resultUrl] : [] });
+        if (state === "success") {
+          result.resultJson = JSON.stringify({ resultUrls: extractResultUrls(fkData) });
         }
         if (state === "fail") {
-          result.failMsg = fkData.response?.errorMessage || fkData.errorMessage || "Flux Kontext generation failed";
+          result.failMsg = extractFailMessage(fkData, "Flux Kontext generation failed");
         }
         return jsonRes({ code: 200, data: result });
       }
@@ -234,36 +338,24 @@ serve(async (req) => {
       // Map raw KIE.AI response to normalized TaskResult format
       if (data?.code === 200 && data?.data) {
         const taskData = data.data;
-        const successFlag = taskData.successFlag ?? taskData.response?.successFlag;
-        let state: string;
-        if (successFlag === 1) state = "success";
-        else if (successFlag === 2 || successFlag === 3) state = "fail";
-        else if (taskData.status === "completed" || taskData.status === "success") state = "success";
-        else if (taskData.status === "failed" || taskData.status === "fail") state = "fail";
-        else if (taskData.status === "processing" || taskData.status === "running" || taskData.status === "in_progress") state = "generating";
-        else if (taskData.status === "queuing" || taskData.status === "queued") state = "queuing";
-        else state = taskData.state || "waiting";
+        const state = normalizeProviderState(taskData);
+        const resultUrls = extractResultUrls(taskData);
+        const rawStatus = taskData?.status ?? taskData?.state ?? taskData?.response?.status ?? taskData?.response?.state;
 
         const result: Record<string, unknown> = {
           taskId: taskData.taskId,
           state,
-          progress: taskData.progress ?? taskData.percentage ?? undefined,
+          progress: taskData.progress ?? taskData.percentage ?? taskData?.response?.progress ?? undefined,
         };
 
         if (state === "success") {
-          const resultUrls = taskData.response?.resultUrls
-            || taskData.response?.resultImageUrls
-            || taskData.resultUrls
-            || [];
-          const originUrl = taskData.response?.originImageUrl || taskData.response?.resultImageUrl;
-          const finalUrls = resultUrls.length > 0 ? resultUrls : (originUrl ? [originUrl] : []);
-          result.resultJson = JSON.stringify({ resultUrls: finalUrls });
+          result.resultJson = JSON.stringify({ resultUrls });
         }
         if (state === "fail") {
-          result.failMsg = taskData.response?.errorMessage || taskData.errorMessage || taskData.failMsg || "Task failed";
+          result.failMsg = extractFailMessage(taskData, "Task failed");
         }
 
-        console.log("Task status mapped:", JSON.stringify({ taskId, state, successFlag, rawStatus: taskData.status }));
+        console.log("Task status mapped:", JSON.stringify({ taskId, state, rawStatus, resultUrlsCount: resultUrls.length }));
         return jsonRes({ code: 200, data: result });
       }
       return jsonRes(data);
