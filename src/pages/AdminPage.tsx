@@ -452,38 +452,7 @@ const AdminPage = () => {
 
           {/* Users */}
           {tab === "users" && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <h2 className="text-lg font-bold text-foreground">المستخدمون</h2>
-                <span className="text-xs text-muted-foreground">{users.length}</span>
-              </div>
-              <div className="relative">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="بحث بالإيميل أو الاسم..." className="pr-10 bg-card text-xs" dir="ltr" />
-              </div>
-              {filteredUsers.map((u) => (
-                <div key={u.id} className="bg-card rounded-xl border border-border/50 p-3 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-xs font-bold text-primary">
-                    {(u.full_name || u.email)?.[0]?.toUpperCase() || "?"}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-foreground truncate">{u.full_name || "بدون اسم"}</p>
-                    <p className="text-[10px] text-muted-foreground truncate" dir="ltr">{u.email}</p>
-                    <p className="text-[9px] text-muted-foreground">{formatDate(u.created_at)}</p>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button onClick={() => setGrantModal({ userId: u.id, email: u.email })}
-                      className="px-2 py-1 rounded-lg bg-primary/15 text-primary text-[10px] font-bold hover:bg-primary/25 transition-colors" title="منح كريدت">
-                      <Coins className="w-3 h-3" />
-                    </button>
-                    <button onClick={() => { setSubModal({ userId: u.id, email: u.email }); setSelectedPlanId(plans[0]?.id || ""); }}
-                      className="px-2 py-1 rounded-lg bg-secondary text-foreground text-[10px] font-bold hover:bg-secondary/80 transition-colors" title="تفعيل اشتراك">
-                      <Crown className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <UserManagement plans={plans} onDataRefresh={fetchData} />
           )}
 
           {/* Roles Management (Super Admin Only) */}
