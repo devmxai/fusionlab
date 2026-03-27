@@ -355,7 +355,7 @@ const AdminPage = () => {
                   </button>
                 </div>
                 <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-                  {tabs.map((t) => (
+                  {visibleTabs.map((t) => (
                     <button key={t.id} onClick={() => { setTab(t.id); setSidebarOpen(false); }}
                       className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors ${
                         tab === t.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
