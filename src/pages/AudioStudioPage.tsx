@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import {
-  ArrowRight,
+  ArrowLeft,
   Menu,
   X,
   Play,
@@ -506,31 +506,38 @@ const AudioStudioPage = () => {
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden" dir="rtl">
       {/* Header */}
       <header className="shrink-0 bg-nav-bg/80 backdrop-blur-xl border-b border-border/50 px-4 py-3 z-50">
-        <div className="flex items-center gap-3 w-full">
-          <button onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowRight className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setLibrarySidebarOpen(true)}
-            className="w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors relative"
-          >
-            <Library className="w-4 h-4 text-muted-foreground" />
-            {audioLibrary.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[8px] font-bold flex items-center justify-center">
-                {audioLibrary.length}
-              </span>
-            )}
-          </button>
-          <h1 className="text-base font-bold text-foreground">استوديو الصوت</h1>
-          <div className="mr-auto flex items-center gap-2">
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium">
-              {selectedVoice.label}
-            </span>
+        <div className="flex items-center justify-between w-full">
+          {/* Right side (start in RTL): Voice settings sidebar */}
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setSidebarOpen(true)}
               className="w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors lg:hidden"
             >
               <Menu className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium">
+              {selectedVoice.label}
+            </span>
+          </div>
+
+          {/* Center: Title */}
+          <h1 className="text-base font-bold text-foreground">استوديو الصوت</h1>
+
+          {/* Left side (end in RTL): Library + Back */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setLibrarySidebarOpen(true)}
+              className="w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors relative"
+            >
+              <Library className="w-4 h-4 text-muted-foreground" />
+              {audioLibrary.length > 0 && (
+                <span className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[8px] font-bold flex items-center justify-center">
+                  {audioLibrary.length}
+                </span>
+              )}
+            </button>
+            <button onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="w-5 h-5" />
             </button>
           </div>
         </div>
