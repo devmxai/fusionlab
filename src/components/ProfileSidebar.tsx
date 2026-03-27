@@ -416,7 +416,10 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
                     transition={{ duration: 0.2, delay: i * 0.02 }}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => setViewerItem(gen)}
+                    onClick={() => {
+                      onClose();
+                      setTimeout(() => setViewerItem(gen), 200);
+                    }}
                     className="break-inside-avoid mb-[6px] rounded-xl overflow-hidden bg-secondary/30 border border-border/20 cursor-pointer relative group"
                   >
                     {isImage ? (
