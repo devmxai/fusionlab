@@ -1,6 +1,7 @@
 /**
  * Hook: manages generation queue from DB with realtime updates.
  * Jobs are created SERVER-SIDE in start-generation — this hook only reads and polls.
+ * v2 — stabilized hook count for HMR compatibility.
  */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
