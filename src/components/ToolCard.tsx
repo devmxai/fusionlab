@@ -39,6 +39,16 @@ interface ToolCardProps {
   override?: ToolCardOverride;
 }
 
+const categoryStudioMap: Record<string, string> = {
+  "صور": "/studio/images",
+  "فيديو": "/studio/video",
+  "ريمكس": "/studio/remix",
+  "صوت": "/studio/audio",
+  "افتار": "/studio/avatar",
+  "حذف الخلفية": "/studio/remove-bg",
+  "رفع الجودة": "/studio/upscale",
+};
+
 const ToolCard = ({ tool, index = 0, override }: ToolCardProps) => {
   const [imgLoaded, setImgLoaded] = useState(false);
   const navigate = useNavigate();
@@ -50,10 +60,19 @@ const ToolCard = ({ tool, index = 0, override }: ToolCardProps) => {
     setImgLoaded(false);
   }, [imgSrc]);
 
+  const handleClick = () => {
+    const studioRoute = categoryStudioMap[tool.category];
+    if (studioRoute) {
+      navigate(`${studioRoute}?model=${encodeURIComponent(tool.id)}`);
+    } else {
+      navigate(`/tool/${tool.id}`);
+    }
+  };
+
   return (
     <div>
       <div
-        onClick={() => navigate(`/tool/${tool.id}`)}
+        onClick={handleClick}
         className="group cursor-pointer rounded-xl overflow-hidden bg-card hover:bg-card-hover transition-all duration-300 border border-border/50 hover:border-primary/30 hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)]"
       >
         <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
