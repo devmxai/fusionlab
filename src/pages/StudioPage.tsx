@@ -679,7 +679,7 @@ const StudioPage = () => {
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden" dir="rtl">
       {/* ── Header / App Bar ── */}
       <header ref={headerRef} className="relative shrink-0 bg-card/90 backdrop-blur-xl border-b border-border/30 z-[120] rounded-b-2xl shadow-lg">
-        <div className="flex items-center gap-2 px-3 py-2.5 max-w-3xl mx-auto flex-row-reverse relative">
+        <div className="flex items-center gap-2 px-3 py-2.5 w-full flex-row-reverse relative">
           {/* Back button - pinned to left edge */}
           <button
             onClick={() => navigate("/")}
@@ -906,7 +906,7 @@ const StudioPage = () => {
       {/* ── Center area ── */}
       <div className="relative z-0 flex-1 flex flex-col items-center justify-center px-4 min-h-0">
         {resultUrls.length > 1 && !loading && (
-          <div className="w-full max-w-3xl overflow-x-auto flex gap-2 mb-4 scrollbar-hide">
+          <div className="w-full overflow-x-auto flex gap-2 mb-4 scrollbar-hide">
             {resultUrls.slice(1).map((url, i) => (
               <div key={i} className="shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-border/50 cursor-pointer hover:border-primary/50 transition-colors"
                 onClick={() => openViewer(url)}>
@@ -962,7 +962,7 @@ const StudioPage = () => {
 
       {/* ── Bottom bar ── */}
       <div className="shrink-0 bg-card/90 backdrop-blur-xl border-t border-border/30 px-4 py-3 z-50">
-        <div className="max-w-3xl mx-auto space-y-2">
+        <div className="w-full space-y-2">
           {/* Hidden file inputs */}
           <input ref={fileInputRef} type="file" accept="image/*" multiple={!isImageOnlyTool} className="hidden" onChange={handleImageUpload} />
           <input ref={remixSlotInputRef} type="file" accept="image/*" className="hidden" onChange={handleRemixSlotUpload} />

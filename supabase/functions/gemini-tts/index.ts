@@ -86,80 +86,12 @@ function validateOfficialVoice(voiceName: string): string | null {
   return null;
 }
 
-const INLINE_TAG_REGEX = /\[(short pause|medium pause|long pause|whispering|shouting|sarcasm|laughing|sigh|fast|extremely fast|robotic|uhm|gasp|groan|scared|curious|bored)\]/gi;
-
-const TAG_EFFECTS: Record<string, string> = {
-  "short pause": "نفّذ وقفة قصيرة واضحة",
-  "medium pause": "نفّذ وقفة متوسطة ومسموعة",
-  "long pause": "نفّذ وقفة طويلة مع سكون واضح",
-  "whispering": "حوّل الأداء إلى همس واضح وناعم",
-  "shouting": "ارفع شدة الصوت إلى صراخ مضبوط بدون تشويه",
-  "sarcasm": "أدِّ الجملة بسخرية خفيفة ومسموعة",
-  "laughing": "أضف ضحكة طبيعية قصيرة ومسموعة",
-  "sigh": "أضف تنهيدة قصيرة طبيعية",
-  "fast": "زد سرعة الإلقاء بشكل ملحوظ",
-  "extremely fast": "اجعل الإلقاء سريعًا جدًا مع بقاء النطق مفهومًا",
-  "robotic": "اجعل الأداء آليًا بشكل مقصود",
-  "uhm": "أضف ترددًا صوتيًا خفيفًا مثل uhm",
-  "gasp": "أضف شهقة قصيرة قبل العبارة",
-  "groan": "أضف أنينًا خفيفًا قبل العبارة",
-  "scared": "حوّل الأداء إلى نبرة خوف واضحة",
-  "curious": "حوّل الأداء إلى نبرة فضول واضحة",
-  "bored": "حوّل الأداء إلى نبرة ملل خفيفة",
-};
+// The Gemini TTS API uses natural language prompting, NOT bracket tags.
+// Stage directions like *يضحك* and pauses via "..." are embedded inline
+// in the transcript and interpreted naturally by the model.
 
 function normalizeText(value: string): string {
   return value.replace(/\s+/g, " ").trim();
-}
-
-function extractTagDirectives(inputText: string): { spokenText: string; directives: string[] } {
-  const matcher = new RegExp(INLINE_TAG_REGEX.source, "gi");
-  const cleanReplacer = new RegExp(INLINE_TAG_REGEX.source, "gi");
-
-  const matches: Array<{ raw: string; tag: string; start: number; end: number }> = [];
-  let match: RegExpExecArray | null = null;
-
-  while ((match = matcher.exec(inputText)) !== null) {
-    matches.push({
-      raw: match[0],
-      tag: (match[1] || "").toLowerCase(),
-      start: match.index,
-      end: match.index + match[0].length,
-    });
-  }
-
-  const spokenText = normalizeText(inputText.replace(cleanReplacer, " "));
-
-  if (!matches.length) {
-    return { spokenText, directives: [] };
-  }
-
-  const directives: string[] = [];
-
-  for (let i = 0; i < matches.length; i++) {
-    const current = matches[i];
-    const previous = matches[i - 1];
-    const next = matches[i + 1];
-
-    const betweenTagsText = normalizeText(
-      inputText
-        .slice(current.end, next ? next.start : inputText.length)
-        .replace(new RegExp(INLINE_TAG_REGEX.source, "gi"), " ")
-    );
-
-    const beforeTagText = normalizeText(
-      inputText
-        .slice(previous ? previous.end : 0, current.start)
-        .replace(new RegExp(INLINE_TAG_REGEX.source, "gi"), " ")
-    );
-
-    const targetPhrase = betweenTagsText || beforeTagText || "أقرب عبارة في النص";
-    const effect = TAG_EFFECTS[current.tag] || "طبّق تأثير الأداء المحلي بدقة";
-
-    directives.push(`- ${current.raw}: ${effect} على العبارة "${targetPhrase}" ثم ارجع للنبرة الأساسية.`);
-  }
-
-  return { spokenText, directives };
 }
 
 async function handleTTSRequest(
@@ -194,38 +126,47 @@ async function handleTTSRequest(
     );
   }
 
-  const { spokenText, directives: tagDirectives } = extractTagDirectives(text);
+  const spokenText = normalizeText(text);
 
   if (!spokenText) {
     return new Response(
-      JSON.stringify({ error: "Text contains tags only. Please add spoken text." }),
+      JSON.stringify({ error: "Text is empty." }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  const directionParts: string[] = [];
-  directionParts.push("تحدث بشكل طبيعي تماماً كمتحدث عربي أصلي مع تعبيرات عاطفية واقعية ووقفات طبيعية.");
-  directionParts.push("تحدث باللغة العربية فقط بنطق عربي أصيل وطبيعي.");
-  directionParts.push("لا تنطق علامات التحكم حرفياً؛ نفّذها كتعليمات أداء فقط.");
+  // Build prompt using Director's Notes pattern (official Gemini TTS approach)
+  // Stage directions like *يضحك*, *بسخرية*, pauses via "..." are kept inline
+  const promptParts: string[] = [];
+  promptParts.push("# AUDIO PROFILE");
+  promptParts.push("متحدث عربي أصلي بأداء طبيعي وتعبيرات عاطفية واقعية.");
+  
+  promptParts.push("\n## DIRECTOR'S NOTES");
+  promptParts.push("اللغة: العربية فقط بنطق أصيل وطبيعي.");
 
   if (dialectHint) {
-    directionParts.push(`اللهجة المطلوبة: ${dialectHint}.`);
+    promptParts.push(`اللهجة: ${dialectHint}.`);
   } else {
-    directionParts.push("تحدث بلهجة عراقية عامية طبيعية.");
+    promptParts.push("اللهجة: عراقية عامية طبيعية.");
   }
 
-  if (emotionHint) directionParts.push(`المشاعر: ${emotionHint}.`);
-  if (toneHint) directionParts.push(`النبرة: ${toneHint}.`);
-  if (styleInstruction) directionParts.push(`أسلوب الأداء: ${styleInstruction}`);
-  if (stability < 0.5) directionParts.push("اسمح بتنوع صوتي أكثر وتعبير أقوى.");
-  if (stability > 0.8) directionParts.push("حافظ على نبرة صوت ثابتة ومتسقة.");
+  if (styleInstruction) promptParts.push(`الأسلوب: ${styleInstruction}`);
+  if (emotionHint) promptParts.push(`المشاعر: ${emotionHint}.`);
+  if (toneHint) promptParts.push(`النبرة: ${toneHint}.`);
+  
+  if (speakingRate > 1.3) promptParts.push("الإيقاع: سريع ونشيط.");
+  else if (speakingRate < 0.8) promptParts.push("الإيقاع: بطيء ومتأنٍ.");
+  
+  if (stability < 0.5) promptParts.push("التنوع: اسمح بتنوع صوتي أكثر وتعبير عاطفي أقوى.");
+  if (stability > 0.8) promptParts.push("الثبات: حافظ على نبرة صوت ثابتة ومتسقة.");
 
-  if (tagDirectives.length) {
-    directionParts.push("التزم بتوجيهات الأداء المحلية التالية بدقة وبشكل مسموع دون نطق أسماء العلامات:");
-    directionParts.push(...tagDirectives);
-  }
+  // Inline stage directions guidance
+  promptParts.push("\nالنص يحتوي على توجيهات أداء مضمنة بين نجمتين مثل *يضحك* أو *بسخرية*. نفّذها كأداء صوتي حقيقي (ضحك فعلي، نبرة ساخرة، همس حقيقي) ولا تنطق الكلمات بين النجمتين. النقاط المتتالية ... تعني وقفة صامتة.");
 
-  const fullPrompt = directionParts.join("\n") + "\n\n---\n\n" + spokenText;
+  promptParts.push("\n## TRANSCRIPT");
+  promptParts.push(spokenText);
+
+  const fullPrompt = promptParts.join("\n");
   const contents = [{ parts: [{ text: fullPrompt }] }];
 
   const requestBody = {
@@ -379,25 +320,24 @@ serve(async (req) => {
       }
 
       const previewRawText = previewText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟";
-      const { spokenText: previewSpokenText, directives: previewTagDirectives } = extractTagDirectives(previewRawText);
 
       const previewParts: string[] = [];
-      previewParts.push("تحدث بشكل طبيعي تماماً كمتحدث عربي أصلي مع تعبيرات عاطفية واقعية.");
-      previewParts.push("تحدث باللغة العربية فقط بنطق عربي أصيل وطبيعي.");
-      previewParts.push("لا تنطق علامات التحكم حرفياً؛ نفّذها كتعليمات أداء فقط.");
-      if (prevDialect) previewParts.push(`اللهجة المطلوبة: ${prevDialect}.`);
-      else previewParts.push("تحدث بلهجة عراقية عامية طبيعية.");
+      previewParts.push("# AUDIO PROFILE");
+      previewParts.push("متحدث عربي أصلي بأداء طبيعي.");
+      previewParts.push("\n## DIRECTOR'S NOTES");
+      previewParts.push("اللغة: العربية فقط بنطق أصيل.");
+      if (prevDialect) previewParts.push(`اللهجة: ${prevDialect}.`);
+      else previewParts.push("اللهجة: عراقية عامية طبيعية.");
+      if (prevStyle) previewParts.push(`الأسلوب: ${prevStyle}`);
       if (prevEmotion) previewParts.push(`المشاعر: ${prevEmotion}.`);
       if (prevTone) previewParts.push(`النبرة: ${prevTone}.`);
-      if (prevStyle) previewParts.push(`أسلوب الأداء: ${prevStyle}`);
-      if (prevStability < 0.5) previewParts.push("اسمح بتنوع صوتي أكثر.");
-      if (prevStability > 0.8) previewParts.push("حافظ على نبرة صوت ثابتة.");
-      if (previewTagDirectives.length) {
-        previewParts.push("التزم بتوجيهات الأداء المحلية التالية بدقة وبشكل مسموع دون نطق أسماء العلامات:");
-        previewParts.push(...previewTagDirectives);
-      }
+      if (prevStability < 0.5) previewParts.push("التنوع: تعبير عاطفي أقوى.");
+      if (prevStability > 0.8) previewParts.push("الثبات: نبرة ثابتة.");
 
-      const previewPrompt = previewParts.join("\n") + "\n\n---\n\n" + (previewSpokenText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟");
+      previewParts.push("\n## TRANSCRIPT");
+      previewParts.push(normalizeText(previewRawText));
+
+      const previewPrompt = previewParts.join("\n");
 
       const requestBody = {
         contents: [{ parts: [{ text: previewPrompt }] }],
