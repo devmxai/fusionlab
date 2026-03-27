@@ -14,7 +14,7 @@ const HomeHeader = () => {
   return (
     <>
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/30">
-        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 max-w-[1400px] mx-auto">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-10 xl:px-16 py-3">
           {/* Right side (first in RTL): Profile */}
           {user ? (
             <CreditRingAvatar onClick={() => setProfileOpen(true)} />
