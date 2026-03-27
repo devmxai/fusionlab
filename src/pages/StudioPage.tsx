@@ -694,15 +694,8 @@ const StudioPage = () => {
           <div className="flex-1" />
 
           {/* Settings dropdowns - only show after model is selected */}
-          <AnimatePresence>
-            {selectedTool && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.25 }}
-                className="flex items-center gap-2"
-              >
+          {selectedTool && (
+              <div className="flex items-center gap-2">
                 {/* Upscale Factor */}
                 {showUpscale && (
                   <div className="relative shrink-0">
