@@ -44,12 +44,14 @@ interface CardEntry {
   image_url: string | null;
   title: string | null;
   description: string | null;
+  updated_at: string | null;
 }
 
 interface CardOverride {
   image_url: string | null;
   title: string | null;
   description: string | null;
+  updated_at: string | null;
 }
 
 const copyPrompt = (prompt: string | null) => {
@@ -112,7 +114,7 @@ const Index = () => {
       supabase.from("model_card_tabs").select("*").eq("is_visible", true).order("sort_order"),
       supabase
         .from("model_cards")
-        .select("tool_id, display_section, sort_order, is_visible, image_url, title, description")
+        .select("tool_id, display_section, sort_order, is_visible, image_url, title, description, updated_at")
         .eq("is_visible", true)
         .order("sort_order"),
     ]).then(([imgRes, vidRes, tabsRes, cardsRes]) => {
@@ -133,11 +135,19 @@ const Index = () => {
             map[section].push(tool);
           }
 
-          overrides[card.tool_id] = {
+          const overrideValue: CardOverride = {
             image_url: card.image_url ?? null,
             title: card.title ?? null,
             description: card.description ?? null,
+            updated_at: card.updated_at ?? null,
           };
+
+          const sectionKey = `${section}/${card.tool_id}`;
+          overrides[sectionKey] = overrideValue;
+
+          if (!overrides[card.tool_id]) {
+            overrides[card.tool_id] = overrideValue;
+          }
         }
       }
 
@@ -185,7 +195,13 @@ const Index = () => {
                     />
                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                       {tabTools.map((tool, i) => (
-                        <ToolCard key={`${tab.slug}-${tool.id}`} tool={tool} index={i} override={cardOverrides[tool.id]} sectionSlug={tab.slug} />
+                        <ToolCard
+                          key={`${tab.slug}-${tool.id}`}
+                          tool={tool}
+                          index={i}
+                          override={cardOverrides[`${tab.slug}/${tool.id}`] || cardOverrides[tool.id]}
+                          sectionSlug={tab.slug}
+                        />
                       ))}
                     </div>
                   </section>
