@@ -81,11 +81,9 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
     if (job.status === "succeeded" && !job.seen_at && job.result_url) {
       // Mark as seen immediately so it disappears from the list
       await markJobSeen(job.id);
-      // Close sidebar first, then show preview
+      setPreviewJob(job);
       setLocalOpen(false);
       onClose?.();
-      // Small delay to let sidebar close animation start
-      setTimeout(() => setPreviewJob(job), 200);
     } else if ((job.status === "failed" || job.status === "timed_out") && !job.seen_at) {
       await markJobSeen(job.id);
     }

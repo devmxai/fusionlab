@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -417,8 +418,8 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => {
+                      setViewerItem(gen);
                       onClose();
-                      setTimeout(() => setViewerItem(gen), 200);
                     }}
                     className="break-inside-avoid mb-[6px] rounded-xl overflow-hidden bg-secondary/30 border border-border/20 cursor-pointer relative group"
                   >
@@ -520,71 +521,72 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
       </AnimatePresence>
 
       {/* Fullscreen Media Viewer */}
-      <AnimatePresence>
-        {viewerItem && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/95 backdrop-blur-xl"
-            onClick={() => setViewerItem(null)}
-          >
-            {/* Media */}
+      {typeof window !== "undefined" && createPortal(
+        <AnimatePresence>
+          {viewerItem && (
             <motion.div
-              initial={{ scale: 0.85, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.85, opacity: 0 }}
-              transition={{ type: "spring" as const, damping: 25, stiffness: 300 }}
-              className="relative max-w-[92vw] max-h-[78vh] flex items-center justify-center"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background/95 backdrop-blur-xl"
+              onClick={() => setViewerItem(null)}
             >
-              {viewerItem.file_type?.startsWith("image") ? (
-                <img src={viewerItem.file_url} alt="" className="max-w-[92vw] max-h-[78vh] object-contain rounded-xl" />
-              ) : viewerItem.file_type?.startsWith("video") ? (
-                <video src={viewerItem.file_url} controls autoPlay playsInline className="max-w-[92vw] max-h-[78vh] rounded-2xl bg-black" style={{ objectFit: "contain" }} />
-              ) : (
-                <div className="p-8 rounded-2xl bg-card border border-border/30 text-center min-w-[280px]">
-                  <Music className="w-12 h-12 text-primary mx-auto mb-3" />
-                  <p className="text-xs text-foreground mb-3 font-medium">{viewerItem.tool_name || "صوت"}</p>
-                  <audio src={viewerItem.file_url} controls autoPlay className="w-full max-w-[280px]" ref={(el) => { audioRef.current = el; }} />
-                </div>
-              )}
-            </motion.div>
+              <motion.div
+                initial={{ scale: 0.85, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.85, opacity: 0 }}
+                transition={{ type: "spring" as const, damping: 25, stiffness: 300 }}
+                className="relative max-w-[92vw] max-h-[78vh] flex items-center justify-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {viewerItem.file_type?.startsWith("image") ? (
+                  <img src={viewerItem.file_url} alt="" className="max-w-[92vw] max-h-[78vh] object-contain rounded-xl" />
+                ) : viewerItem.file_type?.startsWith("video") ? (
+                  <video src={viewerItem.file_url} controls autoPlay playsInline className="max-w-[92vw] max-h-[78vh] rounded-2xl bg-black" style={{ objectFit: "contain" }} />
+                ) : (
+                  <div className="p-8 rounded-2xl bg-card border border-border/30 text-center min-w-[280px]">
+                    <Music className="w-12 h-12 text-primary mx-auto mb-3" />
+                    <p className="text-xs text-foreground mb-3 font-medium">{viewerItem.tool_name || "صوت"}</p>
+                    <audio src={viewerItem.file_url} controls autoPlay className="w-full max-w-[280px]" ref={(el) => { audioRef.current = el; }} />
+                  </div>
+                )}
+              </motion.div>
 
-            {/* Bottom bar */}
-            <div className="shrink-0 flex items-center justify-center gap-3 px-4 py-4 pb-6" onClick={(e) => e.stopPropagation()}>
-              <button
-                onClick={() => handleDownload(viewerItem.file_url, `${viewerItem.tool_name || "file"}-${viewerItem.id?.slice(0, 6)}`)}
-                className="h-10 px-5 rounded-full bg-primary flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors"
-              >
-                <Download className="w-4 h-4 text-primary-foreground" />
-                <span className="text-sm font-semibold text-primary-foreground">تحميل</span>
-              </button>
-              <button
-                onClick={async () => {
-                  if (!viewerItem?.id) return;
-                  const { error } = await supabase.from("generations").delete().eq("id", viewerItem.id);
-                  if (!error) {
-                    setGenerations((prev) => prev.filter((g) => g.id !== viewerItem.id));
-                    toast.success("تم حذف العنصر");
-                    setViewerItem(null);
-                  } else {
-                    toast.error("فشل في الحذف");
-                  }
-                }}
-                className="h-10 px-5 rounded-full bg-destructive/20 flex items-center justify-center gap-2 hover:bg-destructive/30 transition-colors border border-destructive/30"
-              >
-                <X className="w-4 h-4 text-destructive" />
-                <span className="text-sm font-semibold text-destructive">حذف</span>
-              </button>
-              <button onClick={() => setViewerItem(null)} className="h-10 px-5 rounded-full bg-secondary/80 flex items-center justify-center gap-2 hover:bg-secondary transition-colors">
-                <X className="w-4 h-4 text-foreground" />
-                <span className="text-sm font-semibold text-foreground">إغلاق</span>
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <div className="shrink-0 flex items-center justify-center gap-3 px-4 py-4 pb-6" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => handleDownload(viewerItem.file_url, `${viewerItem.tool_name || "file"}-${viewerItem.id?.slice(0, 6)}`)}
+                  className="h-10 px-5 rounded-full bg-primary flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors"
+                >
+                  <Download className="w-4 h-4 text-primary-foreground" />
+                  <span className="text-sm font-semibold text-primary-foreground">تحميل</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!viewerItem?.id) return;
+                    const { error } = await supabase.from("generations").delete().eq("id", viewerItem.id);
+                    if (!error) {
+                      setGenerations((prev) => prev.filter((g) => g.id !== viewerItem.id));
+                      toast.success("تم حذف العنصر");
+                      setViewerItem(null);
+                    } else {
+                      toast.error("فشل في الحذف");
+                    }
+                  }}
+                  className="h-10 px-5 rounded-full bg-destructive/20 flex items-center justify-center gap-2 hover:bg-destructive/30 transition-colors border border-destructive/30"
+                >
+                  <X className="w-4 h-4 text-destructive" />
+                  <span className="text-sm font-semibold text-destructive">حذف</span>
+                </button>
+                <button onClick={() => setViewerItem(null)} className="h-10 px-5 rounded-full bg-secondary/80 flex items-center justify-center gap-2 hover:bg-secondary transition-colors">
+                  <X className="w-4 h-4 text-foreground" />
+                  <span className="text-sm font-semibold text-foreground">إغلاق</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 };
