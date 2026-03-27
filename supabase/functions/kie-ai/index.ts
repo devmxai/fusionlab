@@ -229,7 +229,7 @@ serve(async (req) => {
       const response = await fetch(`${KIE_BASE}/jobs/recordInfo?taskId=${taskId}`, {
         headers: { Authorization: `Bearer ${KIE_API_KEY}` },
       });
-      const data = await response.json();
+      const data = await safeJson(response, "Task status");
       return jsonRes(data);
     }
 
