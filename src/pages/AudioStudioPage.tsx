@@ -446,7 +446,7 @@ const AudioStudioPage = () => {
 
       {/* Main Content - Desktop: two columns */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        <div className="max-w-5xl mx-auto flex flex-col lg:flex-row gap-6">
+        <div className="w-full flex flex-col lg:flex-row gap-6">
           {/* Left Column - Main content */}
           <div className="flex-1 space-y-4 min-w-0">
             {/* Style Instructions */}
