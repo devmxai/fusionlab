@@ -303,8 +303,8 @@ const StudioPage = () => {
     }
 
     setLoading(true);
-    setStatus("جاري الإرسال...");
-    setProgress(5);
+    setStatus("جاري التحضير...");
+    setProgress(0);
     setResultUrls([]);
 
     let reservationId: string | null = null;
@@ -380,7 +380,7 @@ const StudioPage = () => {
 
       // ── Step 3: Start generation (server: auth → entitlement → price → reserve → create task + job record) ──
       setStatus("جاري التحقق والإنشاء...");
-      setProgress(25);
+      setProgress((prev) => Math.max(prev, 12));
 
       const idempotencyKey = `gen_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const fileType = (isVideoTool || isAvatarTool) ? "video" : "image";
@@ -545,6 +545,17 @@ const StudioPage = () => {
           setProgress(0);
           await refreshCredits();
           setLoading(false);
+        },
+        // onProgress
+        (progressValue, phaseLabel, state) => {
+          if (state !== "success" && state !== "fail") {
+            setStatus(phaseLabel);
+          }
+          setProgress((prev) => {
+            // keep progress smooth and monotonic while loading
+            const next = Math.max(prev, Math.min(progressValue, 99));
+            return Number.isFinite(next) ? next : prev;
+          });
         },
       );
 
@@ -1237,11 +1248,19 @@ const StudioPage = () => {
             )}
 
             {isImageOnlyTool ? (
-              <div className="flex-1 h-9 rounded-lg bg-card border border-border/50 px-3 flex items-center">
-                <span className="text-xs text-muted-foreground">
-                  {refImages.length > 0 ? "جاهز للمعالجة" : category === "remove-bg" ? "ارفع صورة لحذف الخلفية" : "ارفع صورة لرفع الجودة"}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex-1 h-10 rounded-xl bg-secondary/40 border border-border/30 px-3 flex items-center justify-center gap-2 hover:bg-secondary/60 transition-colors"
+              >
+                <Upload className="w-4 h-4 text-muted-foreground" />
+                <span className="text-xs font-semibold text-foreground">
+                  {refImages.length > 0
+                    ? "تغيير الصورة"
+                    : category === "remove-bg"
+                    ? "رفع صورة لحذف الخلفية"
+                    : "رفع صورة لرفع الجودة"}
                 </span>
-              </div>
+              </button>
             ) : (
               <input
                 value={prompt}
@@ -1258,7 +1277,10 @@ const StudioPage = () => {
               disabled={loading || !selectedTool || insufficientCredits || (isImageOnlyTool && refImages.length === 0) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
               className="shrink-0 rounded-xl gap-2 px-4 h-10 text-xs font-bold shadow-md"
             >
-              <Sparkles className="w-4 h-4" />
+              {isImageOnlyTool ? <Upload className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+              {isImageOnlyTool && (
+                <span>{category === "remove-bg" ? "حذف الخلفية" : "رفع الجودة"}</span>
+              )}
               {estimatedCost > 0 && (
                 <span className="text-[11px] font-bold">{estimatedCost}</span>
               )}
