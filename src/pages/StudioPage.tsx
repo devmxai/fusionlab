@@ -1311,7 +1311,7 @@ const StudioPage = () => {
               <input
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder={isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : "اكتب وصفاً لما تريد توليده..."}
+                placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : "اكتب وصفاً لما تريد توليده..."}
                 className="flex-1 h-9 rounded-lg bg-secondary/40 border border-border/30 px-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/40"
                 dir="ltr"
                 onKeyDown={(e) => e.key === "Enter" && !loading && handleGenerate()}
