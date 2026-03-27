@@ -937,18 +937,7 @@ const StudioPage = () => {
       </header>
 
       {/* ── Center area ── */}
-      <div className="relative z-0 flex-1 flex flex-col items-center justify-center px-4 min-h-0">
-        {resultUrls.length > 1 && !loading && (
-          <div className="w-full overflow-x-auto flex gap-2 mb-4 scrollbar-hide">
-            {resultUrls.slice(1).map((url, i) => (
-              <div key={i} className="shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-border/50 cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => openViewer(url)}>
-                <img src={url} alt="" className="w-full h-full object-cover" />
-              </div>
-            ))}
-          </div>
-        )}
-
+      <div className="relative z-0 flex-1 flex flex-col items-center justify-center px-4 md:px-8 min-h-0">
         <motion.div
           layout
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -959,6 +948,7 @@ const StudioPage = () => {
             width: "100%",
             maxWidth: currentRatio.placeholderMaxW,
             aspectRatio: currentRatio.cssAspect,
+            maxHeight: "calc(100dvh - 180px)",
             background: resultUrls.length > 0 && !loading ? "transparent" : undefined,
           }}
         >
@@ -974,7 +964,7 @@ const StudioPage = () => {
           {(resultUrls.length === 0 || loading) && (
             <div className="absolute inset-0 bg-secondary/20 pointer-events-none" />
           )}
-          <div className="relative z-10 w-full h-full flex items-center justify-center p-4">
+          <div className="relative z-10 w-full h-full flex items-center justify-center p-2">
             <AnimatePresence mode="wait">
               {renderCardContent()}
             </AnimatePresence>

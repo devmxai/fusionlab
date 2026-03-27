@@ -315,6 +315,7 @@ export function useGenerationQueue() {
     let latestState = "waiting";
     let latestProgress: number | undefined;
     const progressInterval = setInterval(() => {
+
       const { progress: simProg, phase } = smooth.update(latestProgress, latestState);
       const rounded = Math.round(simProg);
       updateJobLocal(job.id, {
