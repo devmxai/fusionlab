@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Trash2, Eye, EyeOff, Save, Upload, Layers, Pencil, X, Plus, GripVertical } from "lucide-react";
 import { tools } from "@/data/tools";
 import { compressImage } from "@/lib/image-compress";
+import { cardImageMap, imageMap, optimizeStorageUrl } from "@/components/ToolCard";
 
 interface Tab {
   id: string;
@@ -27,6 +28,7 @@ interface ModelCard {
   media_type: string | null;
   sort_order: number;
   is_visible: boolean;
+  updated_at?: string | null;
 }
 
 const CATEGORY_TAB_MAP: Record<string, string> = {
@@ -52,6 +54,22 @@ const ModelCardsManager = () => {
   const [newTabForm, setNewTabForm] = useState({ label: "", slug: "" });
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editTabForm, setEditTabForm] = useState({ label: "" });
+  const [previewVersion, setPreviewVersion] = useState<number>(Date.now());
+
+  const toolsById = new Map(tools.map((tool) => [tool.id, tool]));
+
+  const resolveCardPreviewUrl = (card: ModelCard, customUrl?: string | null) => {
+    const sectionKey = card.display_section ? `${card.display_section}/${card.tool_id}` : "";
+    const tool = toolsById.get(card.tool_id);
+
+    const rawUrl =
+      customUrl ||
+      card.image_url ||
+      (sectionKey ? cardImageMap[sectionKey] : undefined) ||
+      (tool ? imageMap[tool.image] : undefined);
+
+    return optimizeStorageUrl(rawUrl, 240, customUrl ? String(previewVersion) : (card.updated_at ?? null));
+  };
 
   const fetchAll = async () => {
     const [tabsRes, cardsRes] = await Promise.all([
@@ -82,7 +100,12 @@ const ModelCardsManager = () => {
   const uploadImage = async (file: File): Promise<string | null> => {
     setUploading(true);
     try {
-      const compressed = await compressImage(file, { maxWidth: 800, maxHeight: 1200, quality: 0.82, maxSizeKB: 250 });
+      const compressed = await compressImage(file, {
+        maxWidth: 640,
+        maxHeight: 960,
+        quality: 0.78,
+        maxSizeKB: 160,
+      });
       const ext = compressed.name.split(".").pop() || "webp";
       const path = `model-cards/${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from("cms-content").upload(path, compressed, {
@@ -403,12 +426,15 @@ const ModelCardsManager = () => {
                 const file = e.target.files?.[0];
                 if (!file) return;
                 const url = await uploadImage(file);
-                if (url) setForm(f => ({ ...f, image_url: url }));
+                if (url) {
+                  setPreviewVersion(Date.now());
+                  setForm(f => ({ ...f, image_url: url }));
+                }
               }} />
             </label>
             {form.image_url && (
               <div className="relative">
-                <img src={form.image_url} alt="" className="h-14 rounded-lg" />
+                <img src={optimizeStorageUrl(form.image_url, 240, String(previewVersion))} alt="" className="h-14 rounded-lg" />
                 <button onClick={() => setForm(f => ({ ...f, image_url: "" }))} className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center">
                   <X className="w-2.5 h-2.5 text-destructive-foreground" />
                 </button>
@@ -447,12 +473,15 @@ const ModelCardsManager = () => {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         const url = await uploadImage(file);
-                        if (url) setForm(f => ({ ...f, image_url: url }));
+                        if (url) {
+                          setPreviewVersion(Date.now());
+                          setForm(f => ({ ...f, image_url: url }));
+                        }
                       }} />
                     </label>
-                    {form.image_url && (
+                    {(form.image_url || c.image_url || cardImageMap[`${c.display_section}/${c.tool_id}`]) && (
                       <div className="relative">
-                        <img src={form.image_url} alt="" className="h-14 rounded-lg" />
+                        <img src={resolveCardPreviewUrl(c, form.image_url || null)} alt="" className="h-14 rounded-lg" />
                         <button onClick={() => setForm(f => ({ ...f, image_url: "" }))} className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center">
                           <X className="w-2.5 h-2.5 text-destructive-foreground" />
                         </button>
@@ -468,8 +497,8 @@ const ModelCardsManager = () => {
                 <div className="flex items-center gap-3">
                   {/* Thumbnail */}
                   <div className="w-10 h-14 rounded-lg overflow-hidden bg-secondary shrink-0">
-                    {c.image_url ? (
-                      <img src={c.image_url} alt="" className="w-full h-full object-cover" />
+                    {resolveCardPreviewUrl(c) ? (
+                      <img src={resolveCardPreviewUrl(c)} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-[7px] text-muted-foreground/50">—</div>
                     )}
