@@ -468,11 +468,32 @@ const AudioStudioPage = () => {
             <Textarea
               ref={textareaRef}
               value={text}
-              onChange={(e) => setText(tagsToEmojis(e.target.value))}
+              onChange={(e) => {
+                const newText = tagsToEmojis(e.target.value);
+                setText(newText);
+              }}
               placeholder="اكتب النص الذي تريد تحويله إلى صوت..."
-              className="min-h-[120px] bg-card border-border/50 text-sm resize-none focus:border-primary/50"
+              className={`min-h-[120px] bg-card border-border/50 text-sm resize-none focus:border-primary/50 ${isOverLimit ? "border-destructive focus:border-destructive" : ""}`}
               dir="rtl"
             />
+            {/* Character counter & cost indicator */}
+            <div className="flex items-center justify-between text-[10px] px-1">
+              <div className="flex items-center gap-2">
+                <span className={`font-mono ${isOverLimit ? "text-destructive font-bold" : charCount > MAX_TTS_CHARS * 0.8 ? "text-yellow-500" : "text-muted-foreground"}`}>
+                  {charCount.toLocaleString()} / {MAX_TTS_CHARS.toLocaleString()} حرف
+                </span>
+                {charCount > 0 && (
+                  <span className="text-muted-foreground">
+                    ({currentTier.label})
+                  </span>
+                )}
+              </div>
+              {charCount > 0 && (
+                <span className="text-primary font-bold">
+                  {estimatedCost} كريديت
+                </span>
+              )}
+            </div>
             {/* Inline Tags - Emoji Chips */}
             <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
               {inlineTags.map((tag) => (
