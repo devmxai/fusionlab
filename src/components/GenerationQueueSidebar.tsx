@@ -78,7 +78,8 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
   };
 
   const handleJobClick = async (job: GenerationJob) => {
-    if (job.status === "succeeded" && !job.seen_at && job.result_url) {
+    if (job.status === "succeeded" && job.result_url) {
+      // Close sidebar immediately, then show preview
       setLocalOpen(false);
       onClose?.();
       setPreviewJob(job);
