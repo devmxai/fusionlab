@@ -113,6 +113,8 @@ interface ToolCardProps {
   index?: number;
   override?: ToolCardOverride;
   sectionSlug?: string;
+  eagerLoad?: boolean;
+  highPriority?: boolean;
 }
 
 const categoryStudioMap: Record<string, string> = {
@@ -159,9 +161,18 @@ export const optimizeStorageUrl = (
   return nextUrl;
 };
 
-const ToolCard = ({ tool, index = 0, override, sectionSlug }: ToolCardProps) => {
+const ToolCard = ({
+  tool,
+  index = 0,
+  override,
+  sectionSlug,
+  eagerLoad,
+  highPriority,
+}: ToolCardProps) => {
   const [imgLoaded, setImgLoaded] = useState(false);
   const navigate = useNavigate();
+  const shouldEagerLoad = eagerLoad ?? index < 12;
+  const shouldHighPriority = highPriority ?? index < 4;
 
   // Priority: 1) CMS override image, 2) section-specific card image, 3) default tool image
   const sectionKey = sectionSlug ? `${sectionSlug}/${tool.id}` : "";
@@ -198,9 +209,9 @@ const ToolCard = ({ tool, index = 0, override, sectionSlug }: ToolCardProps) => 
             src={imgSrc}
             alt={title}
             className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
-            loading={index < 12 ? "eager" : "lazy"}
+            loading={shouldEagerLoad ? "eager" : "lazy"}
             decoding="async"
-            fetchPriority={index < 4 ? "high" : "auto"}
+            fetchPriority={shouldHighPriority ? "high" : "auto"}
             onLoad={() => setImgLoaded(true)}
             onError={() => setImgLoaded(true)}
           />
