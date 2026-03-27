@@ -137,7 +137,7 @@ serve(async (req) => {
       const response = await fetch(`${KIE_BASE}/veo/record-info?taskId=${taskId}`, {
         headers: { Authorization: `Bearer ${KIE_API_KEY}` },
       });
-      const data = await response.json();
+      const data = await safeJson(response, "Veo status");
       if (data?.code === 200 && data?.data) {
         const veoData = data.data;
         const successFlag = veoData.successFlag ?? veoData.response?.successFlag;
