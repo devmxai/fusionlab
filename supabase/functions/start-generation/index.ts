@@ -47,6 +47,7 @@ serve(async (req) => {
       quality,
       durationSeconds,
       hasAudio,
+      characterCount,
       idempotencyKey,
       // TTS-specific fields
       ttsParams,

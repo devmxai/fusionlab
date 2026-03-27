@@ -408,7 +408,7 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
                     </td>
 
                     <td className="py-2.5 px-3 text-muted-foreground text-[10px]">
-                      {r.price_unit === "per_second" ? "/ثانية" : "/توليد"}
+                      {r.price_unit === "per_second" ? "/ثانية" : r.price_unit === "per_character" ? "/حرف" : "/توليد"}
                     </td>
 
                     <td className="py-2.5 px-3">
