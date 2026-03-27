@@ -61,6 +61,14 @@ serve(async (req) => {
     const generationType = apiType === "tts" ? "audio" : "default";
 
     // ── 2. Validate entitlement + calculate price + reserve credits (atomic) ──
+    // For TTS, calculate server-side character count
+    let serverCharCount: number | null = null;
+    if (apiType === "tts" && ttsParams?.text) {
+      const ttsText = (ttsParams.text || "") as string;
+      const spokenText = ttsText.replace(/\[(short pause|medium pause|long pause|whispering|shouting|sarcasm|laughing|sigh|fast|extremely fast|robotic|uhm|gasp|groan|scared|curious|bored)\]/gi, "").replace(/\s+/g, " ").trim();
+      serverCharCount = spokenText.length;
+    }
+
     const { data: reserveResult, error: reserveError } = await supabase.rpc(
       "validate_and_reserve",
       {
@@ -72,6 +80,7 @@ serve(async (req) => {
         p_has_audio: hasAudio ?? null,
         p_idempotency_key: idempotencyKey || null,
         p_generation_type: generationType,
+        p_character_count: serverCharCount,
       }
     );
 
