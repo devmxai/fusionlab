@@ -419,7 +419,7 @@ const AudioStudioPage = () => {
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden" dir="rtl">
       {/* Header */}
       <header className="shrink-0 bg-nav-bg/80 backdrop-blur-xl border-b border-border/50 px-4 py-3 z-50">
-        <div className="flex items-center gap-3 max-w-3xl mx-auto">
+        <div className="flex items-center gap-3 max-w-5xl mx-auto">
           <button onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground transition-colors">
             <ArrowRight className="w-5 h-5" />
           </button>
@@ -438,170 +438,271 @@ const AudioStudioPage = () => {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main Content - Desktop: two columns */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        <div className="max-w-3xl mx-auto space-y-4">
-          {/* Style Instructions */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-              أسلوب الأداء
-            </label>
-            <Textarea
-              value={styleInstruction}
-              onChange={(e) => setStyleInstruction(e.target.value)}
-              placeholder="مثال: رجل عراقي متوسط العمر، لهجة عامية، نبرة طبيعية وقريبة من المستمع..."
-              className="min-h-[80px] bg-card border-border/50 text-sm resize-none focus:border-primary/50"
-              dir="rtl"
-            />
-            {/* Enhancement Presets */}
-            <div className="flex gap-1.5 flex-wrap">
-              {presets.map((p) => (
-                <button
-                  key={p.label}
-                  onClick={() => applyPreset(p.style)}
-                  className="text-[10px] px-2.5 py-1 rounded-full bg-secondary border border-border/30 text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
-                >
-                  {p.label}
-                </button>
-              ))}
+        <div className="max-w-5xl mx-auto flex flex-col lg:flex-row gap-6">
+          {/* Left Column - Main content */}
+          <div className="flex-1 space-y-4 min-w-0">
+            {/* Style Instructions */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                أسلوب الأداء
+              </label>
+              <Textarea
+                value={styleInstruction}
+                onChange={(e) => setStyleInstruction(e.target.value)}
+                placeholder="مثال: رجل عراقي متوسط العمر، لهجة عامية، نبرة طبيعية وقريبة من المستمع..."
+                className="min-h-[80px] bg-card border-border/50 text-sm resize-none focus:border-primary/50"
+                dir="rtl"
+              />
+              {/* Enhancement Presets */}
+              <div className="flex gap-1.5 flex-wrap">
+                {presets.map((p) => (
+                  <button
+                    key={p.label}
+                    onClick={() => applyPreset(p.style)}
+                    className="text-[10px] px-2.5 py-1 rounded-full bg-secondary border border-border/30 text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Text Field */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-              <Volume2 className="w-3.5 h-3.5 text-primary" />
-              النص
-            </label>
-            <Textarea
-              ref={textareaRef}
-              value={text}
-              onChange={(e) => {
-                const newText = tagsToEmojis(e.target.value);
-                setText(newText);
-              }}
-              placeholder="اكتب النص الذي تريد تحويله إلى صوت..."
-              className={`min-h-[120px] bg-card border-border/50 text-sm resize-none focus:border-primary/50 ${isOverLimit ? "border-destructive focus:border-destructive" : ""}`}
-              dir="rtl"
-            />
-            {/* Character counter & cost indicator */}
-            <div className="flex items-center justify-between text-[10px] px-1">
-              <div className="flex items-center gap-2">
-                <span className={`font-mono ${isOverLimit ? "text-destructive font-bold" : charCount > MAX_TTS_CHARS * 0.8 ? "text-yellow-500" : "text-muted-foreground"}`}>
-                  {charCount.toLocaleString()} / {MAX_TTS_CHARS.toLocaleString()} حرف
-                </span>
+            {/* Text Field */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                <Volume2 className="w-3.5 h-3.5 text-primary" />
+                النص
+              </label>
+              <Textarea
+                ref={textareaRef}
+                value={text}
+                onChange={(e) => {
+                  const newText = tagsToEmojis(e.target.value);
+                  setText(newText);
+                }}
+                placeholder="اكتب النص الذي تريد تحويله إلى صوت..."
+                className={`min-h-[120px] lg:min-h-[180px] bg-card border-border/50 text-sm resize-none focus:border-primary/50 ${isOverLimit ? "border-destructive focus:border-destructive" : ""}`}
+                dir="rtl"
+              />
+              {/* Character counter & cost indicator */}
+              <div className="flex items-center justify-between text-[10px] px-1">
+                <div className="flex items-center gap-2">
+                  <span className={`font-mono ${isOverLimit ? "text-destructive font-bold" : charCount > MAX_TTS_CHARS * 0.8 ? "text-yellow-500" : "text-muted-foreground"}`}>
+                    {charCount.toLocaleString()} / {MAX_TTS_CHARS.toLocaleString()} حرف
+                  </span>
+                  {charCount > 0 && (
+                    <span className="text-muted-foreground">
+                      ({(price?.perCharRate ?? 0.005).toFixed(3)} كريديت/حرف)
+                    </span>
+                  )}
+                </div>
                 {charCount > 0 && (
-                  <span className="text-muted-foreground">
-                    ({(price?.perCharRate ?? 0.005).toFixed(3)} كريديت/حرف)
+                  <span className="text-primary font-bold">
+                    {estimatedCost} كريديت
                   </span>
                 )}
               </div>
-              {charCount > 0 && (
-                <span className="text-primary font-bold">
-                  {estimatedCost} كريديت
-                </span>
-              )}
+              {/* Inline Tags - Emoji Chips */}
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+                {inlineTags.map((tag) => (
+                  <button
+                    key={tag.id}
+                    onClick={() => insertTag(tag)}
+                    title={tag.label}
+                    className="shrink-0 flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-foreground transition-all border border-primary/10 hover:border-primary/30"
+                  >
+                    <span className="text-sm">{tag.emoji}</span>
+                    <span className="text-[10px] text-muted-foreground">{tag.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-            {/* Inline Tags - Emoji Chips */}
-            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
-              {inlineTags.map((tag) => (
+
+            {/* Audio Player - Always visible */}
+            <div className="bg-card rounded-xl border border-border/50 p-4 space-y-3">
+              <audio
+                ref={audioRef}
+                src={audioUrl || undefined}
+                onTimeUpdate={handleTimeUpdate}
+                onEnded={() => setIsPlaying(false)}
+                onLoadedMetadata={handleTimeUpdate}
+              />
+
+              {/* Waveform-style progress */}
+              <div className="relative h-12 flex items-center gap-[2px] px-2">
+                {Array.from({ length: 60 }).map((_, i) => {
+                  const filled = audioDuration > 0 && (i / 60) <= (audioProgress / audioDuration);
+                  const height = 15 + Math.sin(i * 0.5) * 10 + Math.sin(i * 1.3) * 5;
+                  return (
+                    <div
+                      key={i}
+                      className={`flex-1 rounded-full transition-colors duration-150 cursor-pointer ${
+                        !audioUrl ? "bg-secondary/50" : filled ? "bg-primary" : "bg-secondary"
+                      }`}
+                      style={{ height: `${height}px` }}
+                      onClick={() => {
+                        if (audioRef.current && audioDuration > 0) {
+                          audioRef.current.currentTime = (i / 60) * audioDuration;
+                        }
+                      }}
+                    />
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground px-2">
+                <span>{formatTime(audioProgress)}</span>
+                <span>{audioDuration > 0 ? formatTime(audioDuration) : "0:00"}</span>
+              </div>
+
+              <div className="flex items-center justify-center gap-3">
                 <button
-                  key={tag.id}
-                  onClick={() => insertTag(tag)}
-                  title={tag.label}
-                  className="shrink-0 flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-foreground transition-all border border-primary/10 hover:border-primary/30"
+                  onClick={togglePlay}
+                  disabled={!audioUrl}
+                  className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors ${
+                    audioUrl
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "bg-secondary text-muted-foreground cursor-not-allowed"
+                  }`}
                 >
-                  <span className="text-sm">{tag.emoji}</span>
-                  <span className="text-[10px] text-muted-foreground">{tag.label}</span>
+                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
                 </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Audio Player - Always visible */}
-          <div className="bg-card rounded-xl border border-border/50 p-4 space-y-3">
-            <audio
-              ref={audioRef}
-              src={audioUrl || undefined}
-              onTimeUpdate={handleTimeUpdate}
-              onEnded={() => setIsPlaying(false)}
-              onLoadedMetadata={handleTimeUpdate}
-            />
-
-            {/* Waveform-style progress */}
-            <div className="relative h-12 flex items-center gap-[2px] px-2">
-              {Array.from({ length: 60 }).map((_, i) => {
-                const filled = audioDuration > 0 && (i / 60) <= (audioProgress / audioDuration);
-                const height = 15 + Math.sin(i * 0.5) * 10 + Math.sin(i * 1.3) * 5;
-                return (
-                  <div
-                    key={i}
-                    className={`flex-1 rounded-full transition-colors duration-150 cursor-pointer ${
-                      !audioUrl ? "bg-secondary/50" : filled ? "bg-primary" : "bg-secondary"
-                    }`}
-                    style={{ height: `${height}px` }}
-                    onClick={() => {
-                      if (audioRef.current && audioDuration > 0) {
-                        audioRef.current.currentTime = (i / 60) * audioDuration;
-                      }
-                    }}
-                  />
-                );
-              })}
+              </div>
             </div>
 
-            <div className="flex items-center justify-between text-[10px] text-muted-foreground px-2">
-              <span>{formatTime(audioProgress)}</span>
-              <span>{audioDuration > 0 ? formatTime(audioDuration) : "0:00"}</span>
-            </div>
-
-            <div className="flex items-center justify-center gap-3">
-              <button
-                onClick={togglePlay}
-                disabled={!audioUrl}
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors ${
-                  audioUrl
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "bg-secondary text-muted-foreground cursor-not-allowed"
-                }`}
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <Button
+                onClick={handleGenerate}
+                disabled={loading || !text.trim() || insufficientCredits || isOverLimit}
+                className={`flex-1 gap-2 h-11 rounded-xl text-sm font-bold shadow-md ${insufficientCredits ? "bg-destructive hover:bg-destructive/90" : ""}`}
               >
-                {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-              </button>
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+                {loading ? "جاري التوليد..." : (
+                  <span className="flex items-center gap-1.5">
+                    توليد الصوت
+                    {estimatedCost > 0 && (
+                      <span className="text-xs font-bold opacity-90">{estimatedCost}</span>
+                    )}
+                  </span>
+                )}
+              </Button>
+
+              <Button variant="outline" onClick={handleDownload} disabled={!audioUrl} className="gap-2">
+                <Download className="w-4 h-4" />
+                تحميل
+              </Button>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            <Button
-              onClick={handleGenerate}
-              disabled={loading || !text.trim() || insufficientCredits || isOverLimit}
-              className={`flex-1 gap-2 h-11 rounded-xl text-sm font-bold shadow-md ${insufficientCredits ? "bg-destructive hover:bg-destructive/90" : ""}`}
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Sparkles className="w-4 h-4" />
-              )}
-              {loading ? "جاري التوليد..." : (
-                <span className="flex items-center gap-1.5">
-                  توليد الصوت
-                  {estimatedCost > 0 && (
-                    <span className="text-xs font-bold opacity-90">{estimatedCost}</span>
-                  )}
-                </span>
-              )}
-            </Button>
+          {/* Right Column - Desktop inline voice settings (hidden on mobile, shown on lg+) */}
+          <div className="hidden lg:block w-80 shrink-0">
+            <div className="bg-card rounded-xl border border-border/50 p-4 space-y-4 sticky top-4">
+              <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <Mic className="w-4 h-4 text-primary" />
+                إعدادات الصوت
+              </h2>
 
-            <Button variant="outline" onClick={handleDownload} disabled={!audioUrl} className="gap-2">
-              <Download className="w-4 h-4" />
-              تحميل
-            </Button>
+              {/* Gender Tabs */}
+              <div className="flex rounded-lg bg-secondary/50 p-0.5">
+                <button
+                  onClick={() => setVoiceGenderTab("male")}
+                  className={`flex-1 text-xs py-2 rounded-md font-semibold transition-all ${
+                    voiceGenderTab === "male" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  أصوات الرجال ({maleVoices.length})
+                </button>
+                <button
+                  onClick={() => setVoiceGenderTab("female")}
+                  className={`flex-1 text-xs py-2 rounded-md font-semibold transition-all ${
+                    voiceGenderTab === "female" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  أصوات النساء ({femaleVoices.length})
+                </button>
+              </div>
+
+              {/* Voice List */}
+              <div className="space-y-1 max-h-[320px] overflow-y-auto scrollbar-hide">
+                {(voiceGenderTab === "male" ? maleVoices : femaleVoices).map((v) => (
+                  <div
+                    key={v.name}
+                    onClick={() => setSelectedVoice(v)}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                      selectedVoice.name === v.name
+                        ? "bg-primary/15 border border-primary/30"
+                        : "hover:bg-secondary/50 border border-transparent"
+                    }`}
+                  >
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                      selectedVoice.name === v.name ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                    }`}>
+                      {v.label[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className={`text-xs font-semibold ${selectedVoice.name === v.name ? "text-primary" : "text-foreground"}`}>
+                          {v.label}
+                        </p>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground">{v.trait}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground truncate">{v.description}</p>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handlePreviewVoice(v); }}
+                      disabled={previewingVoice === v.name}
+                      className="w-6 h-6 rounded-full flex items-center justify-center bg-secondary hover:bg-primary/20 transition-colors shrink-0"
+                    >
+                      {previewingVoice === v.name ? (
+                        <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                      ) : (
+                        <Play className="w-3 h-3 text-muted-foreground" />
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Speed */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-muted-foreground">السرعة</label>
+                  <span className="text-[10px] text-primary font-mono">{speakingRate.toFixed(1)}x</span>
+                </div>
+                <Slider value={[speakingRate]} onValueChange={([v]) => setSpeakingRate(v)} min={0.5} max={2.0} step={0.1} />
+              </div>
+
+              {/* Stability */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-muted-foreground">الثبات</label>
+                  <span className="text-[10px] text-primary font-mono">{(stability * 100).toFixed(0)}%</span>
+                </div>
+                <Slider value={[stability]} onValueChange={([v]) => setStability(v)} min={0} max={1} step={0.05} />
+              </div>
+
+              {/* Pitch */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-muted-foreground">درجة الصوت</label>
+                  <span className="text-[10px] text-primary font-mono">{pitch > 0 ? "+" : ""}{pitch}</span>
+                </div>
+                <Slider value={[pitch]} onValueChange={([v]) => setPitch(v)} min={-10} max={10} step={1} />
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ─── Voice Settings Sidebar ─── */}
+      {/* ─── Voice Settings Sidebar (Mobile only) ─── */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
@@ -632,77 +733,66 @@ const AudioStudioPage = () => {
 
               {/* Sidebar Content */}
               <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
-                {/* Male Voices */}
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">أصوات الرجال</label>
-                  <div className="space-y-1">
-                    {maleVoices.map((v) => (
-                      <button
-                        key={v.name}
-                        onClick={() => setSelectedVoice(v)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-right transition-all ${
-                          selectedVoice.name === v.name
-                            ? "bg-primary/15 border border-primary/30"
-                            : "hover:bg-secondary/50 border border-transparent"
-                        }`}
-                      >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                          selectedVoice.name === v.name ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-                        }`}>
-                          {v.label[0]}
-                        </div>
-                        <div className="flex-1 min-w-0">
+                {/* Gender Tabs */}
+                <div className="flex rounded-lg bg-secondary/50 p-0.5">
+                  <button
+                    onClick={() => setVoiceGenderTab("male")}
+                    className={`flex-1 text-xs py-2 rounded-md font-semibold transition-all ${
+                      voiceGenderTab === "male" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    أصوات الرجال ({maleVoices.length})
+                  </button>
+                  <button
+                    onClick={() => setVoiceGenderTab("female")}
+                    className={`flex-1 text-xs py-2 rounded-md font-semibold transition-all ${
+                      voiceGenderTab === "female" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    أصوات النساء ({femaleVoices.length})
+                  </button>
+                </div>
+
+                {/* Voice List */}
+                <div className="space-y-1">
+                  {(voiceGenderTab === "male" ? maleVoices : femaleVoices).map((v) => (
+                    <div
+                      key={v.name}
+                      onClick={() => setSelectedVoice(v)}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${
+                        selectedVoice.name === v.name
+                          ? "bg-primary/15 border border-primary/30"
+                          : "hover:bg-secondary/50 border border-transparent"
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                        selectedVoice.name === v.name ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                      }`}>
+                        {v.label[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
                           <p className={`text-xs font-semibold ${selectedVoice.name === v.name ? "text-primary" : "text-foreground"}`}>
                             {v.label}
                           </p>
-                          <p className="text-[10px] text-muted-foreground">{v.description}</p>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground">{v.trait}</span>
                         </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Female Voices */}
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">أصوات النساء</label>
-                  <div className="space-y-1">
-                    {femaleVoices.map((v) => (
+                        <p className="text-[10px] text-muted-foreground">{v.description}</p>
+                      </div>
                       <button
-                        key={v.name}
-                        onClick={() => setSelectedVoice(v)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-right transition-all ${
-                          selectedVoice.name === v.name
-                            ? "bg-primary/15 border border-primary/30"
-                            : "hover:bg-secondary/50 border border-transparent"
-                        }`}
+                        onClick={(e) => { e.stopPropagation(); handlePreviewVoice(v); }}
+                        disabled={previewingVoice === v.name}
+                        className="w-7 h-7 rounded-full flex items-center justify-center bg-secondary hover:bg-primary/20 transition-colors shrink-0"
                       >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                          selectedVoice.name === v.name ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-                        }`}>
-                          {v.label[0]}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-semibold ${selectedVoice.name === v.name ? "text-primary" : "text-foreground"}`}>
-                            {v.label}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">{v.description}</p>
-                        </div>
+                        {previewingVoice === v.name ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                        ) : (
+                          <Play className="w-3.5 h-3.5 text-muted-foreground" />
+                        )}
                       </button>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-
-                {/* Preview Voice */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePreviewVoice}
-                  disabled={previewing}
-                  className="w-full gap-2"
-                >
-                  {previewing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-                  معاينة الصوت
-                </Button>
 
                 {/* Speed */}
                 <div className="space-y-2">
@@ -710,13 +800,7 @@ const AudioStudioPage = () => {
                     <label className="text-[11px] font-semibold text-muted-foreground">السرعة</label>
                     <span className="text-[10px] text-primary font-mono">{speakingRate.toFixed(1)}x</span>
                   </div>
-                  <Slider
-                    value={[speakingRate]}
-                    onValueChange={([v]) => setSpeakingRate(v)}
-                    min={0.5}
-                    max={2.0}
-                    step={0.1}
-                  />
+                  <Slider value={[speakingRate]} onValueChange={([v]) => setSpeakingRate(v)} min={0.5} max={2.0} step={0.1} />
                 </div>
 
                 {/* Stability */}
@@ -725,13 +809,7 @@ const AudioStudioPage = () => {
                     <label className="text-[11px] font-semibold text-muted-foreground">الثبات</label>
                     <span className="text-[10px] text-primary font-mono">{(stability * 100).toFixed(0)}%</span>
                   </div>
-                  <Slider
-                    value={[stability]}
-                    onValueChange={([v]) => setStability(v)}
-                    min={0}
-                    max={1}
-                    step={0.05}
-                  />
+                  <Slider value={[stability]} onValueChange={([v]) => setStability(v)} min={0} max={1} step={0.05} />
                 </div>
 
                 {/* Pitch */}
@@ -740,13 +818,7 @@ const AudioStudioPage = () => {
                     <label className="text-[11px] font-semibold text-muted-foreground">درجة الصوت</label>
                     <span className="text-[10px] text-primary font-mono">{pitch > 0 ? "+" : ""}{pitch}</span>
                   </div>
-                  <Slider
-                    value={[pitch]}
-                    onValueChange={([v]) => setPitch(v)}
-                    min={-10}
-                    max={10}
-                    step={1}
-                  />
+                  <Slider value={[pitch]} onValueChange={([v]) => setPitch(v)} min={-10} max={10} step={1} />
                 </div>
               </div>
             </motion.div>
