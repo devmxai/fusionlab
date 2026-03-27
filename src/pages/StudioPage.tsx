@@ -164,22 +164,30 @@ const StudioPage = () => {
   };
 
   // Pre-select model from query param (e.g. ?model=kling-3)
+  // and ensure each category always has a valid selected model.
   useEffect(() => {
+    if (categoryTools.length === 0) return;
+
     const modelId = searchParams.get("model");
-    if (modelId && categoryTools.length > 0) {
+    if (modelId) {
       const found = categoryTools.find((t) => t.id === modelId);
       if (found) {
-        handleSelectModel(found);
-        searchParams.delete("model");
-        setSearchParams(searchParams, { replace: true });
+        if (!selectedTool || selectedTool.id !== found.id) {
+          handleSelectModel(found);
+        }
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.delete("model");
+        setSearchParams(nextParams, { replace: true });
+        return;
       }
     }
-    // Auto-select for shoots (single tool, no dropdown)
-    if (category === "shoots" && categoryTools.length > 0 && !selectedTool) {
+
+    const selectedIsValidInCategory = !!selectedTool && categoryTools.some((t) => t.id === selectedTool.id);
+    if (!selectedIsValidInCategory) {
       handleSelectModel(categoryTools[0]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryTools]);
+  }, [categoryTools, selectedTool, searchParams, setSearchParams]);
 
   const tool = selectedTool || categoryTools[0] || null;
   const isVideoTool = category === "video";
