@@ -99,8 +99,7 @@ const StudioPage = () => {
 
   // Dropdown open states
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [expandedProvider, setExpandedProvider] = useState<string | null>(null);
-  const [modelSubPage, setModelSubPage] = useState<string | null>(null); // for sub-navigation in model dropdown
+  const [modelSubPage, setModelSubPage] = useState<string | null>(null);
   const headerRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
