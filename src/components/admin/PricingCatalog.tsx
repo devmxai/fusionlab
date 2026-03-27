@@ -90,7 +90,7 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
     let list = rules;
     // Category filter
     if (activeTab !== "all") {
-      list = list.filter((r) => inferCategory(r, getAccess(r.model)) === activeTab);
+      list = list.filter((r) => mapCategory(r) === activeTab);
     }
     // Search
     if (search.trim()) {
