@@ -224,7 +224,7 @@ const Index = () => {
               {trendingVideos.length > 0 && (
                 <section>
                   <SectionHeader icon={<TrendingUp className="w-4 h-4 text-purple-500" />} title="ترند الفيديو" />
-                  <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3">
+                  <div className="columns-2 lg:columns-3 gap-3">
                     {trendingVideos.map((vid, i) => (
                       <motion.div
                         key={vid.id}
