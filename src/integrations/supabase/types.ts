@@ -122,6 +122,69 @@ export type Database = {
         }
         Relationships: []
       }
+      generation_jobs: {
+        Row: {
+          api_type: string
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          file_type: string
+          id: string
+          metadata: Json | null
+          model: string
+          progress: number
+          prompt: string | null
+          reservation_id: string | null
+          result_url: string | null
+          status: string
+          task_id: string | null
+          tool_id: string
+          tool_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_type?: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          file_type?: string
+          id?: string
+          metadata?: Json | null
+          model: string
+          progress?: number
+          prompt?: string | null
+          reservation_id?: string | null
+          result_url?: string | null
+          status?: string
+          task_id?: string | null
+          tool_id: string
+          tool_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_type?: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          file_type?: string
+          id?: string
+          metadata?: Json | null
+          model?: string
+          progress?: number
+          prompt?: string | null
+          reservation_id?: string | null
+          result_url?: string | null
+          status?: string
+          task_id?: string | null
+          tool_id?: string
+          tool_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       generations: {
         Row: {
           created_at: string
