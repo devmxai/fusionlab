@@ -230,6 +230,42 @@ serve(async (req) => {
         headers: { Authorization: `Bearer ${KIE_API_KEY}` },
       });
       const data = await safeJson(response, "Task status");
+
+      // Map raw KIE.AI response to normalized TaskResult format
+      if (data?.code === 200 && data?.data) {
+        const taskData = data.data;
+        const successFlag = taskData.successFlag ?? taskData.response?.successFlag;
+        let state: string;
+        if (successFlag === 1) state = "success";
+        else if (successFlag === 2 || successFlag === 3) state = "fail";
+        else if (taskData.status === "completed" || taskData.status === "success") state = "success";
+        else if (taskData.status === "failed" || taskData.status === "fail") state = "fail";
+        else if (taskData.status === "processing" || taskData.status === "running" || taskData.status === "in_progress") state = "generating";
+        else if (taskData.status === "queuing" || taskData.status === "queued") state = "queuing";
+        else state = taskData.state || "waiting";
+
+        const result: Record<string, unknown> = {
+          taskId: taskData.taskId,
+          state,
+          progress: taskData.progress ?? taskData.percentage ?? undefined,
+        };
+
+        if (state === "success") {
+          const resultUrls = taskData.response?.resultUrls
+            || taskData.response?.resultImageUrls
+            || taskData.resultUrls
+            || [];
+          const originUrl = taskData.response?.originImageUrl || taskData.response?.resultImageUrl;
+          const finalUrls = resultUrls.length > 0 ? resultUrls : (originUrl ? [originUrl] : []);
+          result.resultJson = JSON.stringify({ resultUrls: finalUrls });
+        }
+        if (state === "fail") {
+          result.failMsg = taskData.response?.errorMessage || taskData.errorMessage || taskData.failMsg || "Task failed";
+        }
+
+        console.log("Task status mapped:", JSON.stringify({ taskId, state, successFlag, rawStatus: taskData.status }));
+        return jsonRes({ code: 200, data: result });
+      }
       return jsonRes(data);
     }
 
