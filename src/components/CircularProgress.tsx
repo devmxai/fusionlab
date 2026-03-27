@@ -40,7 +40,7 @@ const CircularProgress = ({ progress, size = 90, strokeWidth = 5, status }: Circ
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={offset}
-            className="transition-all duration-700 ease-out"
+            className="transition-all duration-500 ease-out"
             style={{
               filter: "drop-shadow(0 0 8px hsl(var(--primary) / 0.6))",
             }}
