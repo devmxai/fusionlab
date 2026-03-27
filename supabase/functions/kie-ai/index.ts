@@ -38,10 +38,10 @@ function normalizeProviderState(taskData: Record<string, any>): string {
 function extractResultUrls(taskData: Record<string, any>): string[] {
   const out = new Set<string>();
 
-  const tryParseJsonString = (value: unknown) => {
+  const tryParseJsonString = (value: unknown): boolean => {
     if (typeof value !== "string") return;
     const trimmed = value.trim();
-    if (!trimmed || (!trimmed.startsWith("{") && !trimmed.startsWith("["))) return;
+    if (!trimmed || (!trimmed.startsWith("{") && !trimmed.startsWith("["))) return false;
     try {
       const parsed = JSON.parse(trimmed) as Record<string, unknown>;
       collect(parsed?.resultUrls);
@@ -54,15 +54,18 @@ function extractResultUrls(taskData: Record<string, any>): string[] {
       collect(parsed?.outputUrl);
       collect(parsed?.url);
       collect(parsed);
+      return true;
     } catch {
       // ignore invalid JSON-like strings
+      return false;
     }
   };
 
   const collect = (value: unknown) => {
     if (!value) return;
     if (typeof value === "string") {
-      tryParseJsonString(value);
+      const parsed = tryParseJsonString(value);
+      if (parsed) return;
       if (value.trim()) out.add(value.trim());
       return;
     }
