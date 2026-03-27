@@ -21,6 +21,7 @@ export const categories = [
   "الكل",
   "فيديو",
   "صور",
+  "شوتس",
   "ريمكس",
   "صوت",
   "افتار",
@@ -98,6 +99,18 @@ export const tools: AITool[] = [
     image: "image-merge",
     isPro: false,
     category: "صور",
+    model: "grok-imagine/text-to-image",
+  },
+
+  // ─── Shoots (Grok Image-to-Image: 2 angle shots from 1 image) ───
+  {
+    id: "grok-shoots",
+    title: "Grok Shoots",
+    provider: "xAI",
+    description: "توليد زاويتين مختلفتين من صورة واحدة",
+    image: "angles",
+    isPro: false,
+    category: "شوتس",
     model: "grok-imagine/text-to-image",
   },
 
@@ -405,7 +418,9 @@ export function buildModelInput(
   }
 
   if (model === "grok-imagine/text-to-image") {
-    return { prompt, aspect_ratio: aspectRatio || "1:1" };
+    const input: Record<string, unknown> = { prompt, aspect_ratio: aspectRatio || "1:1" };
+    if (imageUrls?.length) input.image_url = imageUrls[0];
+    return input;
   }
 
   if (model === "z-image") {

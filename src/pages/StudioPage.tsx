@@ -30,6 +30,7 @@ const categorySlugMap: Record<string, string> = {
   avatar: "افتار",
   "remove-bg": "حذف الخلفية",
   upscale: "رفع الجودة",
+  shoots: "شوتس",
 };
 
 const categoryTitleMap: Record<string, string> = {
@@ -40,6 +41,7 @@ const categoryTitleMap: Record<string, string> = {
   avatar: "استديو الأفتار",
   "remove-bg": "حذف الخلفية",
   upscale: "رفع الجودة",
+  shoots: "شوتس",
 };
 
 const ratioConfig: Record<string, { label: string; cssAspect: string; placeholderMaxW: string }> = {
@@ -172,6 +174,10 @@ const StudioPage = () => {
         setSearchParams(searchParams, { replace: true });
       }
     }
+    // Auto-select for shoots (single tool, no dropdown)
+    if (category === "shoots" && categoryTools.length > 0 && !selectedTool) {
+      handleSelectModel(categoryTools[0]);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryTools]);
 
@@ -181,11 +187,13 @@ const StudioPage = () => {
   const isUpscaleTool = category === "upscale";
   const isRemixTool = category === "remix";
   const isAvatarTool = category === "avatar";
+  const isShootsTool = category === "shoots";
   const isAvatarAudioModel = isAvatarTool && !!tool && (tool.inputType === "avatar");
   const isAvatarAnimateModel = isAvatarTool && !!tool && (tool.inputType === "animate");
   const isFluxKontext = !!tool && tool.isFluxKontextApi === true;
   const hasFrameMode = !!(caps?.frameMode || tool?.frameMode);
   const frameMode = caps?.frameMode || tool?.frameMode;
+  const isGrokImage = !!tool && tool.model === "grok-imagine/text-to-image" && !isShootsTool;
 
   // Remix image limits from capabilities
   const remixMaxImages = isRemixTool ? (caps?.maxImages ?? 3) : 0;
@@ -205,7 +213,7 @@ const StudioPage = () => {
 
   const maxImages = isRemixTool
     ? remixMaxImages
-    : isImageOnlyTool ? 1 : 3;
+    : (isImageOnlyTool || isShootsTool) ? 1 : (caps?.maxImages ?? 3);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -271,7 +279,7 @@ const StudioPage = () => {
   const insufficientCredits = estimatedCost > 0 && credits < estimatedCost;
 
   const handleGenerate = async () => {
-    if (isImageOnlyTool && refImages.length === 0) {
+    if ((isImageOnlyTool || isShootsTool) && refImages.length === 0) {
       toast.error("يجب رفع صورة أولاً");
       return;
     }
@@ -643,11 +651,12 @@ const StudioPage = () => {
     }
 
     if (resultUrls.length > 0) {
-      // Multi-image grid (e.g. Grok generating multiple images)
+      // Multi-image grid (e.g. Grok generating multiple images or Shoots)
       if (resultUrls.length > 1 && !isVideoTool) {
+        const cols = resultUrls.length <= 2 ? "grid-cols-2" : resultUrls.length <= 4 ? "grid-cols-2" : "grid-cols-3";
         return (
           <motion.div key="multi-result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-            className={`w-full h-full grid gap-1.5 ${resultUrls.length === 2 ? "grid-cols-2" : resultUrls.length === 3 ? "grid-cols-2" : "grid-cols-2"}`}>
+            className={`w-full h-full grid gap-2 ${cols}`}>
             {resultUrls.map((url, i) => (
               <motion.div key={i}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -655,7 +664,7 @@ const StudioPage = () => {
                 transition={{ delay: i * 0.08 }}
                 className={`cursor-pointer rounded-xl overflow-hidden border border-border/20 hover:border-primary/40 transition-all ${
                   resultUrls.length === 3 && i === 2 ? "col-span-2" : ""
-                }`}
+                } ${resultUrls.length === 5 && i === 4 ? "col-span-3" : ""}`}
                 onClick={() => openViewer(url)}
               >
                 <img src={url} alt={`Result ${i + 1}`} className="w-full h-full object-cover" />
@@ -692,21 +701,31 @@ const StudioPage = () => {
       <motion.div key="placeholder" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         className="flex flex-col items-center justify-center gap-3 text-center px-4">
         <Sparkles className="w-9 h-9 text-primary opacity-40" />
-        <h2 className="text-base font-bold text-foreground/70">{tool.title}</h2>
-        <p className="text-xs text-muted-foreground/60">{tool.description}</p>
-        <span className="text-[10px] text-muted-foreground/50 mt-1 bg-secondary/30 px-3 py-1 rounded-full">
-          {currentRatio.label} {resolution ? `• ${resolution.toUpperCase()}` : ""}
-        </span>
+        <h2 className="text-base font-bold text-foreground/70">{isShootsTool ? "شوتس" : tool.title}</h2>
+        <p className="text-xs text-muted-foreground/60">{isShootsTool ? "ارفع صورة واكتب وصفاً لتوليد زاويتين" : tool.description}</p>
+        {!isShootsTool && (
+          <span className="text-[10px] text-muted-foreground/50 mt-1 bg-secondary/30 px-3 py-1 rounded-full">
+            {currentRatio.label} {resolution ? `• ${resolution.toUpperCase()}` : ""}
+          </span>
+        )}
       </motion.div>
     );
   };
 
+  // For shoots, use a wider aspect ratio to show 2 cards side by side
+  const shootsPlaceholderStyle = isShootsTool ? {
+    width: "100%",
+    maxWidth: "min(95vw, 700px)",
+    aspectRatio: "2/1",
+    maxHeight: "calc(100dvh - 180px)",
+  } : undefined;
+
   // Determine which settings to show based on model capabilities
-  const showAspect = !!(selectedTool && caps?.aspectRatios?.length);
-  const showDuration = !!(selectedTool && caps?.durations && caps.durations.length > 0);
-  const showRes = !!(selectedTool && caps?.resolutions?.length);
-  const showQuality = !!(selectedTool && caps?.qualities?.length);
-  const showUpscale = !!(selectedTool && caps?.upscaleFactors?.length);
+  const showAspect = !isShootsTool && !!(selectedTool && caps?.aspectRatios?.length);
+  const showDuration = !isShootsTool && !!(selectedTool && caps?.durations && caps.durations.length > 0);
+  const showRes = !isShootsTool && !!(selectedTool && caps?.resolutions?.length);
+  const showQuality = !isShootsTool && !!(selectedTool && caps?.qualities?.length);
+  const showUpscale = !isShootsTool && !!(selectedTool && caps?.upscaleFactors?.length);
 
   return (
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden" dir="rtl">
@@ -834,7 +853,8 @@ const StudioPage = () => {
               </div>
             )}
 
-          {/* Model dropdown - always visible */}
+          {/* Model dropdown - hidden for shoots */}
+          {!isShootsTool && (
           <div className="relative shrink-0">
             <DropdownBtn id="model" label="النموذج" value={selectedTool?.title || ""} hasValue={!!selectedTool} />
             {openMenu === "model" && (
@@ -933,6 +953,7 @@ const StudioPage = () => {
               </motion.div>
             )}
           </div>
+          )}
         </div>
       </header>
 
@@ -944,7 +965,7 @@ const StudioPage = () => {
           className={`relative rounded-2xl overflow-hidden flex items-center justify-center border ${
             resultUrls.length > 0 && !loading ? "border-transparent" : loading ? "border-primary/30" : "border-border/30"
           }`}
-          style={{
+          style={shootsPlaceholderStyle || {
             width: "100%",
             maxWidth: currentRatio.placeholderMaxW,
             aspectRatio: currentRatio.cssAspect,
@@ -1250,12 +1271,25 @@ const StudioPage = () => {
           {/* Input row */}
           <div className="flex items-center gap-2">
             {/* Upload button (only for models that support image input via maxImages in capabilities) */}
-            {!hasFrameMode && !isRemixTool && !isAvatarTool && !isImageOnlyTool && (caps?.maxImages ?? 0) > 0 && refImages.length < (caps?.maxImages ?? 0) && (
+            {!hasFrameMode && !isRemixTool && !isAvatarTool && !isImageOnlyTool && !isShootsTool && (caps?.maxImages ?? 0) > 0 && refImages.length < (caps?.maxImages ?? 0) && (
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="shrink-0 w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors"
               >
                 <ImageIcon className="w-4 h-4 text-muted-foreground" />
+              </button>
+            )}
+
+            {/* Shoots: always show image upload button */}
+            {isShootsTool && (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className={`shrink-0 h-9 px-3 rounded-lg border flex items-center justify-center gap-1.5 transition-colors ${
+                  refImages.length > 0 ? "bg-primary/10 border-primary/40" : "bg-secondary border-border/50 hover:bg-secondary/80"
+                }`}
+              >
+                <Upload className="w-4 h-4 text-muted-foreground" />
+                <span className="text-[10px] font-semibold text-foreground">{refImages.length > 0 ? "تغيير" : "صورة"}</span>
               </button>
             )}
 
@@ -1277,7 +1311,7 @@ const StudioPage = () => {
               <input
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder={isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : "اكتب وصفاً لما تريد توليده..."}
+                placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : "اكتب وصفاً لما تريد توليده..."}
                 className="flex-1 h-9 rounded-lg bg-secondary/40 border border-border/30 px-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/40"
                 dir="ltr"
                 onKeyDown={(e) => e.key === "Enter" && !loading && handleGenerate()}
@@ -1286,7 +1320,7 @@ const StudioPage = () => {
 
             <Button
               onClick={handleGenerate}
-              disabled={loading || !selectedTool || insufficientCredits || (isImageOnlyTool && refImages.length === 0) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
+              disabled={loading || !selectedTool || insufficientCredits || (isImageOnlyTool && refImages.length === 0) || (isShootsTool && refImages.length === 0) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
               className="shrink-0 rounded-xl gap-2 px-4 h-10 text-xs font-bold shadow-md"
             >
               {isImageOnlyTool ? <Upload className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
