@@ -37,6 +37,9 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
   const statusLabel = (j: GenerationJob) => {
     if (j.status === "succeeded" && !j.seen_at) return "جاهزة للعرض";
     if (j.status === "succeeded") return "مكتمل";
+    if (j.status === "failed" && j.reconciliation_status === "pending_review") return "فشل - قيد المراجعة";
+    if (j.status === "failed" && j.provider_billing_state === "upstream_failed_refunded_confirmed" && !j.seen_at) return "فشل - تم الاسترداد";
+    if (j.status === "failed" && j.provider_billing_state === "upstream_failed_refund_unknown" && !j.seen_at) return "فشل - الرصيد معلّق";
     if (j.status === "failed" && !j.seen_at) return "فشل - لم يُشاهد";
     if (j.status === "failed") return "فشل";
     if (j.status === "timed_out") return "انتهى الوقت";
