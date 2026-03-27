@@ -153,12 +153,22 @@ function buildResult(rule: PricingRule, params: PricingParams): PricingResult {
     credits = rule.price_credits * params.durationSeconds;
   }
 
+  // For per_character pricing, multiply by character count
+  if (rule.price_unit === "per_character" && params.characterCount) {
+    credits = rule.price_credits * params.characterCount;
+  }
+
   // Round to 1 decimal
   credits = Math.round(credits * 10) / 10;
 
+  // Minimum 1 credit for per_character if there are characters
+  if (rule.price_unit === "per_character" && params.characterCount && params.characterCount > 0 && credits < 1) {
+    credits = 1;
+  }
+
   return {
     credits,
-    priceUnit: rule.price_unit as "per_generation" | "per_second",
+    priceUnit: rule.price_unit as "per_generation" | "per_second" | "per_character",
     status: rule.status as "active" | "pending_review",
     displayName: rule.display_name || undefined,
     ruleId: rule.id,
