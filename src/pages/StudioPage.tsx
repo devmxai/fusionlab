@@ -174,6 +174,10 @@ const StudioPage = () => {
         setSearchParams(searchParams, { replace: true });
       }
     }
+    // Auto-select for shoots (single tool, no dropdown)
+    if (category === "shoots" && categoryTools.length > 0 && !selectedTool) {
+      handleSelectModel(categoryTools[0]);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryTools]);
 
