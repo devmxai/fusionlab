@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import type { AITool } from "@/data/tools";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import imageGen from "@/assets/tools/image-gen.jpg";
@@ -169,6 +169,7 @@ const ToolCard = ({
   highPriority,
 }: ToolCardProps) => {
   const [imgLoaded, setImgLoaded] = useState(false);
+  const loadAttemptRef = useRef(0);
   const navigate = useNavigate();
   const shouldEagerLoad = eagerLoad ?? false;
   const shouldHighPriority = highPriority ?? false;
@@ -180,7 +181,36 @@ const ToolCard = ({
   const title = override?.title || tool.title;
 
   useEffect(() => {
+    if (!imgSrc) {
+      setImgLoaded(true);
+      return;
+    }
+
+    const attemptId = ++loadAttemptRef.current;
     setImgLoaded(false);
+
+    const probe = new Image();
+    const markReady = () => {
+      if (loadAttemptRef.current === attemptId) {
+        setImgLoaded(true);
+      }
+    };
+
+    probe.onload = markReady;
+    probe.onerror = markReady;
+    probe.src = imgSrc;
+
+    if (probe.complete) {
+      markReady();
+    }
+
+    const fallbackTimer = window.setTimeout(markReady, 3500);
+
+    return () => {
+      window.clearTimeout(fallbackTimer);
+      probe.onload = null;
+      probe.onerror = null;
+    };
   }, [imgSrc]);
 
   const handleClick = () => {
