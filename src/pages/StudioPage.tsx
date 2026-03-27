@@ -1324,7 +1324,7 @@ const StudioPage = () => {
 
             <Button
               onClick={handleGenerate}
-              disabled={loading || !selectedTool || insufficientCredits || (isImageOnlyTool && refImages.length === 0) || (isShootsTool && refImages.length === 0) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
+              disabled={loading || !selectedTool || insufficientCredits || (isImageOnlyTool && refImages.length === 0) || (isShootsTool && refImages.length === 0 && !prompt.trim()) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
               className="shrink-0 rounded-xl gap-2 px-4 h-10 text-xs font-bold shadow-md"
             >
               {isImageOnlyTool ? <Upload className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
