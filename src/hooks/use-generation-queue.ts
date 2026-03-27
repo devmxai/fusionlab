@@ -303,7 +303,7 @@ export function useGenerationQueue() {
     if (pollingRefs.current.get(job.id)) return;
     pollingRefs.current.set(job.id, true);
 
-    const smooth = createSmoothProgress(Math.max(0, Math.min(job.progress || 0, 95)));
+    const smooth = createSmoothProgress(Math.max(0, Math.min(job.progress || 1, 95)));
     const apiType = (job.api_type || "standard") as ApiType;
     const hasExternalHandlers = Boolean(onSuccess || onFail);
 
