@@ -51,8 +51,6 @@ const ratioConfig: Record<string, { label: string; cssAspect: string; placeholde
   "21:9": { label: "21:9",  cssAspect: "21/9", placeholderMaxW: "360px" },
 };
 
-// No more dropdownAnim - we use a stable overlay approach
-
 const StudioPage = () => {
   const { category } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
