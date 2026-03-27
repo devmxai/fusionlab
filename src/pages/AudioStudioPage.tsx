@@ -324,14 +324,15 @@ const AudioStudioPage = () => {
     }
   };
 
-  const handlePreviewVoice = async () => {
-    setPreviewing(true);
+  const handlePreviewVoice = async (voice?: GeminiVoice) => {
+    const v = voice || selectedVoice;
+    setPreviewingVoice(v.name);
     try {
       const { data, error } = await supabase.functions.invoke("gemini-tts", {
         body: {
           action: "preview",
           prebuiltModel: GEMINI_FLASH_TTS_MODEL,
-          voiceName: selectedVoice.name,
+          voiceName: v.name,
           previewText: "مرحباً، أنا صوتك الجديد. كيف أبدو؟",
           styleInstruction: styleInstruction.trim(),
           dialectHint: "لهجة عراقية عامية طبيعية",
@@ -351,7 +352,7 @@ const AudioStudioPage = () => {
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "خطأ في المعاينة");
     } finally {
-      setPreviewing(false);
+      setPreviewingVoice(null);
     }
   };
 
