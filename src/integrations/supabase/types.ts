@@ -383,6 +383,38 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_rule_access: {
+        Row: {
+          created_at: string
+          is_active: boolean
+          min_plan: string
+          pricing_rule_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          is_active?: boolean
+          min_plan?: string
+          pricing_rule_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          is_active?: boolean
+          min_plan?: string
+          pricing_rule_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_rule_access_pricing_rule_id_fkey"
+            columns: ["pricing_rule_id"]
+            isOneToOne: true
+            referencedRelation: "pricing_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing_rules: {
         Row: {
           created_at: string
