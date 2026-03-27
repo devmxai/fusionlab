@@ -238,7 +238,7 @@ serve(async (req) => {
       const response = await fetch(`${KIE_BASE}/chat/credit`, {
         headers: { Authorization: `Bearer ${KIE_API_KEY}` },
       });
-      const data = await response.json();
+      const data = await safeJson(response, "Credits");
       return jsonRes(data);
     }
 
