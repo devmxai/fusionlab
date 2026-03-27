@@ -19,12 +19,7 @@ const HomeHeader = () => {
           {user ? (
             <CreditRingAvatar onClick={() => setProfileOpen(true)} />
           ) : (
-            <button
-              onClick={() => navigate("/auth")}
-              className="w-9 h-9 rounded-full bg-muted/60 border border-border/40 flex items-center justify-center"
-            >
-              <img src="/logo-icon.png" alt="دخول" className="w-5 h-5 object-contain" />
-            </button>
+            <CreditRingAvatar onClick={() => navigate("/auth")} />
           )}
 
           {/* Center Logo */}
