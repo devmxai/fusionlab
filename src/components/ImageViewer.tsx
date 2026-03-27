@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download, ZoomIn, ZoomOut, RotateCcw, Play } from "lucide-react";
 
@@ -64,7 +65,7 @@ const ImageViewer = ({ src, alt = "Result", open, onClose, type = "image" }: Ima
 
   const isVideo = type === "video";
 
-  return (
+  const layer = (
     <AnimatePresence>
       {open && (
         <motion.div
@@ -72,7 +73,7 @@ const ImageViewer = ({ src, alt = "Result", open, onClose, type = "image" }: Ima
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[200] bg-background/95 backdrop-blur-xl flex flex-col"
+          className="fixed inset-0 z-[300] bg-background/95 backdrop-blur-xl flex flex-col"
           onClick={(e) => e.target === e.currentTarget && onClose()}
         >
           {/* Content area */}
@@ -147,6 +148,9 @@ const ImageViewer = ({ src, alt = "Result", open, onClose, type = "image" }: Ima
       )}
     </AnimatePresence>
   );
+
+  if (typeof window === "undefined") return null;
+  return createPortal(layer, document.body);
 };
 
 export default ImageViewer;

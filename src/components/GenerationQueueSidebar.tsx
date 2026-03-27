@@ -79,13 +79,12 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
 
   const handleJobClick = async (job: GenerationJob) => {
     if (job.status === "succeeded" && !job.seen_at && job.result_url) {
-      // Mark as seen immediately so it disappears from the list
-      await markJobSeen(job.id);
-      setPreviewJob(job);
       setLocalOpen(false);
       onClose?.();
+      setPreviewJob(job);
+      void markJobSeen(job.id);
     } else if ((job.status === "failed" || job.status === "timed_out") && !job.seen_at) {
-      await markJobSeen(job.id);
+      void markJobSeen(job.id);
     }
   };
 
