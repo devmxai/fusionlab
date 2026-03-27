@@ -88,7 +88,7 @@ const SectionSkeleton = ({ count = 5 }: { count?: number }) => (
       <div className="w-4 h-4 rounded bg-secondary shimmer-effect" />
       <div className="h-4 w-20 rounded bg-secondary shimmer-effect" />
     </div>
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
       {Array.from({ length: count }).map((_, i) => (
         <CardSkeleton key={i} />
       ))}
@@ -158,11 +158,11 @@ const Index = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <HomeHeader />
 
-      <div className="max-w-[1400px] mx-auto">
+      <div className="w-full">
         <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
         <BannerCarousel />
 
-        <main className="px-3 sm:px-6 lg:px-8 pb-8 space-y-10">
+        <main className="px-3 sm:px-6 lg:px-10 xl:px-16 pb-8 space-y-10">
           {showCategorized ? (
             <>
               {!dataLoaded && (
@@ -183,7 +183,7 @@ const Index = () => {
                       icon={SECTION_ICONS[tab.slug] || <Layers className="w-4 h-4 text-primary" />}
                       title={tab.label}
                     />
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                       {tabTools.map((tool, i) => (
                         <ToolCard key={`${tab.slug}-${tool.id}`} tool={tool} index={i} override={cardOverrides[tool.id]} />
                       ))}
@@ -195,7 +195,7 @@ const Index = () => {
               {trendingImages.length > 0 && (
                 <section>
                   <SectionHeader icon={<TrendingUp className="w-4 h-4 text-pink-500" />} title="ترند الصور" />
-                  <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3">
+                  <div className="columns-2 lg:columns-3 gap-3">
                     {trendingImages.map((img, i) => (
                       <motion.div
                         key={img.id}
@@ -224,7 +224,7 @@ const Index = () => {
               {trendingVideos.length > 0 && (
                 <section>
                   <SectionHeader icon={<TrendingUp className="w-4 h-4 text-purple-500" />} title="ترند الفيديو" />
-                  <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3">
+                  <div className="columns-2 lg:columns-3 gap-3">
                     {trendingVideos.map((vid, i) => (
                       <motion.div
                         key={vid.id}
@@ -270,7 +270,7 @@ const Index = () => {
           ) : (
             <section>
               <h2 className="text-base font-bold text-foreground mb-3">🛠️ الأدوات</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {filteredTools.map((tool, i) => (
                   <ToolCard key={tool.id} tool={tool} index={i} override={cardOverrides[tool.id]} />
                 ))}
@@ -281,7 +281,7 @@ const Index = () => {
       </div>
 
       <footer className="border-t border-border/20 mt-12 bg-secondary/10">
-        <div className="max-w-[1400px] mx-auto px-6 py-10 grid grid-cols-2 sm:grid-cols-4 gap-8" dir="ltr">
+        <div className="px-6 sm:px-10 lg:px-16 py-10 grid grid-cols-2 sm:grid-cols-4 gap-8" dir="ltr">
           <div>
             <h4 className="text-xs font-bold text-foreground mb-4 tracking-wider uppercase">Products</h4>
             <ul className="space-y-2.5">
