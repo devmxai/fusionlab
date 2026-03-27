@@ -68,7 +68,7 @@ const PricingCatalog = ({ onDataChanged }: { onDataChanged?: () => void }) => {
   const [editValue, setEditValue] = useState("");
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState("video");
   const [search, setSearch] = useState("");
 
   useEffect(() => { fetchAll(); }, []);
