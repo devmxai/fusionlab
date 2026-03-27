@@ -11,6 +11,7 @@ import {
   ChevronDown, AlertCircle, RefreshCw, Eye, Pencil, Save, PanelTop, UserCog
 } from "lucide-react";
 import ContentTab from "@/components/admin/ContentTab";
+import PricingCatalog from "@/components/admin/PricingCatalog";
 import UserManagement from "@/components/admin/UserManagement";
 import { toast } from "sonner";
 
