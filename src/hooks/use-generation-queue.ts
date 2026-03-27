@@ -333,7 +333,11 @@ export function useGenerationQueue() {
           latestProgress = prog;
           const { progress: simProg } = smooth.update(prog, state);
           const rounded = Math.round(simProg);
-          updateJobDB(job.id, { progress: rounded, status: "running" });
+          const normalizedState = String(state || "").toLowerCase();
+          const isTerminalState = ["success", "succeeded", "completed", "done", "fail", "failed", "error", "timeout", "timed_out"].includes(normalizedState);
+          if (!isTerminalState) {
+            updateJobDB(job.id, { progress: rounded });
+          }
           emitPollProgress(job.id, rounded, phaseLabels[state] || state, state);
         },
         180,
