@@ -694,15 +694,8 @@ const StudioPage = () => {
           <div className="flex-1" />
 
           {/* Settings dropdowns - only show after model is selected */}
-          <AnimatePresence>
-            {selectedTool && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.25 }}
-                className="flex items-center gap-2"
-              >
+          {selectedTool && (
+              <div className="flex items-center gap-2">
                 {/* Upscale Factor */}
                 {showUpscale && (
                   <div className="relative shrink-0">
@@ -808,9 +801,8 @@ const StudioPage = () => {
                     </DropdownMenu>
                   </div>
                 )}
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
 
           {/* Model dropdown - always visible */}
           <div className="relative shrink-0">
@@ -841,11 +833,10 @@ const StudioPage = () => {
                           {/* Sub-page header with back */}
                           <button
                             onClick={() => setModelSubPage(null)}
-                            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-right hover:bg-secondary/40 transition-colors mb-1"
+                            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-right hover:bg-secondary/40 transition-colors mb-1 flex-row-reverse"
                           >
-                            <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-xs font-bold text-primary flex-1">{group.provider}</span>
-                            <span className="text-[10px] text-muted-foreground">{group.tools.length} نماذج</span>
+                            <ArrowLeft className="w-4 h-4 text-muted-foreground rotate-180" />
+                            <span className="text-xs font-bold text-primary flex-1 text-right">{group.provider}</span>
                           </button>
                           <div className="h-px bg-border/30 mx-2 mb-1" />
                           <div className="space-y-0.5">
@@ -899,9 +890,9 @@ const StudioPage = () => {
                             >
                               <div className="flex-1 min-w-0">
                                 <p className={`text-sm font-bold truncate ${hasSelectedInGroup ? "text-primary" : "text-foreground"}`}>{group.provider}</p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">{group.tools.length} نماذج</p>
+                                
                               </div>
-                              <ChevronDown className="w-4 h-4 text-muted-foreground -rotate-90" />
+                              <ChevronDown className="w-4 h-4 text-muted-foreground rotate-90" />
                             </button>
                           );
                         })}
