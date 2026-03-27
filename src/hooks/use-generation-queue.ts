@@ -38,6 +38,8 @@ export interface GenerationJob {
   reconciliation_notes: string | null;
 }
 
+type PollProgressCallback = (progress: number, phaseLabel: string, state: string) => void;
+
 /**
  * Smooth simulated progress
  */
@@ -131,6 +133,60 @@ export function useGenerationQueue() {
       .eq("id", jobId);
   }, []);
 
+  const finalizeJobServer = useCallback(async (
+    job: GenerationJob,
+    outcome:
+      | { status: "success"; resultUrl: string }
+      | { status: "failed"; errorMessage: string }
+  ) => {
+    const now = new Date().toISOString();
+
+    if (!job.reservation_id) {
+      if (outcome.status === "success") {
+        await updateJobDB(job.id, {
+          status: "succeeded",
+          progress: 100,
+          result_url: outcome.resultUrl,
+          completed_at: now,
+        });
+      } else {
+        await updateJobDB(job.id, {
+          status: "failed",
+          error_message: outcome.errorMessage,
+          completed_at: now,
+        });
+      }
+      return;
+    }
+
+    const body =
+      outcome.status === "success"
+        ? {
+            reservationId: job.reservation_id,
+            status: "success",
+            taskId: job.task_id,
+            toolId: job.tool_id,
+            toolName: job.tool_name,
+            prompt: job.prompt,
+            fileUrl: outcome.resultUrl,
+            fileType: job.file_type,
+            metadata: job.metadata || {},
+          }
+        : {
+            reservationId: job.reservation_id,
+            status: "failed",
+            errorMessage: outcome.errorMessage,
+            providerFailState: outcome.errorMessage,
+            providerStatusCode: null,
+            providerStatusMessage: null,
+          };
+
+    const { error } = await supabase.functions.invoke("complete-generation", { body });
+    if (error) {
+      throw new Error(error.message);
+    }
+  }, [updateJobDB]);
+
   // Mark a job as seen AND move to library (generations table)
   const markJobSeen = useCallback(async (jobId: string) => {
     const now = new Date().toISOString();
@@ -167,25 +223,31 @@ export function useGenerationQueue() {
     job: GenerationJob,
     onSuccess?: (resultUrls: string[], job: GenerationJob) => void,
     onFail?: (error: string, job: GenerationJob) => void,
+    onProgress?: PollProgressCallback,
   ) => {
     if (!job.task_id) return;
     if (pollingRefs.current.get(job.id)) return;
     pollingRefs.current.set(job.id, true);
 
-    const smooth = createSmoothProgress(job.progress || 5);
+    const smooth = createSmoothProgress(Math.max(0, Math.min(job.progress || 0, 95)));
     const apiType = (job.api_type || "standard") as ApiType;
+    const hasExternalHandlers = Boolean(onSuccess || onFail);
 
-    updateJobLocal(job.id, { status: "running" as JobStatus, progress: 10 });
-    await updateJobDB(job.id, { status: "running", progress: 10 });
+    updateJobLocal(job.id, {
+      status: "running" as JobStatus,
+      progress: Math.max(0, Math.min(job.progress || 0, 95)),
+    });
 
     let latestState = "waiting";
     let latestProgress: number | undefined;
     const progressInterval = setInterval(() => {
       const { progress: simProg, phase } = smooth.update(latestProgress, latestState);
+      const rounded = Math.round(simProg);
       updateJobLocal(job.id, {
-        progress: Math.round(simProg),
+        progress: rounded,
         metadata: { ...job.metadata, phaseLabel: phaseLabels[phase] || phase },
       });
+      onProgress?.(rounded, phaseLabels[phase] || phase, latestState);
     }, 800);
 
     try {
@@ -195,7 +257,9 @@ export function useGenerationQueue() {
           latestState = state;
           latestProgress = prog;
           const { progress: simProg } = smooth.update(prog, state);
-          updateJobDB(job.id, { progress: Math.round(simProg), status: "running" });
+          const rounded = Math.round(simProg);
+          updateJobDB(job.id, { progress: rounded, status: "running" });
+          onProgress?.(rounded, phaseLabels[state] || state, state);
         },
         180,
         3000,
@@ -206,37 +270,82 @@ export function useGenerationQueue() {
       clearInterval(progressInterval);
 
       if (result.resultJson) {
-        const parsed = JSON.parse(result.resultJson);
-        const resultUrl = parsed.resultUrls?.[0] || "";
+        let parsed: { resultUrls?: string[] };
+        try {
+          parsed = JSON.parse(result.resultJson);
+        } catch {
+          throw new Error("Invalid provider result payload");
+        }
+
+        const urls = Array.isArray(parsed.resultUrls)
+          ? parsed.resultUrls.filter((u): u is string => typeof u === "string" && u.length > 0)
+          : [];
+
+        if (urls.length === 0) {
+          throw new Error("Provider returned success without result URL");
+        }
+
+        const resultUrl = urls[0];
+        const now = new Date().toISOString();
 
         updateJobLocal(job.id, {
           status: "succeeded" as JobStatus,
           progress: 100,
           result_url: resultUrl,
-          completed_at: new Date().toISOString(),
+          updated_at: now,
+          completed_at: now,
+          metadata: { ...job.metadata, phaseLabel: phaseLabels.finalizing },
         });
-        // DB update is handled by complete-generation edge function
+        onProgress?.(100, phaseLabels.finalizing, "success");
 
-        onSuccess?.(parsed.resultUrls || [], job);
+        if (!hasExternalHandlers) {
+          try {
+            await finalizeJobServer(job, { status: "success", resultUrl });
+          } catch {
+            await updateJobDB(job.id, {
+              status: "succeeded",
+              progress: 100,
+              result_url: resultUrl,
+              completed_at: now,
+            });
+          }
+        }
+
+        onSuccess?.(urls, job);
       } else {
         throw new Error("No result returned");
       }
     } catch (err) {
       clearInterval(progressInterval);
       const msg = err instanceof Error ? err.message : "Unknown error";
+      const now = new Date().toISOString();
+      const failedStatus: JobStatus = msg.toLowerCase().includes("timed out") ? "timed_out" : "failed";
 
       updateJobLocal(job.id, {
-        status: "failed" as JobStatus,
+        status: failedStatus,
         error_message: msg,
-        completed_at: new Date().toISOString(),
+        updated_at: now,
+        completed_at: now,
       });
-      // DB update is handled by complete-generation edge function
+      onProgress?.(Math.max(Math.round(job.progress || 0), 0), msg, "fail");
+
+      if (!hasExternalHandlers) {
+        try {
+          await finalizeJobServer(job, { status: "failed", errorMessage: msg });
+        } catch {
+          await updateJobDB(job.id, {
+            status: failedStatus,
+            error_message: msg,
+            completed_at: now,
+          });
+        }
+      }
 
       onFail?.(msg, job);
     } finally {
       pollingRefs.current.delete(job.id);
     }
-  }, [updateJobLocal, updateJobDB]);
+  }, [updateJobLocal, updateJobDB, finalizeJobServer]);
 
   // Fetch on mount
   useEffect(() => {
@@ -267,7 +376,21 @@ export function useGenerationQueue() {
             });
           } else if (payload.eventType === "UPDATE") {
             setJobs((prev) =>
-              prev.map((j) => (j.id === newJob.id ? newJob : j))
+              prev.map((j) => {
+                if (j.id !== newJob.id) return j;
+
+                const localIsTerminal = j.status === "succeeded" || j.status === "failed" || j.status === "timed_out";
+                const incomingIsActive = newJob.status === "pending" || newJob.status === "running";
+                const localUpdatedAt = new Date(j.updated_at || j.created_at).getTime();
+                const incomingUpdatedAt = new Date(newJob.updated_at || newJob.created_at).getTime();
+
+                // Prevent regressing UI from terminal local state back to stale active updates.
+                if (localIsTerminal && incomingIsActive && incomingUpdatedAt <= localUpdatedAt) {
+                  return j;
+                }
+
+                return newJob;
+              })
             );
           } else if (payload.eventType === "DELETE") {
             setJobs((prev) => prev.filter((j) => j.id !== (payload.old as any).id));

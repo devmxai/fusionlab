@@ -16,6 +16,7 @@ interface GenerationQueueContextValue {
     job: GenerationJob,
     onSuccess?: (resultUrls: string[], job: GenerationJob) => void,
     onFail?: (error: string, job: GenerationJob) => void,
+    onProgress?: (progress: number, phaseLabel: string, state: string) => void,
   ) => Promise<void>;
   fetchJobs: () => Promise<void>;
   updateJobLocal: (jobId: string, updates: Partial<GenerationJob>) => void;
