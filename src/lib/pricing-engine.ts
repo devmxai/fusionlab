@@ -12,6 +12,7 @@ export interface PricingParams {
   quality?: string | null;
   durationSeconds?: number | null;
   hasAudio?: boolean | null;
+  characterCount?: number | null;
 }
 
 export interface PricingResult {
