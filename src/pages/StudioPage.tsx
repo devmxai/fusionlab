@@ -71,6 +71,7 @@ const StudioPage = () => {
   const [remixUploadSlot, setRemixUploadSlot] = useState<number>(-1);
 
   const { user, credits, refreshCredits } = useAuth();
+  const { createJob, pollJob } = useQueue();
   const categoryName = category ? categorySlugMap[category] : undefined;
 
   const categoryTools = useMemo(
