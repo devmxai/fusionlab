@@ -76,20 +76,6 @@ const StudioPage = () => {
     [categoryName]
   );
 
-  // Pre-select model from query param (e.g. ?model=kling-3)
-  useEffect(() => {
-    const modelId = searchParams.get("model");
-    if (modelId && categoryTools.length > 0) {
-      const found = categoryTools.find((t) => t.id === modelId);
-      if (found) {
-        handleSelectModel(found);
-        // Clean the URL
-        searchParams.delete("model");
-        setSearchParams(searchParams, { replace: true });
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryTools]);
 
   // ── State ──
   const [selectedTool, setSelectedTool] = useState<AITool | null>(null);
