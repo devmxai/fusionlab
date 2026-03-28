@@ -375,9 +375,9 @@ const StudioPage = () => {
   const isImageOnlyTool = category === "remove-bg" || category === "upscale";
   const isUpscaleTool = category === "upscale";
   const isRemixTool = category === "remix";
-  const isAvatarTool = category === "avatar";
+  const isAvatarTool = category === "avatar" || category === "transfer";
   const isShootsTool = category === "shoots";
-  const isAvatarAudioModel = isAvatarTool && !!tool && (tool.inputType === "avatar");
+  const isAvatarAudioModel = (category === "avatar") && !!tool && (tool.inputType === "avatar");
   const isAvatarAnimateModel = isAvatarTool && !!tool && (tool.inputType === "animate");
   const isFluxKontext = !!tool && tool.isFluxKontextApi === true;
   const hasFrameMode = !!(caps?.frameMode || tool?.frameMode);
