@@ -602,7 +602,7 @@ export function buildModelInput(
     };
   }
 
-  if (model === "wan/2-2-animate-move") {
+  if (model === "wan/2-2-animate-move" || model === "wan/2-2-animate-replace") {
     return {
       video_url: extraParams?.video_url || "",
       image_url: extraParams?.image_url || (imageUrls?.[0] ?? ""),
