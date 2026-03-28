@@ -1059,6 +1059,18 @@ const StudioPage = () => {
             const file = e.target.files?.[0];
             if (!file) return;
             setAvatarAudio({ file, name: file.name });
+            // Detect actual audio duration for accurate pricing
+            const audioEl = document.createElement("audio");
+            audioEl.src = URL.createObjectURL(file);
+            audioEl.addEventListener("loadedmetadata", () => {
+              if (audioEl.duration && isFinite(audioEl.duration)) {
+                setAudioDurationSeconds(audioEl.duration);
+              }
+              URL.revokeObjectURL(audioEl.src);
+            });
+            audioEl.addEventListener("error", () => {
+              URL.revokeObjectURL(audioEl.src);
+            });
             if (avatarAudioInputRef.current) avatarAudioInputRef.current.value = "";
           }} />
           <input ref={avatarVideoInputRef} type="file" accept="video/*" className="hidden" onChange={(e) => {
