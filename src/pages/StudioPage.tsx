@@ -599,6 +599,8 @@ const StudioPage = () => {
       }
 
       // ── Step 2: Build model input ──
+      // For Kling Avatar: use the effective model (pro when 1080p selected)
+      const apiModel = isAvatarTool ? (effectiveAvatarModel || tool.model) : tool.model;
       const extraParams: Record<string, unknown> = {
         upscale_factor: upscaleFactor,
         duration: videoDuration,
@@ -608,7 +610,7 @@ const StudioPage = () => {
         ...(avatarVideoUrl && { video_url: avatarVideoUrl }),
         ...(imageUrls?.[0] && isAvatarTool && { image_url: imageUrls[0] }),
       };
-      const input = buildModelInput(tool.model, prompt, aspectRatio, resolution, imageUrls, extraParams);
+      const input = buildModelInput(apiModel, prompt, aspectRatio, resolution, imageUrls, extraParams);
       const apiType = isFluxKontext ? "flux-kontext" : (tool.isVeoApi ? "veo" : "standard");
 
       // ── Step 3: Start generation (server: auth → entitlement → price → reserve → create task + job record) ──
@@ -618,14 +620,14 @@ const StudioPage = () => {
       const idempotencyKey = `gen_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const fileType = (isVideoTool || isAvatarTool) ? "video" : "image";
 
-      // Use avatar-specific resolution for avatar models, general resolution otherwise
+      // Use avatar-specific resolution and model for server
       const serverResolution = isAvatarTool ? avatarPricingResolution : (resolution || null);
 
       const { data: startResult, error: startError } = await supabase.functions.invoke("start-generation", {
         body: {
           toolId: tool.id,
           toolName: tool.title,
-          model: tool.model,
+          model: apiModel,
           apiType,
           input,
           resolution: serverResolution,
