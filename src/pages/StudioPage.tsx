@@ -1296,8 +1296,8 @@ const StudioPage = () => {
                       <div className="flex-1 min-w-0">
                         <Music className="w-3.5 h-3.5 text-primary inline-block mr-1" />
                         <span className="text-[10px] font-medium text-foreground truncate">{avatarAudio.name}</span>
-                        {audioDurationSeconds !== null && (
-                          <span className="text-[9px] text-muted-foreground mr-1">({Math.ceil(audioDurationSeconds)}ث)</span>
+                        {mediaDurationSeconds !== null && (
+                          <span className="text-[9px] text-muted-foreground mr-1">({Math.ceil(mediaDurationSeconds)}ث)</span>
                         )}
                       </div>
                       <button
