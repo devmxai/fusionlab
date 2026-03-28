@@ -189,6 +189,9 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
   "wan/2-2-animate-move": {
     resolutions: ["480p", "580p", "720p"],
   },
+  "wan/2-2-animate-replace": {
+    resolutions: ["480p", "580p", "720p"],
+  },
 
   // ─── Transfer / Motion Control Models ───
   // Docs: mode 720p|1080p, character_orientation image|video, input_urls 1 image, video_urls 1 video
