@@ -16,6 +16,7 @@ import {
   Sparkles,
   Loader2,
   Library,
+  Video,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -704,6 +705,22 @@ const AudioStudioPage = () => {
                 <Download className="w-4 h-4" />
                 تحميل
               </Button>
+
+              <Button
+                variant="outline"
+                disabled={!audioUrl}
+                className="gap-2"
+                onClick={() => {
+                  if (!audioUrl) return;
+                  // Store audio URL in sessionStorage and navigate to avatar studio
+                  sessionStorage.setItem("avatar-audio-url", audioUrl);
+                  sessionStorage.setItem("avatar-audio-name", `صوت_${selectedVoice.label}_${Date.now()}`);
+                  navigate("/studio/avatar");
+                }}
+              >
+                <Video className="w-4 h-4" />
+                استخدام في أفتار
+              </Button>
             </div>
           </div>
 
@@ -1009,6 +1026,17 @@ const AudioStudioPage = () => {
                           title="تحميل"
                         >
                           <Download className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            sessionStorage.setItem("avatar-audio-url", item.file_url);
+                            sessionStorage.setItem("avatar-audio-name", item.prompt?.slice(0, 30) || "مقطع صوتي");
+                            navigate("/studio/avatar");
+                          }}
+                          className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
+                          title="استخدام في أفتار"
+                        >
+                          <Video className="w-3.5 h-3.5 text-primary" />
                         </button>
                         <button
                           onClick={() => handleLibDelete(item)}
