@@ -393,7 +393,30 @@ const StudioPage = () => {
   const remixMaxImages = isRemixTool ? (caps?.maxImages ?? 3) : 0;
   const remixMinImages = isRemixTool ? (caps?.minImages ?? 0) : 0;
 
-  // Shoots: Coming Soon page
+  // Transfer showcase: animated text
+  const transferTexts = ["نقل الحركة من فيديو إلى صورة", "استبدال الشخصية في الفيديو", "تحريك صورة ثابتة بحركة واقعية", "دمج ملامح جديدة بسلاسة"];
+  const [transferTextIdx, setTransferTextIdx] = useState(0);
+  useEffect(() => {
+    if (category !== "transfer") return;
+    const interval = setInterval(() => setTransferTextIdx((p) => (p + 1) % transferTexts.length), 3000);
+    return () => clearInterval(interval);
+  }, [category]);
+
+  const TransferShowcaseText = () => (
+    <AnimatePresence mode="wait">
+      <motion.p
+        key={transferTextIdx}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.4 }}
+        className="text-sm font-bold text-primary/80 text-center"
+      >
+        {transferTexts[transferTextIdx]}
+      </motion.p>
+    </AnimatePresence>
+  );
+
   if (isShootsTool) {
     return (
       <div className="h-screen bg-background flex flex-col items-center justify-center gap-4" dir="rtl">
@@ -953,6 +976,24 @@ const StudioPage = () => {
           <Sparkles className="w-9 h-9 text-primary opacity-40" />
           <h2 className="text-base font-bold text-foreground/70">اختر النموذج</h2>
           <p className="text-xs text-muted-foreground/60">اختر نموذج من الأعلى للبدء</p>
+        </motion.div>
+      );
+    }
+
+    // Transfer showcase: show demo videos when no files uploaded yet
+    if (category === "transfer" && !avatarImage && !avatarVideo) {
+      return (
+        <motion.div key="transfer-showcase" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="w-full h-full flex flex-col items-center justify-center gap-4 px-4">
+          <div className="flex gap-3 w-full max-w-[600px]">
+            <div className="flex-1 rounded-xl overflow-hidden border border-border/30 shadow-lg">
+              <video src="/demos/transfer-demo-1.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover" />
+            </div>
+            <div className="flex-1 rounded-xl overflow-hidden border border-border/30 shadow-lg">
+              <video src="/demos/transfer-demo-2.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover" />
+            </div>
+          </div>
+          <TransferShowcaseText />
         </motion.div>
       );
     }
