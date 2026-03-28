@@ -328,6 +328,12 @@ export function useGenerationQueue() {
     const apiType = (job.api_type || "standard") as ApiType;
     const hasExternalHandlers = Boolean(onSuccess || onFail);
 
+    // Avatar and video models need longer polling (up to ~20 minutes)
+    const isLongRunning = ["avatar", "افتار"].some(cat =>
+      job.model?.includes("avatar") || job.model?.includes("infinitalk") || job.model?.includes("animate") || job.file_type === "video"
+    );
+    const maxAttempts = isLongRunning ? 400 : 180;
+
     updateJobLocal(job.id, {
       status: "running" as JobStatus,
       progress: Math.max(1, Math.min(job.progress || 1, 95)),
@@ -361,7 +367,7 @@ export function useGenerationQueue() {
           }
           emitPollProgress(job.id, rounded, phaseLabels[state] || state, state);
         },
-        180,
+        maxAttempts,
         3000,
         false,
         apiType,
@@ -418,30 +424,49 @@ export function useGenerationQueue() {
     } catch (err) {
       clearInterval(progressInterval);
       const msg = err instanceof Error ? err.message : "Unknown error";
+      const isTimeout = msg.toLowerCase().includes("timed out");
       const now = new Date().toISOString();
-      const failedStatus: JobStatus = msg.toLowerCase().includes("timed out") ? "timed_out" : "failed";
 
-      updateJobLocal(job.id, {
-        status: failedStatus,
-        error_message: msg,
-        updated_at: now,
-        completed_at: now,
-      });
-      emitPollProgress(job.id, Math.max(Math.round(job.progress || 0), 0), msg, "fail");
+      // For timeouts on long-running models: DON'T mark as permanently failed.
+      // Keep the job as "running" so auto-resume can pick it up when user revisits.
+      if (isTimeout && isLongRunning) {
+        console.warn(`Polling timed out for long-running job ${job.id}, keeping alive for auto-resume`);
+        // Keep job in running state with current progress — don't call complete-generation
+        updateJobLocal(job.id, {
+          status: "running" as JobStatus,
+          metadata: { ...job.metadata, phaseLabel: "يعمل في الخلفية — سيظهر في قيد التوليد عند الاكتمال" },
+        });
+        emitPollProgress(job.id, Math.max(Math.round(job.progress || 0), 0), "يعمل في الخلفية...", "running");
 
-      if (!hasExternalHandlers) {
-        try {
-          await finalizeJobServer(job, { status: "failed", errorMessage: msg });
-        } catch {
-          await updateJobDB(job.id, {
-            status: failedStatus,
-            error_message: msg,
-            completed_at: now,
-          });
+        // Emit fail to the external handler to reset UI loading state, but don't finalize server-side
+        if (hasExternalHandlers) {
+          emitPollFail(job.id, "يعمل في الخلفية — تابع من قائمة قيد التوليد", job);
         }
-      }
+      } else {
+        const failedStatus: JobStatus = isTimeout ? "timed_out" : "failed";
 
-      emitPollFail(job.id, msg, job);
+        updateJobLocal(job.id, {
+          status: failedStatus,
+          error_message: msg,
+          updated_at: now,
+          completed_at: now,
+        });
+        emitPollProgress(job.id, Math.max(Math.round(job.progress || 0), 0), msg, "fail");
+
+        if (!hasExternalHandlers) {
+          try {
+            await finalizeJobServer(job, { status: "failed", errorMessage: msg });
+          } catch {
+            await updateJobDB(job.id, {
+              status: failedStatus,
+              error_message: msg,
+              completed_at: now,
+            });
+          }
+        }
+
+        emitPollFail(job.id, msg, job);
+      }
     } finally {
       pollingRefs.current.delete(job.id);
       pollListenersRef.current.delete(job.id);

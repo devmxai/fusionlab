@@ -571,6 +571,17 @@ const StudioPage = () => {
         },
         // onFail
         async (errorMsg, failedJob) => {
+          // If it's a "background" message from long-running timeout, don't treat as real failure
+          const isBackgroundContinue = errorMsg?.includes("يعمل في الخلفية");
+          if (isBackgroundContinue) {
+            toast.info("النموذج يعمل في الخلفية — تابع النتيجة من قائمة \"قيد التوليد\"", { duration: 6000 });
+            setStatus("");
+            setProgress(0);
+            setLoading(false);
+            // Don't call complete-generation — job is still alive
+            return;
+          }
+
           if (reservationId) {
             try {
               await supabase.functions.invoke("complete-generation", {
@@ -679,8 +690,13 @@ const StudioPage = () => {
     if (loading) {
       return (
         <motion.div key="loading" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
-          className="flex flex-col items-center justify-center gap-2">
+          className="flex flex-col items-center justify-center gap-3">
           <CircularProgress progress={progress} size={110} status={status} />
+          {isAvatarTool && (
+            <p className="text-[11px] text-muted-foreground text-center max-w-[260px] leading-relaxed mt-1">
+              نماذج الأفتار تستغرق وقتاً أطول (2-10 دقائق). يمكنك المتابعة من قائمة "قيد التوليد" إذا أردت المغادرة.
+            </p>
+          )}
         </motion.div>
       );
     }
