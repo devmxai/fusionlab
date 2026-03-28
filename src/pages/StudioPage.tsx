@@ -1359,7 +1359,7 @@ const StudioPage = () => {
                       <Video className="w-4 h-4 text-primary" />
                       <span className="text-[8px] font-bold text-foreground truncate max-w-[80%] px-1">{avatarVideo.name}</span>
                       <button
-                        onClick={(e) => { e.stopPropagation(); setAvatarVideo(null); }}
+                        onClick={(e) => { e.stopPropagation(); setAvatarVideo(null); setMediaDurationSeconds(null); }}
                         className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
                       >
                         <X className="w-2.5 h-2.5 text-destructive-foreground" />
@@ -1373,6 +1373,30 @@ const StudioPage = () => {
                   )}
                 </button>
               )}
+            </div>
+          )}
+
+          {/* ── Avatar Pricing Breakdown ── */}
+          {isAvatarTool && selectedTool && mediaDurationSeconds !== null && price && price.priceUnit === "per_second" && effectiveDurationSeconds && (
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-secondary/50 border border-border/30">
+              <div className="flex items-center gap-3 text-[10px] text-muted-foreground flex-1">
+                <span className="font-bold text-foreground">{resolution?.toUpperCase()}</span>
+                <span>•</span>
+                <span>{effectiveDurationSeconds}ث</span>
+                <span>•</span>
+                <span>{Math.round((price.credits / effectiveDurationSeconds) * 10) / 10} كريدت/ث</span>
+                <span>•</span>
+                <span className="font-bold text-primary">{price.credits} كريدت</span>
+              </div>
+            </div>
+          )}
+
+          {/* Duration exceeded warning */}
+          {mediaDurationExceedsLimit && (
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-destructive/10 border border-destructive/30">
+              <span className="text-[10px] text-destructive font-medium">
+                ⚠️ المدة {Math.ceil(mediaDurationSeconds!)}ث تتجاوز الحد الأقصى (15ث). سيتم احتساب 15ث فقط.
+              </span>
             </div>
           )}
 
