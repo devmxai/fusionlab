@@ -250,10 +250,10 @@ const StudioPage = () => {
   const effectiveDurationSeconds = useMemo(() => {
     const isAvatar = !!selectedTool && (selectedTool.inputType === "avatar" || selectedTool.inputType === "animate");
     if (isAvatar && mediaDurationSeconds !== null) {
-      const capped = Math.ceil(mediaDurationSeconds);
+      const rounded = Math.round(mediaDurationSeconds);
       // Infinitalk max 15s per KIE.AI docs
-      if (selectedTool?.model === "infinitalk/from-audio" && capped > 15) return 15;
-      return capped;
+      if (selectedTool?.model === "infinitalk/from-audio" && rounded > 15) return 15;
+      return rounded;
     }
     // For avatar models without detected duration, return null (prevent fallback to videoDuration)
     if (isAvatar) return null;
@@ -264,7 +264,7 @@ const StudioPage = () => {
   const mediaDurationExceedsLimit = useMemo(() => {
     if (!selectedTool || selectedTool.model !== "infinitalk/from-audio") return false;
     if (mediaDurationSeconds === null) return false;
-    return Math.ceil(mediaDurationSeconds) > 15;
+    return Math.round(mediaDurationSeconds) > 15;
   }, [selectedTool, mediaDurationSeconds]);
 
   // Determine hasAudio correctly for avatar models
