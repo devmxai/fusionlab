@@ -121,6 +121,14 @@ const StudioPage = () => {
     return getModelCapabilities(selectedTool.model);
   }, [selectedTool]);
 
+  // For avatar per_second models, use actual audio duration; for video models, use dropdown
+  const effectiveDurationSeconds = useMemo(() => {
+    if (isAvatarAudioModel && audioDurationSeconds !== null) {
+      return Math.ceil(audioDurationSeconds);
+    }
+    return videoDuration ? parseInt(videoDuration) : null;
+  }, [isAvatarAudioModel, audioDurationSeconds, videoDuration]);
+
   // Dynamic pricing based on selected model + options
   const pricingParams = useMemo(() => {
     if (!selectedTool) return null;
@@ -129,10 +137,10 @@ const StudioPage = () => {
       model: t.model,
       resolution: resolution || null,
       quality: quality || null,
-      durationSeconds: videoDuration ? parseInt(videoDuration) : null,
+      durationSeconds: effectiveDurationSeconds,
       hasAudio: false,
     };
-  }, [selectedTool, resolution, quality, videoDuration]);
+  }, [selectedTool, resolution, quality, effectiveDurationSeconds]);
 
   const { price } = usePricing(pricingParams);
   const { checkAccess } = usePlanGating(selectedTool?.model || null);
