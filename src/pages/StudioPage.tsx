@@ -393,7 +393,30 @@ const StudioPage = () => {
   const remixMaxImages = isRemixTool ? (caps?.maxImages ?? 3) : 0;
   const remixMinImages = isRemixTool ? (caps?.minImages ?? 0) : 0;
 
-  // Shoots: Coming Soon page
+  // Transfer showcase: animated text
+  const transferTexts = ["نقل الحركة من فيديو إلى صورة", "استبدال الشخصية في الفيديو", "تحريك صورة ثابتة بحركة واقعية", "دمج ملامح جديدة بسلاسة"];
+  const [transferTextIdx, setTransferTextIdx] = useState(0);
+  useEffect(() => {
+    if (category !== "transfer") return;
+    const interval = setInterval(() => setTransferTextIdx((p) => (p + 1) % transferTexts.length), 3000);
+    return () => clearInterval(interval);
+  }, [category]);
+
+  const TransferShowcaseText = () => (
+    <AnimatePresence mode="wait">
+      <motion.p
+        key={transferTextIdx}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.4 }}
+        className="text-sm font-bold text-primary/80 text-center"
+      >
+        {transferTexts[transferTextIdx]}
+      </motion.p>
+    </AnimatePresence>
+  );
+
   if (isShootsTool) {
     return (
       <div className="h-screen bg-background flex flex-col items-center justify-center gap-4" dir="rtl">
