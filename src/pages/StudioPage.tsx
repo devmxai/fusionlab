@@ -1635,26 +1635,48 @@ const StudioPage = () => {
         open={audioPickerOpen}
         onClose={() => setAudioPickerOpen(false)}
         mediaType="audio"
-        onSelect={(url, fileName) => {
+        onSelect={async (url, fileName) => {
           if (avatarAudio?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl);
+
+          // Fetch the audio to create a local blob for duration detection and playback
+          let localBlobUrl: string | null = null;
+          let detectedDuration: number | null = null;
+
+          try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            localBlobUrl = URL.createObjectURL(blob);
+          } catch {
+            // If fetch fails (CORS), use the URL directly
+            localBlobUrl = url;
+          }
+
           setAvatarAudio({
             name: fileName || "library_audio.mp3",
             sourceUrl: url,
-            previewUrl: url,
+            previewUrl: localBlobUrl,
           });
 
-          // Detect duration from source URL
+          // Detect duration from local blob
           const audioEl = document.createElement("audio");
           audioEl.preload = "metadata";
-          audioEl.src = url;
+          audioEl.src = localBlobUrl;
           audioEl.addEventListener("loadedmetadata", () => {
             if (audioEl.duration && isFinite(audioEl.duration)) {
               setMediaDurationSeconds(audioEl.duration);
             }
           });
           audioEl.addEventListener("error", () => {
-            setMediaDurationSeconds(null);
-            toast.error("تعذر قراءة مدة الملف الصوتي من المكتبة");
+            // Fallback: try with crossOrigin
+            const audioEl2 = document.createElement("audio");
+            audioEl2.crossOrigin = "anonymous";
+            audioEl2.preload = "metadata";
+            audioEl2.src = url;
+            audioEl2.addEventListener("loadedmetadata", () => {
+              if (audioEl2.duration && isFinite(audioEl2.duration)) {
+                setMediaDurationSeconds(audioEl2.duration);
+              }
+            });
           });
         }}
       />

@@ -361,10 +361,23 @@ const AudioStudioPage = () => {
           .from("generations")
           .upload(`audio/${fileName}`, audioBlob, { contentType: startResult.mimeType || "audio/wav", upsert: false });
 
-        let permanentUrl = localUrl;
+        let permanentUrl: string | null = null;
         if (!uploadError && uploadData?.path) {
           const { data: publicData } = supabase.storage.from("generations").getPublicUrl(uploadData.path);
-          permanentUrl = publicData?.publicUrl || localUrl;
+          permanentUrl = publicData?.publicUrl || null;
+        }
+
+        if (!permanentUrl) {
+          console.error("Audio upload failed, cannot save with blob URL:", uploadError);
+          toast.error("تم التوليد لكن فشل رفع الملف الصوتي — حاول مرة أخرى");
+          // Release credits since we can't persist the file
+          if (reservationId) {
+            await supabase.functions.invoke("complete-generation", {
+              body: { reservationId, status: "failed", errorMessage: "Storage upload failed", providerFailState: "storage_upload_failed" },
+            });
+          }
+          await refreshCredits();
+          return;
         }
 
         // Settle credits + save generation via complete-generation
