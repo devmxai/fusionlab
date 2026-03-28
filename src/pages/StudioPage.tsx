@@ -1341,7 +1341,10 @@ const StudioPage = () => {
                 >
                   <img src={avatarImage.preview} alt="Avatar" className="w-full h-full object-cover rounded-lg" />
                   <button
-                    onClick={() => { URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }}
+                    onClick={() => {
+                      if (avatarImage.preview.startsWith("blob:")) URL.revokeObjectURL(avatarImage.preview);
+                      setAvatarImage(null);
+                    }}
                     className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
                   >
                     <X className="w-2.5 h-2.5 text-destructive-foreground" />
