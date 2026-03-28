@@ -123,11 +123,12 @@ const StudioPage = () => {
 
   // For avatar per_second models, use actual audio duration; for video models, use dropdown
   const effectiveDurationSeconds = useMemo(() => {
-    if (isAvatarAudioModel && audioDurationSeconds !== null) {
+    const isAvatarAudio = !!selectedTool && selectedTool.inputType === "avatar";
+    if (isAvatarAudio && audioDurationSeconds !== null) {
       return Math.ceil(audioDurationSeconds);
     }
     return videoDuration ? parseInt(videoDuration) : null;
-  }, [isAvatarAudioModel, audioDurationSeconds, videoDuration]);
+  }, [selectedTool, audioDurationSeconds, videoDuration]);
 
   // Dynamic pricing based on selected model + options
   const pricingParams = useMemo(() => {
