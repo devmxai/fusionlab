@@ -1648,10 +1648,7 @@ const StudioPage = () => {
           audioEl.addEventListener("error", () => {
             setMediaDurationSeconds(null);
             toast.error("تعذر قراءة مدة الملف الصوتي من المكتبة");
-            });
-          } catch {
-            toast.error("فشل في تحميل الصوت من المكتبة");
-          }
+          });
         }}
       />
     </div>
