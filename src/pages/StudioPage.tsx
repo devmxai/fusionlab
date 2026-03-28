@@ -142,15 +142,15 @@ const StudioPage = () => {
         const res = await fetch(audioUrl);
         const blob = await res.blob();
         const file = new File([blob], audioName || "audio.wav", { type: blob.type || "audio/wav" });
-        setAvatarAudio({ file, name: file.name });
+        const objectUrl = URL.createObjectURL(file);
+        setAvatarAudio({ file, name: file.name, previewUrl: objectUrl, sourceUrl: objectUrl });
         // Detect duration
         const audioEl = document.createElement("audio");
-        audioEl.src = URL.createObjectURL(file);
+        audioEl.src = objectUrl;
         audioEl.addEventListener("loadedmetadata", () => {
           if (audioEl.duration && isFinite(audioEl.duration)) {
             setMediaDurationSeconds(audioEl.duration);
           }
-          URL.revokeObjectURL(audioEl.src);
         });
       } catch {
         // silently ignore
