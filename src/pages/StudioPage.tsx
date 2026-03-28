@@ -1406,7 +1406,7 @@ const StudioPage = () => {
                       >
                         <Play className="w-3.5 h-3.5 text-primary ml-0.5" />
                       </button>
-                      <audio id="avatar-audio-preview" src={URL.createObjectURL(avatarAudio.file)} className="hidden" />
+                      <audio id="avatar-audio-preview" src={avatarAudio.previewUrl || avatarAudio.sourceUrl || ""} className="hidden" />
                       <div className="flex-1 min-w-0">
                         <Music className="w-3.5 h-3.5 text-primary inline-block mr-1" />
                         <span className="text-[10px] font-medium text-foreground truncate">{avatarAudio.name}</span>
