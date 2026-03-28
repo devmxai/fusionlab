@@ -457,18 +457,32 @@ const StudioPage = () => {
       if (isAvatarTool && avatarImage) {
         setStatus("جاري رفع الملفات...");
         setProgress(10);
-        const imgB64 = await fileToBase64(avatarImage.file);
-        const imgUrl = await uploadFileBase64(imgB64, `avatar_img_${Date.now()}.png`);
-        imageUrls = [imgUrl];
+
+        if (avatarImage.file) {
+          const imgB64 = await fileToBase64(avatarImage.file);
+          const imgUrl = await uploadFileBase64(imgB64, `avatar_img_${Date.now()}.png`);
+          imageUrls = [imgUrl];
+        } else if (avatarImage.sourceUrl) {
+          imageUrls = [avatarImage.sourceUrl];
+        } else {
+          throw new Error("تعذر قراءة الصورة المحددة");
+        }
+
         setProgress(18);
       }
 
       let avatarAudioUrl = "";
       let avatarVideoUrl = "";
       if (isAvatarAudioModel && avatarAudio) {
-        const audioB64 = await fileToBase64(avatarAudio.file);
-        const ext = avatarAudio.file.name.split(".").pop() || "mp3";
-        avatarAudioUrl = await uploadFileBase64(audioB64, `avatar_audio_${Date.now()}.${ext}`);
+        if (avatarAudio.file) {
+          const audioB64 = await fileToBase64(avatarAudio.file);
+          const ext = avatarAudio.file.name.split(".").pop() || "mp3";
+          avatarAudioUrl = await uploadFileBase64(audioB64, `avatar_audio_${Date.now()}.${ext}`);
+        } else if (avatarAudio.sourceUrl) {
+          avatarAudioUrl = avatarAudio.sourceUrl;
+        } else {
+          throw new Error("تعذر قراءة الملف الصوتي المحدد");
+        }
         setProgress(22);
       }
       if (isAvatarAnimateModel && avatarVideo) {
