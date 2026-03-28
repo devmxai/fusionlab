@@ -176,9 +176,10 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
 
   // ─── Avatar Models ───
   // Docs: image_url + audio_url + prompt only, no resolution
-  // Kling Avatar: resolution is fixed per model (720p standard, 1080p pro)
-  // No user-selectable resolution — it's implicit in the model choice
-  "kling/ai-avatar-standard": {},
+  // Kling Avatar: 720p = standard (8 cr/s), 1080p = pro (16 cr/s)
+  "kling/ai-avatar-standard": {
+    resolutions: ["720p", "1080p"],
+  },
   "kling/ai-avatar-pro": {},
   // Docs: image_url + audio_url + prompt + resolution (480p/720p)
   "infinitalk/from-audio": {
