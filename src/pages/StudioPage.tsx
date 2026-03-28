@@ -1393,20 +1393,27 @@ const StudioPage = () => {
                 >
                   {avatarAudio ? (
                     <div className="relative w-full h-14 flex items-center gap-3 px-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const audioEl = document.getElementById("avatar-audio-preview") as HTMLAudioElement | null;
-                          if (audioEl) {
-                            if (audioEl.paused) { audioEl.play(); }
-                            else { audioEl.pause(); }
-                          }
-                        }}
-                        className="w-8 h-8 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center flex-shrink-0 transition-colors"
-                      >
-                        <Play className="w-3.5 h-3.5 text-primary ml-0.5" />
-                      </button>
-                      <audio id="avatar-audio-preview" src={avatarAudio.previewUrl || avatarAudio.sourceUrl || ""} className="hidden" />
+                      {(() => {
+                        const audioSrc = avatarAudio.previewUrl || avatarAudio.sourceUrl || "";
+                        return (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const audioEl = document.getElementById("avatar-audio-preview") as HTMLAudioElement | null;
+                                if (audioEl) {
+                                  if (audioEl.paused) { audioEl.play().catch(() => {}); }
+                                  else { audioEl.pause(); }
+                                }
+                              }}
+                              className="w-8 h-8 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center flex-shrink-0 transition-colors"
+                            >
+                              <Play className="w-3.5 h-3.5 text-primary ml-0.5" />
+                            </button>
+                            <audio id="avatar-audio-preview" src={audioSrc} crossOrigin="anonymous" preload="metadata" className="hidden" />
+                          </>
+                        );
+                      })()}
                       <div className="flex-1 min-w-0">
                         <Music className="w-3.5 h-3.5 text-primary inline-block mr-1" />
                         <span className="text-[10px] font-medium text-foreground truncate">{avatarAudio.name}</span>
