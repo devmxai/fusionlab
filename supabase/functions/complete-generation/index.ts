@@ -145,6 +145,25 @@ serve(async (req) => {
         })
         .eq("reservation_id", reservationId);
 
+      // ── Save generation record ──
+      if (fileUrl && toolId) {
+        const { error: insertError } = await supabaseAdmin
+          .from("generations")
+          .insert({
+            user_id: user.id,
+            tool_id: toolId,
+            tool_name: toolName || null,
+            prompt: prompt || null,
+            file_url: fileUrl,
+            file_type: fileType || "image",
+            reservation_id: reservationId,
+            metadata: metadata || null,
+          });
+        if (insertError) {
+          console.error("Failed to insert generation record:", insertError);
+        }
+      }
+
       console.log("Generation completed:", JSON.stringify({ reservationId, taskId, toolId, billingState: "upstream_success_confirmed" }));
       return jsonRes({ success: true, action: "settled" });
 
