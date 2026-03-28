@@ -1092,7 +1092,7 @@ const StudioPage = () => {
             audioEl.src = URL.createObjectURL(file);
             audioEl.addEventListener("loadedmetadata", () => {
               if (audioEl.duration && isFinite(audioEl.duration)) {
-                setAudioDurationSeconds(audioEl.duration);
+                setMediaDurationSeconds(audioEl.duration);
               }
               URL.revokeObjectURL(audioEl.src);
             });
