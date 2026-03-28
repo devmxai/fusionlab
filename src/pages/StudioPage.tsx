@@ -93,9 +93,13 @@ const StudioPage = () => {
   const [lastFrame, setLastFrame] = useState<{ file: File; preview: string } | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState("");
+
+  type AvatarImageValue = { preview: string; file?: File; sourceUrl?: string };
+  type AvatarAudioValue = { name: string; file?: File; sourceUrl?: string; previewUrl?: string };
+
   // Avatar-specific state
-  const [avatarImage, setAvatarImage] = useState<{ file: File; preview: string } | null>(null);
-  const [avatarAudio, setAvatarAudio] = useState<{ file: File; name: string } | null>(null);
+  const [avatarImage, setAvatarImage] = useState<AvatarImageValue | null>(null);
+  const [avatarAudio, setAvatarAudio] = useState<AvatarAudioValue | null>(null);
   const [avatarVideo, setAvatarVideo] = useState<{ file: File; name: string } | null>(null);
   const [mediaDurationSeconds, setMediaDurationSeconds] = useState<number | null>(null);
 
@@ -138,15 +142,15 @@ const StudioPage = () => {
         const res = await fetch(audioUrl);
         const blob = await res.blob();
         const file = new File([blob], audioName || "audio.wav", { type: blob.type || "audio/wav" });
-        setAvatarAudio({ file, name: file.name });
+        const objectUrl = URL.createObjectURL(file);
+        setAvatarAudio({ file, name: file.name, previewUrl: objectUrl, sourceUrl: objectUrl });
         // Detect duration
         const audioEl = document.createElement("audio");
-        audioEl.src = URL.createObjectURL(file);
+        audioEl.src = objectUrl;
         audioEl.addEventListener("loadedmetadata", () => {
           if (audioEl.duration && isFinite(audioEl.duration)) {
             setMediaDurationSeconds(audioEl.duration);
           }
-          URL.revokeObjectURL(audioEl.src);
         });
       } catch {
         // silently ignore
@@ -211,7 +215,9 @@ const StudioPage = () => {
     if (firstFrame) { URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }
     if (lastFrame) { URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }
     // Reset avatar
-    if (avatarImage) { URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }
+    if (avatarImage?.preview?.startsWith("blob:")) URL.revokeObjectURL(avatarImage.preview);
+    if (avatarAudio?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl);
+    setAvatarImage(null);
     setAvatarAudio(null);
     setAvatarVideo(null);
     setMediaDurationSeconds(null);
@@ -451,18 +457,32 @@ const StudioPage = () => {
       if (isAvatarTool && avatarImage) {
         setStatus("جاري رفع الملفات...");
         setProgress(10);
-        const imgB64 = await fileToBase64(avatarImage.file);
-        const imgUrl = await uploadFileBase64(imgB64, `avatar_img_${Date.now()}.png`);
-        imageUrls = [imgUrl];
+
+        if (avatarImage.file) {
+          const imgB64 = await fileToBase64(avatarImage.file);
+          const imgUrl = await uploadFileBase64(imgB64, `avatar_img_${Date.now()}.png`);
+          imageUrls = [imgUrl];
+        } else if (avatarImage.sourceUrl) {
+          imageUrls = [avatarImage.sourceUrl];
+        } else {
+          throw new Error("تعذر قراءة الصورة المحددة");
+        }
+
         setProgress(18);
       }
 
       let avatarAudioUrl = "";
       let avatarVideoUrl = "";
       if (isAvatarAudioModel && avatarAudio) {
-        const audioB64 = await fileToBase64(avatarAudio.file);
-        const ext = avatarAudio.file.name.split(".").pop() || "mp3";
-        avatarAudioUrl = await uploadFileBase64(audioB64, `avatar_audio_${Date.now()}.${ext}`);
+        if (avatarAudio.file) {
+          const audioB64 = await fileToBase64(avatarAudio.file);
+          const ext = avatarAudio.file.name.split(".").pop() || "mp3";
+          avatarAudioUrl = await uploadFileBase64(audioB64, `avatar_audio_${Date.now()}.${ext}`);
+        } else if (avatarAudio.sourceUrl) {
+          avatarAudioUrl = avatarAudio.sourceUrl;
+        } else {
+          throw new Error("تعذر قراءة الملف الصوتي المحدد");
+        }
         setProgress(22);
       }
       if (isAvatarAnimateModel && avatarVideo) {
@@ -1138,25 +1158,24 @@ const StudioPage = () => {
           <input ref={avatarImageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
             const file = e.target.files?.[0];
             if (!file) return;
-            if (avatarImage) URL.revokeObjectURL(avatarImage.preview);
-            setAvatarImage({ file, preview: URL.createObjectURL(file) });
+            const objectUrl = URL.createObjectURL(file);
+            if (avatarImage?.preview?.startsWith("blob:")) URL.revokeObjectURL(avatarImage.preview);
+            setAvatarImage({ file, preview: objectUrl, sourceUrl: objectUrl });
             if (avatarImageInputRef.current) avatarImageInputRef.current.value = "";
           }} />
           <input ref={avatarAudioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => {
             const file = e.target.files?.[0];
             if (!file) return;
-            setAvatarAudio({ file, name: file.name });
+            const objectUrl = URL.createObjectURL(file);
+            if (avatarAudio?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl);
+            setAvatarAudio({ file, name: file.name, previewUrl: objectUrl, sourceUrl: objectUrl });
             // Detect actual audio duration for accurate pricing
             const audioEl = document.createElement("audio");
-            audioEl.src = URL.createObjectURL(file);
+            audioEl.src = objectUrl;
             audioEl.addEventListener("loadedmetadata", () => {
               if (audioEl.duration && isFinite(audioEl.duration)) {
                 setMediaDurationSeconds(audioEl.duration);
               }
-              URL.revokeObjectURL(audioEl.src);
-            });
-            audioEl.addEventListener("error", () => {
-              URL.revokeObjectURL(audioEl.src);
             });
             if (avatarAudioInputRef.current) avatarAudioInputRef.current.value = "";
           }} />
@@ -1322,7 +1341,10 @@ const StudioPage = () => {
                 >
                   <img src={avatarImage.preview} alt="Avatar" className="w-full h-full object-cover rounded-lg" />
                   <button
-                    onClick={() => { URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }}
+                    onClick={() => {
+                      if (avatarImage.preview.startsWith("blob:")) URL.revokeObjectURL(avatarImage.preview);
+                      setAvatarImage(null);
+                    }}
                     className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
                   >
                     <X className="w-2.5 h-2.5 text-destructive-foreground" />
@@ -1364,7 +1386,7 @@ const StudioPage = () => {
               {/* Audio slot - single icon with dropdown */}
               {isAvatarAudioModel && (
                 <div
-                  className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
+                  className={`flex-1 relative rounded-xl border-2 border-dashed transition-all ${
                     avatarAudio ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
                   }`}
                   style={{ minHeight: "56px" }}
@@ -1384,7 +1406,7 @@ const StudioPage = () => {
                       >
                         <Play className="w-3.5 h-3.5 text-primary ml-0.5" />
                       </button>
-                      <audio id="avatar-audio-preview" src={URL.createObjectURL(avatarAudio.file)} className="hidden" />
+                      <audio id="avatar-audio-preview" src={avatarAudio.previewUrl || avatarAudio.sourceUrl || ""} className="hidden" />
                       <div className="flex-1 min-w-0">
                         <Music className="w-3.5 h-3.5 text-primary inline-block mr-1" />
                         <span className="text-[10px] font-medium text-foreground truncate">{avatarAudio.name}</span>
@@ -1393,7 +1415,12 @@ const StudioPage = () => {
                         )}
                       </div>
                       <button
-                        onClick={(e) => { e.stopPropagation(); setAvatarAudio(null); setMediaDurationSeconds(null); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (avatarAudio.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl);
+                          setAvatarAudio(null);
+                          setMediaDurationSeconds(null);
+                        }}
                         className="w-4 h-4 rounded-full bg-destructive flex items-center justify-center flex-shrink-0"
                       >
                         <X className="w-2.5 h-2.5 text-destructive-foreground" />
@@ -1592,40 +1619,36 @@ const StudioPage = () => {
         open={imagePickerOpen}
         onClose={() => setImagePickerOpen(false)}
         mediaType="image"
-        onSelect={async (url) => {
-          try {
-            const res = await fetch(url);
-            const blob = await res.blob();
-            const file = new File([blob], "library_image.png", { type: blob.type });
-            if (avatarImage) URL.revokeObjectURL(avatarImage.preview);
-            setAvatarImage({ file, preview: URL.createObjectURL(file) });
-          } catch {
-            toast.error("فشل في تحميل الصورة من المكتبة");
-          }
+        onSelect={(url) => {
+          if (avatarImage?.preview?.startsWith("blob:")) URL.revokeObjectURL(avatarImage.preview);
+          setAvatarImage({ preview: url, sourceUrl: url });
         }}
       />
       <MediaPickerDialog
         open={audioPickerOpen}
         onClose={() => setAudioPickerOpen(false)}
         mediaType="audio"
-        onSelect={async (url, fileName) => {
-          try {
-            const res = await fetch(url);
-            const blob = await res.blob();
-            const file = new File([blob], fileName || "library_audio.mp3", { type: blob.type });
-            setAvatarAudio({ file, name: file.name });
-            // Detect duration
-            const audioEl = document.createElement("audio");
-            audioEl.src = URL.createObjectURL(file);
-            audioEl.addEventListener("loadedmetadata", () => {
-              if (audioEl.duration && isFinite(audioEl.duration)) {
-                setMediaDurationSeconds(audioEl.duration);
-              }
-              URL.revokeObjectURL(audioEl.src);
-            });
-          } catch {
-            toast.error("فشل في تحميل الصوت من المكتبة");
-          }
+        onSelect={(url, fileName) => {
+          if (avatarAudio?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl);
+          setAvatarAudio({
+            name: fileName || "library_audio.mp3",
+            sourceUrl: url,
+            previewUrl: url,
+          });
+
+          // Detect duration from source URL
+          const audioEl = document.createElement("audio");
+          audioEl.preload = "metadata";
+          audioEl.src = url;
+          audioEl.addEventListener("loadedmetadata", () => {
+            if (audioEl.duration && isFinite(audioEl.duration)) {
+              setMediaDurationSeconds(audioEl.duration);
+            }
+          });
+          audioEl.addEventListener("error", () => {
+            setMediaDurationSeconds(null);
+            toast.error("تعذر قراءة مدة الملف الصوتي من المكتبة");
+          });
         }}
       />
     </div>

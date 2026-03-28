@@ -56,7 +56,7 @@ const MediaPickerDialog = ({ open, onClose, mediaType, onSelect }: MediaPickerDi
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md max-h-[70vh] overflow-hidden flex flex-col" dir="rtl">
+      <DialogContent className="w-[94vw] max-w-5xl max-h-[78vh] overflow-hidden flex flex-col" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-sm">
             {mediaType === "image" ? <ImageIcon className="w-4 h-4" /> : <Music className="w-4 h-4" />}
@@ -76,7 +76,7 @@ const MediaPickerDialog = ({ open, onClose, mediaType, onSelect }: MediaPickerDi
               </p>
             </div>
           ) : mediaType === "image" ? (
-            <div className="grid grid-cols-3 gap-2 p-1">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-1">
               {items.map((item) => (
                 <button
                   key={item.id}
