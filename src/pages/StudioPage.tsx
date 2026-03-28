@@ -29,6 +29,7 @@ const categorySlugMap: Record<string, string> = {
   remix: "ريمكس",
   audio: "صوت",
   avatar: "افتار",
+  transfer: "ترانسفير",
   "remove-bg": "حذف الخلفية",
   upscale: "رفع الجودة",
   shoots: "شوتس",
@@ -40,6 +41,7 @@ const categoryTitleMap: Record<string, string> = {
   remix: "استديو الريمكس",
   audio: "استديو الصوت",
   avatar: "استديو الأفتار",
+  transfer: "استديو الترانسفير",
   "remove-bg": "حذف الخلفية",
   upscale: "رفع الجودة",
   shoots: "شوتس",
@@ -253,6 +255,8 @@ const StudioPage = () => {
       const rounded = Math.round(mediaDurationSeconds);
       // Infinitalk max 15s per KIE.AI docs
       if (selectedTool?.model === "infinitalk/from-audio" && rounded > 15) return 15;
+      // Kling motion control: max 30s (video orientation), 10s (image orientation) — use 30s default
+      if ((selectedTool?.model === "kling-3.0/motion-control" || selectedTool?.model === "kling-2.6/motion-control") && rounded > 30) return 30;
       return rounded;
     }
     // For avatar models without detected duration, return null (prevent fallback to videoDuration)
@@ -287,9 +291,11 @@ const StudioPage = () => {
   // Get the correct resolution for avatar pricing
   const avatarPricingResolution = useMemo((): string | null => {
     if (!selectedTool) return null;
-    if (selectedTool.model === "kling/ai-avatar-standard") return resolution; // 720p or 1080p from dropdown
-    if (selectedTool.model === "infinitalk/from-audio") return resolution; // user-selected
-    if (selectedTool.model === "wan/2-2-animate-move") return resolution; // user-selected
+    if (selectedTool.model === "kling/ai-avatar-standard") return resolution;
+    if (selectedTool.model === "infinitalk/from-audio") return resolution;
+    if (selectedTool.model === "wan/2-2-animate-move") return resolution;
+    if (selectedTool.model === "kling-3.0/motion-control") return resolution;
+    if (selectedTool.model === "kling-2.6/motion-control") return resolution;
     return null;
   }, [selectedTool, resolution]);
 
@@ -373,9 +379,9 @@ const StudioPage = () => {
   const isImageOnlyTool = category === "remove-bg" || category === "upscale";
   const isUpscaleTool = category === "upscale";
   const isRemixTool = category === "remix";
-  const isAvatarTool = category === "avatar";
+  const isAvatarTool = category === "avatar" || category === "transfer";
   const isShootsTool = category === "shoots";
-  const isAvatarAudioModel = isAvatarTool && !!tool && (tool.inputType === "avatar");
+  const isAvatarAudioModel = (category === "avatar") && !!tool && (tool.inputType === "avatar");
   const isAvatarAnimateModel = isAvatarTool && !!tool && (tool.inputType === "animate");
   const isFluxKontext = !!tool && tool.isFluxKontextApi === true;
   const hasFrameMode = !!(caps?.frameMode || tool?.frameMode);

@@ -25,6 +25,7 @@ export const categories = [
   "ريمكس",
   "صوت",
   "افتار",
+  "ترانسفير",
   "حذف الخلفية",
   "رفع الجودة",
 ] as const;
@@ -345,6 +346,30 @@ export const tools: AITool[] = [
     model: "infinitalk/from-audio",
     inputType: "avatar",
   },
+
+  // ─── Transfer Models (Motion Control — image + reference video) ───
+  {
+    id: "kling-3-motion",
+    title: "Kling 3.0 Motion",
+    provider: "Kling",
+    description: "نقل الحركة من فيديو مرجعي بدقة عالية مع الحفاظ على الهوية",
+    image: "video-gen",
+    isPro: true,
+    category: "ترانسفير",
+    model: "kling-3.0/motion-control",
+    inputType: "animate",
+  },
+  {
+    id: "kling-2-6-motion",
+    title: "Kling 2.6 Motion",
+    provider: "Kling",
+    description: "نقل حركة اقتصادي من فيديو مرجعي إلى صورة",
+    image: "video-gen",
+    isPro: false,
+    category: "ترانسفير",
+    model: "kling-2.6/motion-control",
+    inputType: "animate",
+  },
   {
     id: "wan-animate",
     title: "Wan Animate",
@@ -352,7 +377,7 @@ export const tools: AITool[] = [
     description: "تحريك صورة حسب فيديو مرجعي",
     image: "ai-influencer",
     isPro: false,
-    category: "افتار",
+    category: "ترانسفير",
     model: "wan/2-2-animate-move",
     inputType: "animate",
   },
@@ -571,6 +596,18 @@ export function buildModelInput(
       video_url: extraParams?.video_url || "",
       image_url: extraParams?.image_url || (imageUrls?.[0] ?? ""),
       resolution: (extraParams?.resolution as string) || "480p",
+    };
+  }
+
+  // ─── TRANSFER / MOTION CONTROL MODELS ───
+
+  if (model === "kling-3.0/motion-control" || model === "kling-2.6/motion-control") {
+    return {
+      prompt: prompt || "No distortion, the character's movements are consistent with the video.",
+      input_urls: imageUrls?.length ? [imageUrls[0]] : [],
+      video_urls: extraParams?.video_url ? [extraParams.video_url as string] : [],
+      character_orientation: (extraParams?.character_orientation as string) || "video",
+      mode: (extraParams?.resolution as string) === "1080p" ? "1080p" : "720p",
     };
   }
 

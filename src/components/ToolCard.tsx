@@ -123,6 +123,7 @@ const categoryStudioMap: Record<string, string> = {
   "ريمكس": "/studio/remix",
   "صوت": "/studio/audio",
   "افتار": "/studio/avatar",
+  "ترانسفير": "/studio/transfer",
   "حذف الخلفية": "/studio/remove-bg",
   "رفع الجودة": "/studio/upscale",
 };
