@@ -158,6 +158,7 @@ const StudioPage = () => {
     if (avatarImage) { URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }
     setAvatarAudio(null);
     setAvatarVideo(null);
+    setAudioDurationSeconds(null);
     // Baseline defaults
     setAspectRatio("1:1");
     setVideoDuration("5");
