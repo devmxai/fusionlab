@@ -142,6 +142,12 @@ const StudioPage = () => {
     return Math.ceil(mediaDurationSeconds) > 15;
   }, [selectedTool, mediaDurationSeconds]);
 
+  // Determine hasAudio correctly for avatar models
+  const hasAudioForPricing = useMemo(() => {
+    if (!selectedTool) return false;
+    return selectedTool.inputType === "avatar"; // avatar models use audio input
+  }, [selectedTool]);
+
   // Dynamic pricing based on selected model + options
   const pricingParams = useMemo(() => {
     if (!selectedTool) return null;
@@ -151,9 +157,9 @@ const StudioPage = () => {
       resolution: resolution || null,
       quality: quality || null,
       durationSeconds: effectiveDurationSeconds,
-      hasAudio: false,
+      hasAudio: hasAudioForPricing,
     };
-  }, [selectedTool, resolution, quality, effectiveDurationSeconds]);
+  }, [selectedTool, resolution, quality, effectiveDurationSeconds, hasAudioForPricing]);
 
   const { price } = usePricing(pricingParams);
   const { checkAccess } = usePlanGating(selectedTool?.model || null);
