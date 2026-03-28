@@ -3,7 +3,8 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { tools, buildModelInput, AITool } from "@/data/tools";
 import { getModelCapabilities } from "@/data/model-capabilities";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Image as ImageIcon, Send, X, Sparkles, ChevronDown, Upload, Plus, Music, Video, Lock, Play, Pause } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, Send, X, Sparkles, ChevronDown, Upload, Plus, Music, Video, Lock, Play, Pause, FolderOpen } from "lucide-react";
+import MediaPickerDialog from "@/components/MediaPickerDialog";
 import { uploadFileBase64 } from "@/lib/kie-ai";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -96,11 +97,14 @@ const StudioPage = () => {
   const [avatarImage, setAvatarImage] = useState<{ file: File; preview: string } | null>(null);
   const [avatarAudio, setAvatarAudio] = useState<{ file: File; name: string } | null>(null);
   const [avatarVideo, setAvatarVideo] = useState<{ file: File; name: string } | null>(null);
-  const [audioDurationSeconds, setAudioDurationSeconds] = useState<number | null>(null);
+  const [mediaDurationSeconds, setMediaDurationSeconds] = useState<number | null>(null);
 
   // Dropdown open states
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [modelSubPage, setModelSubPage] = useState<string | null>(null);
+  // Media picker state
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
+  const [audioPickerOpen, setAudioPickerOpen] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -121,14 +125,32 @@ const StudioPage = () => {
     return getModelCapabilities(selectedTool.model);
   }, [selectedTool]);
 
-  // For avatar per_second models, use actual audio duration; for video models, use dropdown
+  // For avatar models, use actual media duration (audio/video); for video models, use dropdown
   const effectiveDurationSeconds = useMemo(() => {
-    const isAvatarAudio = !!selectedTool && selectedTool.inputType === "avatar";
-    if (isAvatarAudio && audioDurationSeconds !== null) {
-      return Math.ceil(audioDurationSeconds);
+    const isAvatar = !!selectedTool && (selectedTool.inputType === "avatar" || selectedTool.inputType === "animate");
+    if (isAvatar && mediaDurationSeconds !== null) {
+      const capped = Math.ceil(mediaDurationSeconds);
+      // Infinitalk max 15s per KIE.AI docs
+      if (selectedTool?.model === "infinitalk/from-audio" && capped > 15) return 15;
+      return capped;
     }
+    // For avatar models without detected duration, return null (prevent fallback to videoDuration)
+    if (isAvatar) return null;
     return videoDuration ? parseInt(videoDuration) : null;
-  }, [selectedTool, audioDurationSeconds, videoDuration]);
+  }, [selectedTool, mediaDurationSeconds, videoDuration]);
+
+  // Whether media duration exceeds the limit
+  const mediaDurationExceedsLimit = useMemo(() => {
+    if (!selectedTool || selectedTool.model !== "infinitalk/from-audio") return false;
+    if (mediaDurationSeconds === null) return false;
+    return Math.ceil(mediaDurationSeconds) > 15;
+  }, [selectedTool, mediaDurationSeconds]);
+
+  // Determine hasAudio correctly for avatar models
+  const hasAudioForPricing = useMemo(() => {
+    if (!selectedTool) return false;
+    return selectedTool.inputType === "avatar"; // avatar models use audio input
+  }, [selectedTool]);
 
   // Dynamic pricing based on selected model + options
   const pricingParams = useMemo(() => {
@@ -139,9 +161,9 @@ const StudioPage = () => {
       resolution: resolution || null,
       quality: quality || null,
       durationSeconds: effectiveDurationSeconds,
-      hasAudio: false,
+      hasAudio: hasAudioForPricing,
     };
-  }, [selectedTool, resolution, quality, effectiveDurationSeconds]);
+  }, [selectedTool, resolution, quality, effectiveDurationSeconds, hasAudioForPricing]);
 
   const { price } = usePricing(pricingParams);
   const { checkAccess } = usePlanGating(selectedTool?.model || null);
@@ -158,7 +180,7 @@ const StudioPage = () => {
     if (avatarImage) { URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }
     setAvatarAudio(null);
     setAvatarVideo(null);
-    setAudioDurationSeconds(null);
+    setMediaDurationSeconds(null);
     // Baseline defaults
     setAspectRatio("1:1");
     setVideoDuration("5");
@@ -326,8 +348,16 @@ const StudioPage = () => {
       toast.error("يجب رفع صورة ومقطع صوتي");
       return;
     }
+    if (isAvatarAudioModel && mediaDurationSeconds === null) {
+      toast.error("لم يتم استخراج مدة الملف الصوتي — يرجى إعادة رفعه");
+      return;
+    }
     if (isAvatarAnimateModel && (!avatarImage || !avatarVideo)) {
       toast.error("يجب رفع صورة وفيديو مرجعي");
+      return;
+    }
+    if (isAvatarAnimateModel && mediaDurationSeconds === null) {
+      toast.error("لم يتم استخراج مدة الفيديو — يرجى إعادة رفعه");
       return;
     }
     if (!isImageOnlyTool && !isRemixTool && !isAvatarTool && !prompt.trim() && refImages.length === 0 && !firstFrame) {
@@ -438,11 +468,18 @@ const StudioPage = () => {
           resolution: resolution || null,
           quality: quality || null,
           durationSeconds: effectiveDurationSeconds,
-          hasAudio: false,
+          hasAudio: hasAudioForPricing,
           idempotencyKey,
           prompt: prompt || tool.title,
           fileType,
-          jobMetadata: { aspectRatio, resolution, quality },
+          jobMetadata: {
+            aspectRatio,
+            resolution,
+            quality,
+            detected_duration_seconds: mediaDurationSeconds ? Math.ceil(mediaDurationSeconds) : null,
+            selected_resolution: resolution,
+            matched_rate_per_second: price?.priceUnit === "per_second" ? price?.perCharRate || (price?.credits && effectiveDurationSeconds ? Math.round((price.credits / effectiveDurationSeconds) * 10) / 10 : null) : null,
+          },
         },
       });
 
@@ -1080,7 +1117,7 @@ const StudioPage = () => {
             audioEl.src = URL.createObjectURL(file);
             audioEl.addEventListener("loadedmetadata", () => {
               if (audioEl.duration && isFinite(audioEl.duration)) {
-                setAudioDurationSeconds(audioEl.duration);
+                setMediaDurationSeconds(audioEl.duration);
               }
               URL.revokeObjectURL(audioEl.src);
             });
@@ -1093,6 +1130,19 @@ const StudioPage = () => {
             const file = e.target.files?.[0];
             if (!file) return;
             setAvatarVideo({ file, name: file.name });
+            // Detect video duration for animate models
+            const videoEl = document.createElement("video");
+            videoEl.preload = "metadata";
+            videoEl.src = URL.createObjectURL(file);
+            videoEl.addEventListener("loadedmetadata", () => {
+              if (videoEl.duration && isFinite(videoEl.duration)) {
+                setMediaDurationSeconds(videoEl.duration);
+              }
+              URL.revokeObjectURL(videoEl.src);
+            });
+            videoEl.addEventListener("error", () => {
+              URL.revokeObjectURL(videoEl.src);
+            });
             if (avatarVideoInputRef.current) avatarVideoInputRef.current.value = "";
           }} />
 
@@ -1230,31 +1280,40 @@ const StudioPage = () => {
           {/* ── Avatar upload strip ── */}
           {isAvatarTool && selectedTool && (
             <div className="flex gap-2 items-stretch">
-              {/* Image slot - square */}
-              <button
-                onClick={() => avatarImageInputRef.current?.click()}
-                className={`relative rounded-xl border-2 border-dashed transition-all overflow-hidden flex-shrink-0 ${
-                  avatarImage ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
-                }`}
-                style={{ width: "56px", height: "56px" }}
-              >
-                {avatarImage ? (
-                  <div className="relative w-full h-full">
-                    <img src={avatarImage.preview} alt="Avatar" className="w-full h-full object-cover rounded-lg" />
-                    <button
-                      onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }}
-                      className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
-                    >
-                      <X className="w-2.5 h-2.5 text-destructive-foreground" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center gap-0.5 w-full h-full">
-                    <Upload className="w-4 h-4 text-muted-foreground/60" />
-                    <span className="text-[8px] font-semibold text-muted-foreground/70">صورة</span>
-                  </div>
-                )}
-              </button>
+              {/* Image slot - square with upload/library options */}
+              {avatarImage ? (
+                <div
+                  className="relative rounded-xl border-2 border-primary/40 bg-primary/5 overflow-hidden flex-shrink-0"
+                  style={{ width: "56px", height: "56px" }}
+                >
+                  <img src={avatarImage.preview} alt="Avatar" className="w-full h-full object-cover rounded-lg" />
+                  <button
+                    onClick={() => { URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }}
+                    className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                  >
+                    <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => avatarImageInputRef.current?.click()}
+                    className="rounded-xl border-2 border-dashed border-border/40 bg-secondary/30 hover:border-primary/30 transition-all flex flex-col items-center justify-center gap-0.5"
+                    style={{ width: "44px", height: "56px" }}
+                  >
+                    <Upload className="w-3.5 h-3.5 text-muted-foreground/60" />
+                    <span className="text-[7px] font-semibold text-muted-foreground/70">رفع</span>
+                  </button>
+                  <button
+                    onClick={() => setImagePickerOpen(true)}
+                    className="rounded-xl border-2 border-dashed border-border/40 bg-secondary/30 hover:border-primary/30 transition-all flex flex-col items-center justify-center gap-0.5"
+                    style={{ width: "44px", height: "56px" }}
+                  >
+                    <FolderOpen className="w-3.5 h-3.5 text-muted-foreground/60" />
+                    <span className="text-[7px] font-semibold text-muted-foreground/70">مكتبة</span>
+                  </button>
+                </div>
+              )}
 
               {/* Audio slot - wide bar with play button */}
               {isAvatarAudioModel && (
@@ -1284,25 +1343,35 @@ const StudioPage = () => {
                       <div className="flex-1 min-w-0">
                         <Music className="w-3.5 h-3.5 text-primary inline-block mr-1" />
                         <span className="text-[10px] font-medium text-foreground truncate">{avatarAudio.name}</span>
-                        {audioDurationSeconds !== null && (
-                          <span className="text-[9px] text-muted-foreground mr-1">({Math.ceil(audioDurationSeconds)}ث)</span>
+                        {mediaDurationSeconds !== null && (
+                          <span className="text-[9px] text-muted-foreground mr-1">({Math.ceil(mediaDurationSeconds)}ث)</span>
                         )}
                       </div>
                       <button
-                        onClick={(e) => { e.stopPropagation(); setAvatarAudio(null); setAudioDurationSeconds(null); }}
+                        onClick={(e) => { e.stopPropagation(); setAvatarAudio(null); setMediaDurationSeconds(null); }}
                         className="w-4 h-4 rounded-full bg-destructive flex items-center justify-center flex-shrink-0"
                       >
                         <X className="w-2.5 h-2.5 text-destructive-foreground" />
                       </button>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => avatarAudioInputRef.current?.click()}
-                      className="flex items-center justify-center gap-2 w-full h-full py-2"
-                    >
-                      <Music className="w-4 h-4 text-muted-foreground/60" />
-                      <span className="text-[10px] font-semibold text-muted-foreground/70">ارفع مقطع صوتي</span>
-                    </button>
+                    <div className="flex items-center justify-center gap-3 w-full h-full py-2">
+                      <button
+                        onClick={() => avatarAudioInputRef.current?.click()}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-secondary/60 transition-colors"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-muted-foreground/60" />
+                        <span className="text-[10px] font-semibold text-muted-foreground/70">رفع صوت</span>
+                      </button>
+                      <div className="w-px h-6 bg-border/40" />
+                      <button
+                        onClick={() => setAudioPickerOpen(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-secondary/60 transition-colors"
+                      >
+                        <FolderOpen className="w-3.5 h-3.5 text-muted-foreground/60" />
+                        <span className="text-[10px] font-semibold text-muted-foreground/70">من المكتبة</span>
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
@@ -1321,7 +1390,7 @@ const StudioPage = () => {
                       <Video className="w-4 h-4 text-primary" />
                       <span className="text-[8px] font-bold text-foreground truncate max-w-[80%] px-1">{avatarVideo.name}</span>
                       <button
-                        onClick={(e) => { e.stopPropagation(); setAvatarVideo(null); }}
+                        onClick={(e) => { e.stopPropagation(); setAvatarVideo(null); setMediaDurationSeconds(null); }}
                         className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
                       >
                         <X className="w-2.5 h-2.5 text-destructive-foreground" />
@@ -1335,6 +1404,30 @@ const StudioPage = () => {
                   )}
                 </button>
               )}
+            </div>
+          )}
+
+          {/* ── Avatar Pricing Breakdown ── */}
+          {isAvatarTool && selectedTool && mediaDurationSeconds !== null && price && price.priceUnit === "per_second" && effectiveDurationSeconds && (
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-secondary/50 border border-border/30">
+              <div className="flex items-center gap-3 text-[10px] text-muted-foreground flex-1">
+                <span className="font-bold text-foreground">{resolution?.toUpperCase()}</span>
+                <span>•</span>
+                <span>{effectiveDurationSeconds}ث</span>
+                <span>•</span>
+                <span>{Math.round((price.credits / effectiveDurationSeconds) * 10) / 10} كريدت/ث</span>
+                <span>•</span>
+                <span className="font-bold text-primary">{price.credits} كريدت</span>
+              </div>
+            </div>
+          )}
+
+          {/* Duration exceeded warning */}
+          {mediaDurationExceedsLimit && (
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-destructive/10 border border-destructive/30">
+              <span className="text-[10px] text-destructive font-medium">
+                ⚠️ المدة {Math.ceil(mediaDurationSeconds!)}ث تتجاوز الحد الأقصى (15ث). سيتم احتساب 15ث فقط.
+              </span>
             </div>
           )}
 
@@ -1416,13 +1509,17 @@ const StudioPage = () => {
 
                 <Button
                   onClick={handleGenerate}
-                  disabled={loading || !selectedTool || insufficientCredits || (isShootsTool && refImages.length === 0 && !prompt.trim()) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
+                  disabled={loading || !selectedTool || insufficientCredits || (isShootsTool && refImages.length === 0 && !prompt.trim()) || (isAvatarAudioModel && (!avatarImage || !avatarAudio || mediaDurationSeconds === null)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo || mediaDurationSeconds === null))}
                   className="shrink-0 rounded-xl gap-2 px-4 h-10 text-xs font-bold shadow-md"
                 >
                   <Sparkles className="w-4 h-4" />
-                  {estimatedCost > 0 && (
+                  {isAvatarTool && mediaDurationSeconds !== null && estimatedCost > 0 ? (
                     <span className="text-[11px] font-bold">{estimatedCost}</span>
-                  )}
+                  ) : isAvatarTool && mediaDurationSeconds === null ? (
+                    <span className="text-[11px] font-bold opacity-50">—</span>
+                  ) : estimatedCost > 0 ? (
+                    <span className="text-[11px] font-bold">{estimatedCost}</span>
+                  ) : null}
                 </Button>
               </>
             )}
@@ -1431,6 +1528,48 @@ const StudioPage = () => {
       </div>
 
       <ImageViewer src={viewerUrl} open={viewerOpen} onClose={() => setViewerOpen(false)} type={(isVideoTool || isAvatarTool) ? "video" : "image"} />
+
+      {/* Media picker dialogs */}
+      <MediaPickerDialog
+        open={imagePickerOpen}
+        onClose={() => setImagePickerOpen(false)}
+        mediaType="image"
+        onSelect={async (url) => {
+          try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            const file = new File([blob], "library_image.png", { type: blob.type });
+            if (avatarImage) URL.revokeObjectURL(avatarImage.preview);
+            setAvatarImage({ file, preview: URL.createObjectURL(file) });
+          } catch {
+            toast.error("فشل في تحميل الصورة من المكتبة");
+          }
+        }}
+      />
+      <MediaPickerDialog
+        open={audioPickerOpen}
+        onClose={() => setAudioPickerOpen(false)}
+        mediaType="audio"
+        onSelect={async (url, fileName) => {
+          try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            const file = new File([blob], fileName || "library_audio.mp3", { type: blob.type });
+            setAvatarAudio({ file, name: file.name });
+            // Detect duration
+            const audioEl = document.createElement("audio");
+            audioEl.src = URL.createObjectURL(file);
+            audioEl.addEventListener("loadedmetadata", () => {
+              if (audioEl.duration && isFinite(audioEl.duration)) {
+                setMediaDurationSeconds(audioEl.duration);
+              }
+              URL.revokeObjectURL(audioEl.src);
+            });
+          } catch {
+            toast.error("فشل في تحميل الصوت من المكتبة");
+          }
+        }}
+      />
     </div>
   );
 };
