@@ -690,8 +690,13 @@ const StudioPage = () => {
     if (loading) {
       return (
         <motion.div key="loading" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
-          className="flex flex-col items-center justify-center gap-2">
+          className="flex flex-col items-center justify-center gap-3">
           <CircularProgress progress={progress} size={110} status={status} />
+          {isAvatarTool && (
+            <p className="text-[11px] text-muted-foreground text-center max-w-[260px] leading-relaxed mt-1">
+              نماذج الأفتار تستغرق وقتاً أطول (2-10 دقائق). يمكنك المتابعة من قائمة "قيد التوليد" إذا أردت المغادرة.
+            </p>
+          )}
         </motion.div>
       );
     }
