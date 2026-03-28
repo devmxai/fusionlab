@@ -328,6 +328,12 @@ export function useGenerationQueue() {
     const apiType = (job.api_type || "standard") as ApiType;
     const hasExternalHandlers = Boolean(onSuccess || onFail);
 
+    // Avatar and video models need longer polling (up to ~20 minutes)
+    const isLongRunning = ["avatar", "افتار"].some(cat =>
+      job.model?.includes("avatar") || job.model?.includes("infinitalk") || job.model?.includes("animate") || job.file_type === "video"
+    );
+    const maxAttempts = isLongRunning ? 400 : 180;
+
     updateJobLocal(job.id, {
       status: "running" as JobStatus,
       progress: Math.max(1, Math.min(job.progress || 1, 95)),
@@ -361,7 +367,7 @@ export function useGenerationQueue() {
           }
           emitPollProgress(job.id, rounded, phaseLabels[state] || state, state);
         },
-        180,
+        maxAttempts,
         3000,
         false,
         apiType,
