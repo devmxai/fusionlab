@@ -1028,6 +1028,17 @@ const AudioStudioPage = () => {
                           <Download className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
                         <button
+                          onClick={() => {
+                            sessionStorage.setItem("avatar-audio-url", item.file_url);
+                            sessionStorage.setItem("avatar-audio-name", item.prompt?.slice(0, 30) || "مقطع صوتي");
+                            navigate("/studio/avatar");
+                          }}
+                          className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
+                          title="استخدام في أفتار"
+                        >
+                          <Video className="w-3.5 h-3.5 text-primary" />
+                        </button>
+                        <button
                           onClick={() => handleLibDelete(item)}
                           disabled={deletingLibId === item.id}
                           className="p-2 rounded-lg bg-destructive/10 hover:bg-destructive/20 transition-colors disabled:opacity-50"
