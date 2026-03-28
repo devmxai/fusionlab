@@ -102,6 +102,8 @@ const StudioPage = () => {
   const [avatarAudio, setAvatarAudio] = useState<AvatarAudioValue | null>(null);
   const [avatarVideo, setAvatarVideo] = useState<{ file: File; name: string } | null>(null);
   const [mediaDurationSeconds, setMediaDurationSeconds] = useState<number | null>(null);
+  const avatarAudioPreviewRef = useRef<HTMLAudioElement | null>(null);
+  const [isAvatarAudioPlaying, setIsAvatarAudioPlaying] = useState(false);
 
   // Dropdown open states
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -112,6 +114,93 @@ const StudioPage = () => {
   const headerRef = useRef<HTMLDivElement>(null);
 
   const bottomBarRef = useRef<HTMLDivElement>(null);
+
+  const stopAvatarAudioPreview = () => {
+    if (avatarAudioPreviewRef.current) {
+      avatarAudioPreviewRef.current.pause();
+      avatarAudioPreviewRef.current.currentTime = 0;
+    }
+    setIsAvatarAudioPlaying(false);
+  };
+
+  const detectAudioDuration = (audioSrc: string): Promise<number | null> =>
+    new Promise((resolve) => {
+      const audioEl = document.createElement("audio");
+      let settled = false;
+      let timeoutId: number | null = null;
+
+      const finalize = (duration: number | null) => {
+        if (settled) return;
+        settled = true;
+        if (timeoutId !== null) window.clearTimeout(timeoutId);
+        audioEl.removeAttribute("src");
+        audioEl.load();
+        resolve(duration);
+      };
+
+      audioEl.preload = "metadata";
+      audioEl.addEventListener("loadedmetadata", () => {
+        const d = Number(audioEl.duration);
+        finalize(Number.isFinite(d) && d > 0 ? d : null);
+      });
+      audioEl.addEventListener("error", () => finalize(null));
+      timeoutId = window.setTimeout(() => finalize(null), 10000);
+      audioEl.src = audioSrc;
+      audioEl.load();
+    });
+
+  const applyAvatarAudioFromSource = async (sourceUrl: string, name: string) => {
+    stopAvatarAudioPreview();
+    if (avatarAudio?.previewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(avatarAudio.previewUrl);
+    }
+
+    let previewUrl = sourceUrl;
+    let localFile: File | undefined;
+
+    try {
+      const res = await fetch(sourceUrl);
+      const blob = await res.blob();
+      const inferredType = blob.type || "audio/mpeg";
+      localFile = new File([blob], name || "audio.mp3", { type: inferredType });
+      previewUrl = URL.createObjectURL(blob);
+    } catch {
+      previewUrl = sourceUrl;
+    }
+
+    setAvatarAudio({
+      name: name || "audio.mp3",
+      sourceUrl,
+      previewUrl,
+      ...(localFile ? { file: localFile } : {}),
+    });
+
+    const duration = await detectAudioDuration(previewUrl);
+    if (duration !== null) {
+      setMediaDurationSeconds(duration);
+      return;
+    }
+
+    setMediaDurationSeconds(null);
+    toast.error("تعذر قراءة مدة الملف الصوتي — اختر ملفًا آخر");
+  };
+
+  const toggleAvatarAudioPreview = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const audioEl = avatarAudioPreviewRef.current;
+    if (!audioEl || !audioEl.src) return;
+
+    try {
+      if (audioEl.paused) {
+        await audioEl.play();
+      } else {
+        audioEl.pause();
+      }
+    } catch {
+      setIsAvatarAudioPlaying(false);
+      toast.error("تعذر تشغيل المعاينة الصوتية");
+    }
+  };
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -136,27 +225,21 @@ const StudioPage = () => {
     if (!audioUrl) return;
     sessionStorage.removeItem("avatar-audio-url");
     sessionStorage.removeItem("avatar-audio-name");
-    // Fetch the audio and set it
+
     (async () => {
       try {
-        const res = await fetch(audioUrl);
-        const blob = await res.blob();
-        const file = new File([blob], audioName || "audio.wav", { type: blob.type || "audio/wav" });
-        const objectUrl = URL.createObjectURL(file);
-        setAvatarAudio({ file, name: file.name, previewUrl: objectUrl, sourceUrl: objectUrl });
-        // Detect duration
-        const audioEl = document.createElement("audio");
-        audioEl.src = objectUrl;
-        audioEl.addEventListener("loadedmetadata", () => {
-          if (audioEl.duration && isFinite(audioEl.duration)) {
-            setMediaDurationSeconds(audioEl.duration);
-          }
-        });
+        await applyAvatarAudioFromSource(audioUrl, audioName || "audio.mp3");
       } catch {
-        // silently ignore
+        toast.error("تعذر إدراج الصوت من الاستوديو");
       }
     })();
   }, [category]);
+
+  useEffect(() => {
+    return () => {
+      stopAvatarAudioPreview();
+    };
+  }, []);
 
   const caps = useMemo(() => {
     if (!selectedTool) return null;
@@ -217,6 +300,7 @@ const StudioPage = () => {
     // Reset avatar
     if (avatarImage?.preview?.startsWith("blob:")) URL.revokeObjectURL(avatarImage.preview);
     if (avatarAudio?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl);
+    stopAvatarAudioPreview();
     setAvatarImage(null);
     setAvatarAudio(null);
     setAvatarVideo(null);
@@ -1163,20 +1247,20 @@ const StudioPage = () => {
             setAvatarImage({ file, preview: objectUrl, sourceUrl: objectUrl });
             if (avatarImageInputRef.current) avatarImageInputRef.current.value = "";
           }} />
-          <input ref={avatarAudioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => {
+          <input ref={avatarAudioInputRef} type="file" accept="audio/*" className="hidden" onChange={async (e) => {
             const file = e.target.files?.[0];
             if (!file) return;
             const objectUrl = URL.createObjectURL(file);
             if (avatarAudio?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl);
+            stopAvatarAudioPreview();
             setAvatarAudio({ file, name: file.name, previewUrl: objectUrl, sourceUrl: objectUrl });
-            // Detect actual audio duration for accurate pricing
-            const audioEl = document.createElement("audio");
-            audioEl.src = objectUrl;
-            audioEl.addEventListener("loadedmetadata", () => {
-              if (audioEl.duration && isFinite(audioEl.duration)) {
-                setMediaDurationSeconds(audioEl.duration);
-              }
-            });
+            const duration = await detectAudioDuration(objectUrl);
+            if (duration !== null) {
+              setMediaDurationSeconds(duration);
+            } else {
+              setMediaDurationSeconds(null);
+              toast.error("تعذر قراءة مدة الملف الصوتي");
+            }
             if (avatarAudioInputRef.current) avatarAudioInputRef.current.value = "";
           }} />
           <input ref={avatarVideoInputRef} type="file" accept="video/*" className="hidden" onChange={(e) => {
@@ -1398,19 +1482,25 @@ const StudioPage = () => {
                         return (
                           <>
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const audioEl = document.getElementById("avatar-audio-preview") as HTMLAudioElement | null;
-                                if (audioEl) {
-                                  if (audioEl.paused) { audioEl.play().catch(() => {}); }
-                                  else { audioEl.pause(); }
-                                }
-                              }}
+                              onClick={toggleAvatarAudioPreview}
                               className="w-8 h-8 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center flex-shrink-0 transition-colors"
                             >
-                              <Play className="w-3.5 h-3.5 text-primary ml-0.5" />
+                              {isAvatarAudioPlaying ? (
+                                <Pause className="w-3.5 h-3.5 text-primary" />
+                              ) : (
+                                <Play className="w-3.5 h-3.5 text-primary ml-0.5" />
+                              )}
                             </button>
-                            <audio id="avatar-audio-preview" src={audioSrc} crossOrigin="anonymous" preload="metadata" className="hidden" />
+                            <audio
+                              ref={avatarAudioPreviewRef}
+                              key={audioSrc}
+                              src={audioSrc}
+                              preload="metadata"
+                              className="hidden"
+                              onPlay={() => setIsAvatarAudioPlaying(true)}
+                              onPause={() => setIsAvatarAudioPlaying(false)}
+                              onEnded={() => setIsAvatarAudioPlaying(false)}
+                            />
                           </>
                         );
                       })()}
@@ -1424,6 +1514,7 @@ const StudioPage = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          stopAvatarAudioPreview();
                           if (avatarAudio.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl);
                           setAvatarAudio(null);
                           setMediaDurationSeconds(null);
@@ -1636,48 +1727,7 @@ const StudioPage = () => {
         onClose={() => setAudioPickerOpen(false)}
         mediaType="audio"
         onSelect={async (url, fileName) => {
-          if (avatarAudio?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl);
-
-          // Fetch the audio to create a local blob for duration detection and playback
-          let localBlobUrl: string | null = null;
-          let detectedDuration: number | null = null;
-
-          try {
-            const res = await fetch(url);
-            const blob = await res.blob();
-            localBlobUrl = URL.createObjectURL(blob);
-          } catch {
-            // If fetch fails (CORS), use the URL directly
-            localBlobUrl = url;
-          }
-
-          setAvatarAudio({
-            name: fileName || "library_audio.mp3",
-            sourceUrl: url,
-            previewUrl: localBlobUrl,
-          });
-
-          // Detect duration from local blob
-          const audioEl = document.createElement("audio");
-          audioEl.preload = "metadata";
-          audioEl.src = localBlobUrl;
-          audioEl.addEventListener("loadedmetadata", () => {
-            if (audioEl.duration && isFinite(audioEl.duration)) {
-              setMediaDurationSeconds(audioEl.duration);
-            }
-          });
-          audioEl.addEventListener("error", () => {
-            // Fallback: try with crossOrigin
-            const audioEl2 = document.createElement("audio");
-            audioEl2.crossOrigin = "anonymous";
-            audioEl2.preload = "metadata";
-            audioEl2.src = url;
-            audioEl2.addEventListener("loadedmetadata", () => {
-              if (audioEl2.duration && isFinite(audioEl2.duration)) {
-                setMediaDurationSeconds(audioEl2.duration);
-              }
-            });
-          });
+          await applyAvatarAudioFromSource(url, fileName || "library_audio.mp3");
         }}
       />
     </div>
