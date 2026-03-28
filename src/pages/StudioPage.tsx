@@ -571,6 +571,17 @@ const StudioPage = () => {
         },
         // onFail
         async (errorMsg, failedJob) => {
+          // If it's a "background" message from long-running timeout, don't treat as real failure
+          const isBackgroundContinue = errorMsg?.includes("يعمل في الخلفية");
+          if (isBackgroundContinue) {
+            toast.info("النموذج يعمل في الخلفية — تابع النتيجة من قائمة \"قيد التوليد\"", { duration: 6000 });
+            setStatus("");
+            setProgress(0);
+            setLoading(false);
+            // Don't call complete-generation — job is still alive
+            return;
+          }
+
           if (reservationId) {
             try {
               await supabase.functions.invoke("complete-generation", {
