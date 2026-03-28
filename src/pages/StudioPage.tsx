@@ -264,7 +264,7 @@ const StudioPage = () => {
   const mediaDurationExceedsLimit = useMemo(() => {
     if (!selectedTool || selectedTool.model !== "infinitalk/from-audio") return false;
     if (mediaDurationSeconds === null) return false;
-    return Math.ceil(mediaDurationSeconds) > 15;
+    return Math.round(mediaDurationSeconds) > 15;
   }, [selectedTool, mediaDurationSeconds]);
 
   // Determine hasAudio correctly for avatar models
