@@ -895,6 +895,30 @@ const StudioPage = () => {
     >{children}</button>
   );
 
+  // Animated text for transfer showcase
+  const transferTexts = ["نقل الحركة من فيديو إلى صورة", "استبدال الشخصية في الفيديو", "تحريك صورة ثابتة بحركة واقعية", "دمج ملامح جديدة بسلاسة"];
+  const [transferTextIdx, setTransferTextIdx] = useState(0);
+  useEffect(() => {
+    if (category !== "transfer") return;
+    const interval = setInterval(() => setTransferTextIdx((p) => (p + 1) % transferTexts.length), 3000);
+    return () => clearInterval(interval);
+  }, [category]);
+
+  const TransferShowcaseText = () => (
+    <AnimatePresence mode="wait">
+      <motion.p
+        key={transferTextIdx}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.4 }}
+        className="text-sm font-bold text-primary/80 text-center"
+      >
+        {transferTexts[transferTextIdx]}
+      </motion.p>
+    </AnimatePresence>
+  );
+
   const renderCardContent = () => {
     if (loading) {
       return (
