@@ -957,6 +957,24 @@ const StudioPage = () => {
       );
     }
 
+    // Transfer showcase: show demo videos when no files uploaded yet
+    if (category === "transfer" && !avatarImage && !avatarVideo) {
+      return (
+        <motion.div key="transfer-showcase" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="w-full h-full flex flex-col items-center justify-center gap-4 px-4">
+          <div className="flex gap-3 w-full max-w-[600px]">
+            <div className="flex-1 rounded-xl overflow-hidden border border-border/30 shadow-lg">
+              <video src="/demos/transfer-demo-1.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover" />
+            </div>
+            <div className="flex-1 rounded-xl overflow-hidden border border-border/30 shadow-lg">
+              <video src="/demos/transfer-demo-2.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover" />
+            </div>
+          </div>
+          <TransferShowcaseText />
+        </motion.div>
+      );
+    }
+
     return (
       <motion.div key="placeholder" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         className="flex flex-col items-center justify-center gap-3 text-center px-4">
