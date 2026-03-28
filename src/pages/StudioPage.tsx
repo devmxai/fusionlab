@@ -456,11 +456,18 @@ const StudioPage = () => {
           resolution: resolution || null,
           quality: quality || null,
           durationSeconds: effectiveDurationSeconds,
-          hasAudio: false,
+          hasAudio: hasAudioForPricing,
           idempotencyKey,
           prompt: prompt || tool.title,
           fileType,
-          jobMetadata: { aspectRatio, resolution, quality },
+          jobMetadata: {
+            aspectRatio,
+            resolution,
+            quality,
+            detected_duration_seconds: mediaDurationSeconds ? Math.ceil(mediaDurationSeconds) : null,
+            selected_resolution: resolution,
+            matched_rate_per_second: price?.priceUnit === "per_second" ? price?.perCharRate || (price?.credits && effectiveDurationSeconds ? Math.round((price.credits / effectiveDurationSeconds) * 10) / 10 : null) : null,
+          },
         },
       });
 
