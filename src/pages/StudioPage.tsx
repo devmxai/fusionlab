@@ -1118,6 +1118,19 @@ const StudioPage = () => {
             const file = e.target.files?.[0];
             if (!file) return;
             setAvatarVideo({ file, name: file.name });
+            // Detect video duration for animate models
+            const videoEl = document.createElement("video");
+            videoEl.preload = "metadata";
+            videoEl.src = URL.createObjectURL(file);
+            videoEl.addEventListener("loadedmetadata", () => {
+              if (videoEl.duration && isFinite(videoEl.duration)) {
+                setMediaDurationSeconds(videoEl.duration);
+              }
+              URL.revokeObjectURL(videoEl.src);
+            });
+            videoEl.addEventListener("error", () => {
+              URL.revokeObjectURL(videoEl.src);
+            });
             if (avatarVideoInputRef.current) avatarVideoInputRef.current.value = "";
           }} />
 
