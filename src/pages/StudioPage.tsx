@@ -1528,6 +1528,48 @@ const StudioPage = () => {
       </div>
 
       <ImageViewer src={viewerUrl} open={viewerOpen} onClose={() => setViewerOpen(false)} type={(isVideoTool || isAvatarTool) ? "video" : "image"} />
+
+      {/* Media picker dialogs */}
+      <MediaPickerDialog
+        open={imagePickerOpen}
+        onClose={() => setImagePickerOpen(false)}
+        mediaType="image"
+        onSelect={async (url) => {
+          try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            const file = new File([blob], "library_image.png", { type: blob.type });
+            if (avatarImage) URL.revokeObjectURL(avatarImage.preview);
+            setAvatarImage({ file, preview: URL.createObjectURL(file) });
+          } catch {
+            toast.error("فشل في تحميل الصورة من المكتبة");
+          }
+        }}
+      />
+      <MediaPickerDialog
+        open={audioPickerOpen}
+        onClose={() => setAudioPickerOpen(false)}
+        mediaType="audio"
+        onSelect={async (url, fileName) => {
+          try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            const file = new File([blob], fileName || "library_audio.mp3", { type: blob.type });
+            setAvatarAudio({ file, name: file.name });
+            // Detect duration
+            const audioEl = document.createElement("audio");
+            audioEl.src = URL.createObjectURL(file);
+            audioEl.addEventListener("loadedmetadata", () => {
+              if (audioEl.duration && isFinite(audioEl.duration)) {
+                setMediaDurationSeconds(audioEl.duration);
+              }
+              URL.revokeObjectURL(audioEl.src);
+            });
+          } catch {
+            toast.error("فشل في تحميل الصوت من المكتبة");
+          }
+        }}
+      />
     </div>
   );
 };
