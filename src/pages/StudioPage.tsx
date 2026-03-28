@@ -121,14 +121,26 @@ const StudioPage = () => {
     return getModelCapabilities(selectedTool.model);
   }, [selectedTool]);
 
-  // For avatar per_second models, use actual audio duration; for video models, use dropdown
+  // For avatar models, use actual media duration (audio/video); for video models, use dropdown
   const effectiveDurationSeconds = useMemo(() => {
-    const isAvatarAudio = !!selectedTool && selectedTool.inputType === "avatar";
-    if (isAvatarAudio && audioDurationSeconds !== null) {
-      return Math.ceil(audioDurationSeconds);
+    const isAvatar = !!selectedTool && (selectedTool.inputType === "avatar" || selectedTool.inputType === "animate");
+    if (isAvatar && mediaDurationSeconds !== null) {
+      const capped = Math.ceil(mediaDurationSeconds);
+      // Infinitalk max 15s per KIE.AI docs
+      if (selectedTool?.model === "infinitalk/from-audio" && capped > 15) return 15;
+      return capped;
     }
+    // For avatar models without detected duration, return null (prevent fallback to videoDuration)
+    if (isAvatar) return null;
     return videoDuration ? parseInt(videoDuration) : null;
-  }, [selectedTool, audioDurationSeconds, videoDuration]);
+  }, [selectedTool, mediaDurationSeconds, videoDuration]);
+
+  // Whether media duration exceeds the limit
+  const mediaDurationExceedsLimit = useMemo(() => {
+    if (!selectedTool || selectedTool.model !== "infinitalk/from-audio") return false;
+    if (mediaDurationSeconds === null) return false;
+    return Math.ceil(mediaDurationSeconds) > 15;
+  }, [selectedTool, mediaDurationSeconds]);
 
   // Dynamic pricing based on selected model + options
   const pricingParams = useMemo(() => {
