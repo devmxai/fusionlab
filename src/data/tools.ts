@@ -599,6 +599,18 @@ export function buildModelInput(
     };
   }
 
+  // ─── TRANSFER / MOTION CONTROL MODELS ───
+
+  if (model === "kling-3.0/motion-control" || model === "kling-2.6/motion-control") {
+    return {
+      prompt: prompt || "No distortion, the character's movements are consistent with the video.",
+      input_urls: imageUrls?.length ? [imageUrls[0]] : [],
+      video_urls: extraParams?.video_url ? [extraParams.video_url as string] : [],
+      character_orientation: (extraParams?.character_orientation as string) || "video",
+      mode: (extraParams?.resolution as string) === "1080p" ? "1080p" : "720p",
+    };
+  }
+
   // ─── VEO 3.1 ───
   if (model === "veo3" || model === "veo3_fast") {
     const input: Record<string, unknown> = {
