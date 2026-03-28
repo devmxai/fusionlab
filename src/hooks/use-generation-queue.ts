@@ -49,6 +49,8 @@ interface JobPollListeners {
   progress: Set<PollProgressCallback>;
 }
 
+type PollErrorLike = Error & { terminal?: boolean };
+
 /**
  * Smooth simulated progress
  */
@@ -424,7 +426,9 @@ export function useGenerationQueue() {
     } catch (err) {
       clearInterval(progressInterval);
       const msg = err instanceof Error ? err.message : "Unknown error";
-      const isTimeout = msg.toLowerCase().includes("timed out");
+      const pollErr = err as PollErrorLike;
+      const isProviderTerminalFailure = Boolean(pollErr?.terminal);
+      const isTimeout = !isProviderTerminalFailure && msg.toLowerCase().includes("timed out");
       const now = new Date().toISOString();
 
       // For timeouts on long-running models: DON'T mark as permanently failed.
