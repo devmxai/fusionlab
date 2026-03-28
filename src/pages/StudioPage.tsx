@@ -1486,13 +1486,17 @@ const StudioPage = () => {
 
                 <Button
                   onClick={handleGenerate}
-                  disabled={loading || !selectedTool || insufficientCredits || (isShootsTool && refImages.length === 0 && !prompt.trim()) || (isAvatarAudioModel && (!avatarImage || !avatarAudio)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))}
+                  disabled={loading || !selectedTool || insufficientCredits || (isShootsTool && refImages.length === 0 && !prompt.trim()) || (isAvatarAudioModel && (!avatarImage || !avatarAudio || mediaDurationSeconds === null)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo || mediaDurationSeconds === null))}
                   className="shrink-0 rounded-xl gap-2 px-4 h-10 text-xs font-bold shadow-md"
                 >
                   <Sparkles className="w-4 h-4" />
-                  {estimatedCost > 0 && (
+                  {isAvatarTool && mediaDurationSeconds !== null && estimatedCost > 0 ? (
                     <span className="text-[11px] font-bold">{estimatedCost}</span>
-                  )}
+                  ) : isAvatarTool && mediaDurationSeconds === null ? (
+                    <span className="text-[11px] font-bold opacity-50">—</span>
+                  ) : estimatedCost > 0 ? (
+                    <span className="text-[11px] font-bold">{estimatedCost}</span>
+                  ) : null}
                 </Button>
               </>
             )}
