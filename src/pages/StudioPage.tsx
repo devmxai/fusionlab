@@ -93,9 +93,13 @@ const StudioPage = () => {
   const [lastFrame, setLastFrame] = useState<{ file: File; preview: string } | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState("");
+
+  type AvatarImageValue = { preview: string; file?: File; sourceUrl?: string };
+  type AvatarAudioValue = { name: string; file?: File; sourceUrl?: string; previewUrl?: string };
+
   // Avatar-specific state
-  const [avatarImage, setAvatarImage] = useState<{ file: File; preview: string } | null>(null);
-  const [avatarAudio, setAvatarAudio] = useState<{ file: File; name: string } | null>(null);
+  const [avatarImage, setAvatarImage] = useState<AvatarImageValue | null>(null);
+  const [avatarAudio, setAvatarAudio] = useState<AvatarAudioValue | null>(null);
   const [avatarVideo, setAvatarVideo] = useState<{ file: File; name: string } | null>(null);
   const [mediaDurationSeconds, setMediaDurationSeconds] = useState<number | null>(null);
 
