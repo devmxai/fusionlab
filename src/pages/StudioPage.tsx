@@ -102,6 +102,9 @@ const StudioPage = () => {
   // Dropdown open states
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [modelSubPage, setModelSubPage] = useState<string | null>(null);
+  // Media picker state
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
+  const [audioPickerOpen, setAudioPickerOpen] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
