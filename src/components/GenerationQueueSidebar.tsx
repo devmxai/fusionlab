@@ -130,17 +130,19 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
             onTouchMove={(e) => e.stopPropagation()}
             onWheel={(e) => e.stopPropagation()}
           >
-            <button onClick={handleClose} className="absolute top-4 right-4 z-10 p-1.5 rounded-full bg-secondary/40 hover:bg-secondary/70 transition-colors">
-              <ChevronLeft className="w-4 h-4 text-muted-foreground" />
-            </button>
-
-            <div className="px-5 pt-5 pb-2 flex items-center gap-2">
-              <span className="text-[11px] font-bold text-muted-foreground tracking-wide">قيد التوليد</span>
-              {unseenCount > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 text-[9px] font-bold">
-                  {unseenCount} جديد
-                </span>
-              )}
+            <div className="px-5 pt-5 pb-2 flex items-center justify-between">
+              <button onClick={handleClose} className="p-1.5 rounded-full bg-secondary/40 hover:bg-secondary/70 transition-colors">
+                <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-muted-foreground tracking-wide">قيد التوليد</span>
+                {unseenCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 text-[9px] font-bold">
+                    {unseenCount} جديد
+                  </span>
+                )}
+              </div>
+              <div className="w-7" />
             </div>
 
             <div className="flex-1 px-4 mt-3 overflow-y-auto scrollbar-hide">
