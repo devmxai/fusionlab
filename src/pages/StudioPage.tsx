@@ -289,9 +289,11 @@ const StudioPage = () => {
   // Get the correct resolution for avatar pricing
   const avatarPricingResolution = useMemo((): string | null => {
     if (!selectedTool) return null;
-    if (selectedTool.model === "kling/ai-avatar-standard") return resolution; // 720p or 1080p from dropdown
-    if (selectedTool.model === "infinitalk/from-audio") return resolution; // user-selected
-    if (selectedTool.model === "wan/2-2-animate-move") return resolution; // user-selected
+    if (selectedTool.model === "kling/ai-avatar-standard") return resolution;
+    if (selectedTool.model === "infinitalk/from-audio") return resolution;
+    if (selectedTool.model === "wan/2-2-animate-move") return resolution;
+    if (selectedTool.model === "kling-3.0/motion-control") return resolution;
+    if (selectedTool.model === "kling-2.6/motion-control") return resolution;
     return null;
   }, [selectedTool, resolution]);
 
