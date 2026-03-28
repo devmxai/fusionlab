@@ -1128,7 +1128,7 @@ const StudioPage = () => {
       </div>
 
       {/* ── Bottom bar ── */}
-      <div className="shrink-0 bg-card/90 backdrop-blur-xl border-t border-border/30 px-4 py-3 z-50">
+      <div ref={bottomBarRef} className="shrink-0 bg-card/90 backdrop-blur-xl border-t border-border/30 px-4 py-3 z-50">
         <div className="w-full space-y-2">
           {/* Hidden file inputs */}
           <input ref={fileInputRef} type="file" accept="image/*" multiple={!isImageOnlyTool} className="hidden" onChange={handleImageUpload} />
