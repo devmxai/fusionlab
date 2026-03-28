@@ -359,7 +359,7 @@ const AudioStudioPage = () => {
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("generations")
-          .upload(`audio/${fileName}`, audioBlob, { contentType: startResult.mimeType || "audio/wav", upsert: false });
+          .upload(`${user.id}/audio/${fileName}`, audioBlob, { contentType: startResult.mimeType || "audio/wav", upsert: false });
 
         let permanentUrl: string | null = null;
         if (!uploadError && uploadData?.path) {
