@@ -96,6 +96,7 @@ const StudioPage = () => {
   const [avatarImage, setAvatarImage] = useState<{ file: File; preview: string } | null>(null);
   const [avatarAudio, setAvatarAudio] = useState<{ file: File; name: string } | null>(null);
   const [avatarVideo, setAvatarVideo] = useState<{ file: File; name: string } | null>(null);
+  const [audioDurationSeconds, setAudioDurationSeconds] = useState<number | null>(null);
 
   // Dropdown open states
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -120,6 +121,15 @@ const StudioPage = () => {
     return getModelCapabilities(selectedTool.model);
   }, [selectedTool]);
 
+  // For avatar per_second models, use actual audio duration; for video models, use dropdown
+  const effectiveDurationSeconds = useMemo(() => {
+    const isAvatarAudio = !!selectedTool && selectedTool.inputType === "avatar";
+    if (isAvatarAudio && audioDurationSeconds !== null) {
+      return Math.ceil(audioDurationSeconds);
+    }
+    return videoDuration ? parseInt(videoDuration) : null;
+  }, [selectedTool, audioDurationSeconds, videoDuration]);
+
   // Dynamic pricing based on selected model + options
   const pricingParams = useMemo(() => {
     if (!selectedTool) return null;
@@ -128,10 +138,10 @@ const StudioPage = () => {
       model: t.model,
       resolution: resolution || null,
       quality: quality || null,
-      durationSeconds: videoDuration ? parseInt(videoDuration) : null,
+      durationSeconds: effectiveDurationSeconds,
       hasAudio: false,
     };
-  }, [selectedTool, resolution, quality, videoDuration]);
+  }, [selectedTool, resolution, quality, effectiveDurationSeconds]);
 
   const { price } = usePricing(pricingParams);
   const { checkAccess } = usePlanGating(selectedTool?.model || null);
@@ -148,6 +158,7 @@ const StudioPage = () => {
     if (avatarImage) { URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }
     setAvatarAudio(null);
     setAvatarVideo(null);
+    setAudioDurationSeconds(null);
     // Baseline defaults
     setAspectRatio("1:1");
     setVideoDuration("5");
@@ -426,7 +437,7 @@ const StudioPage = () => {
           input,
           resolution: resolution || null,
           quality: quality || null,
-          durationSeconds: videoDuration ? parseInt(videoDuration) : null,
+          durationSeconds: effectiveDurationSeconds,
           hasAudio: false,
           idempotencyKey,
           prompt: prompt || tool.title,
@@ -1048,6 +1059,18 @@ const StudioPage = () => {
             const file = e.target.files?.[0];
             if (!file) return;
             setAvatarAudio({ file, name: file.name });
+            // Detect actual audio duration for accurate pricing
+            const audioEl = document.createElement("audio");
+            audioEl.src = URL.createObjectURL(file);
+            audioEl.addEventListener("loadedmetadata", () => {
+              if (audioEl.duration && isFinite(audioEl.duration)) {
+                setAudioDurationSeconds(audioEl.duration);
+              }
+              URL.revokeObjectURL(audioEl.src);
+            });
+            audioEl.addEventListener("error", () => {
+              URL.revokeObjectURL(audioEl.src);
+            });
             if (avatarAudioInputRef.current) avatarAudioInputRef.current.value = "";
           }} />
           <input ref={avatarVideoInputRef} type="file" accept="video/*" className="hidden" onChange={(e) => {
@@ -1245,9 +1268,12 @@ const StudioPage = () => {
                       <div className="flex-1 min-w-0">
                         <Music className="w-3.5 h-3.5 text-primary inline-block mr-1" />
                         <span className="text-[10px] font-medium text-foreground truncate">{avatarAudio.name}</span>
+                        {audioDurationSeconds !== null && (
+                          <span className="text-[9px] text-muted-foreground mr-1">({Math.ceil(audioDurationSeconds)}ث)</span>
+                        )}
                       </div>
                       <button
-                        onClick={(e) => { e.stopPropagation(); setAvatarAudio(null); }}
+                        onClick={(e) => { e.stopPropagation(); setAvatarAudio(null); setAudioDurationSeconds(null); }}
                         className="w-4 h-4 rounded-full bg-destructive flex items-center justify-center flex-shrink-0"
                       >
                         <X className="w-2.5 h-2.5 text-destructive-foreground" />
