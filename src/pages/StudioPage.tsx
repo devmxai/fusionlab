@@ -119,7 +119,36 @@ const StudioPage = () => {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // Get capabilities for selected model
+  // Pick up audio from Audio Studio via sessionStorage
+  useEffect(() => {
+    if (category !== "avatar") return;
+    const audioUrl = sessionStorage.getItem("avatar-audio-url");
+    const audioName = sessionStorage.getItem("avatar-audio-name");
+    if (!audioUrl) return;
+    sessionStorage.removeItem("avatar-audio-url");
+    sessionStorage.removeItem("avatar-audio-name");
+    // Fetch the audio and set it
+    (async () => {
+      try {
+        const res = await fetch(audioUrl);
+        const blob = await res.blob();
+        const file = new File([blob], audioName || "audio.wav", { type: blob.type || "audio/wav" });
+        setAvatarAudio({ file, name: file.name });
+        // Detect duration
+        const audioEl = document.createElement("audio");
+        audioEl.src = URL.createObjectURL(file);
+        audioEl.addEventListener("loadedmetadata", () => {
+          if (audioEl.duration && isFinite(audioEl.duration)) {
+            setMediaDurationSeconds(audioEl.duration);
+          }
+          URL.revokeObjectURL(audioEl.src);
+        });
+      } catch {
+        // silently ignore
+      }
+    })();
+  }, [category]);
+
   const caps = useMemo(() => {
     if (!selectedTool) return null;
     return getModelCapabilities(selectedTool.model);
