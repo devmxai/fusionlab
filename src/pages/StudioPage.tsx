@@ -215,7 +215,9 @@ const StudioPage = () => {
     if (firstFrame) { URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }
     if (lastFrame) { URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }
     // Reset avatar
-    if (avatarImage) { URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }
+    if (avatarImage?.preview?.startsWith("blob:")) URL.revokeObjectURL(avatarImage.preview);
+    if (avatarAudio?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl);
+    setAvatarImage(null);
     setAvatarAudio(null);
     setAvatarVideo(null);
     setMediaDurationSeconds(null);
