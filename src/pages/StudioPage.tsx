@@ -255,6 +255,8 @@ const StudioPage = () => {
       const rounded = Math.round(mediaDurationSeconds);
       // Infinitalk max 15s per KIE.AI docs
       if (selectedTool?.model === "infinitalk/from-audio" && rounded > 15) return 15;
+      // Kling motion control: max 30s (video orientation), 10s (image orientation) — use 30s default
+      if ((selectedTool?.model === "kling-3.0/motion-control" || selectedTool?.model === "kling-2.6/motion-control") && rounded > 30) return 30;
       return rounded;
     }
     // For avatar models without detected duration, return null (prevent fallback to videoDuration)
