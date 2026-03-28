@@ -96,7 +96,7 @@ const StudioPage = () => {
   const [avatarImage, setAvatarImage] = useState<{ file: File; preview: string } | null>(null);
   const [avatarAudio, setAvatarAudio] = useState<{ file: File; name: string } | null>(null);
   const [avatarVideo, setAvatarVideo] = useState<{ file: File; name: string } | null>(null);
-  const [audioDurationSeconds, setAudioDurationSeconds] = useState<number | null>(null);
+  const [mediaDurationSeconds, setMediaDurationSeconds] = useState<number | null>(null);
 
   // Dropdown open states
   const [openMenu, setOpenMenu] = useState<string | null>(null);
