@@ -1393,20 +1393,27 @@ const StudioPage = () => {
                 >
                   {avatarAudio ? (
                     <div className="relative w-full h-14 flex items-center gap-3 px-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const audioEl = document.getElementById("avatar-audio-preview") as HTMLAudioElement | null;
-                          if (audioEl) {
-                            if (audioEl.paused) { audioEl.play(); }
-                            else { audioEl.pause(); }
-                          }
-                        }}
-                        className="w-8 h-8 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center flex-shrink-0 transition-colors"
-                      >
-                        <Play className="w-3.5 h-3.5 text-primary ml-0.5" />
-                      </button>
-                      <audio id="avatar-audio-preview" src={avatarAudio.previewUrl || avatarAudio.sourceUrl || ""} className="hidden" />
+                      {(() => {
+                        const audioSrc = avatarAudio.previewUrl || avatarAudio.sourceUrl || "";
+                        return (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const audioEl = document.getElementById("avatar-audio-preview") as HTMLAudioElement | null;
+                                if (audioEl) {
+                                  if (audioEl.paused) { audioEl.play().catch(() => {}); }
+                                  else { audioEl.pause(); }
+                                }
+                              }}
+                              className="w-8 h-8 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center flex-shrink-0 transition-colors"
+                            >
+                              <Play className="w-3.5 h-3.5 text-primary ml-0.5" />
+                            </button>
+                            <audio id="avatar-audio-preview" src={audioSrc} crossOrigin="anonymous" preload="metadata" className="hidden" />
+                          </>
+                        );
+                      })()}
                       <div className="flex-1 min-w-0">
                         <Music className="w-3.5 h-3.5 text-primary inline-block mr-1" />
                         <span className="text-[10px] font-medium text-foreground truncate">{avatarAudio.name}</span>
@@ -1628,26 +1635,48 @@ const StudioPage = () => {
         open={audioPickerOpen}
         onClose={() => setAudioPickerOpen(false)}
         mediaType="audio"
-        onSelect={(url, fileName) => {
+        onSelect={async (url, fileName) => {
           if (avatarAudio?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl);
+
+          // Fetch the audio to create a local blob for duration detection and playback
+          let localBlobUrl: string | null = null;
+          let detectedDuration: number | null = null;
+
+          try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            localBlobUrl = URL.createObjectURL(blob);
+          } catch {
+            // If fetch fails (CORS), use the URL directly
+            localBlobUrl = url;
+          }
+
           setAvatarAudio({
             name: fileName || "library_audio.mp3",
             sourceUrl: url,
-            previewUrl: url,
+            previewUrl: localBlobUrl,
           });
 
-          // Detect duration from source URL
+          // Detect duration from local blob
           const audioEl = document.createElement("audio");
           audioEl.preload = "metadata";
-          audioEl.src = url;
+          audioEl.src = localBlobUrl;
           audioEl.addEventListener("loadedmetadata", () => {
             if (audioEl.duration && isFinite(audioEl.duration)) {
               setMediaDurationSeconds(audioEl.duration);
             }
           });
           audioEl.addEventListener("error", () => {
-            setMediaDurationSeconds(null);
-            toast.error("تعذر قراءة مدة الملف الصوتي من المكتبة");
+            // Fallback: try with crossOrigin
+            const audioEl2 = document.createElement("audio");
+            audioEl2.crossOrigin = "anonymous";
+            audioEl2.preload = "metadata";
+            audioEl2.src = url;
+            audioEl2.addEventListener("loadedmetadata", () => {
+              if (audioEl2.duration && isFinite(audioEl2.duration)) {
+                setMediaDurationSeconds(audioEl2.duration);
+              }
+            });
           });
         }}
       />

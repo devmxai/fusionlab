@@ -2,11 +2,11 @@
  * MediaPickerDialog - allows picking images or audio from the user's generation library.
  * Shows a grid of previously generated media filtered by type.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Image as ImageIcon, Music, Sparkles } from "lucide-react";
+import { Image as ImageIcon, Music, Sparkles, Play, Pause } from "lucide-react";
 
 interface Generation {
   id: string;
@@ -30,10 +30,13 @@ const MediaPickerDialog = ({ open, onClose, mediaType, onSelect }: MediaPickerDi
   const { user } = useAuth();
   const [items, setItems] = useState<Generation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (!open || !user) return;
     setLoading(true);
+    setPlayingId(null);
     const load = async () => {
       const { data } = await supabase
         .from("generations")
@@ -48,10 +51,42 @@ const MediaPickerDialog = ({ open, onClose, mediaType, onSelect }: MediaPickerDi
     load();
   }, [open, user, mediaType]);
 
+  // Cleanup audio on close
+  useEffect(() => {
+    if (!open) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      setPlayingId(null);
+    }
+  }, [open]);
+
   const handlePick = (item: Generation) => {
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     const fileName = item.prompt?.slice(0, 30) || item.tool_name || mediaType;
     onSelect(item.file_url, fileName);
     onClose();
+  };
+
+  const handlePlayToggle = (item: Generation, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (playingId === item.id) {
+      // Pause
+      if (audioRef.current) { audioRef.current.pause(); }
+      setPlayingId(null);
+      return;
+    }
+
+    // Play new
+    if (audioRef.current) { audioRef.current.pause(); }
+    const audio = new Audio(item.file_url);
+    audioRef.current = audio;
+    audio.play().catch(() => {});
+    setPlayingId(item.id);
+    audio.onended = () => setPlayingId(null);
+    audio.onerror = () => setPlayingId(null);
   };
 
   return (
@@ -96,26 +131,39 @@ const MediaPickerDialog = ({ open, onClose, mediaType, onSelect }: MediaPickerDi
           ) : (
             <div className="space-y-1.5 p-1">
               {items.map((item) => (
-                <button
+                <div
                   key={item.id}
-                  onClick={() => handlePick(item)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border/30 hover:border-primary/40 hover:bg-primary/5 transition-all text-right"
                 >
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Music className="w-3.5 h-3.5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
+                  {/* Play/Pause button */}
+                  <button
+                    onClick={(e) => handlePlayToggle(item, e)}
+                    className="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 flex items-center justify-center flex-shrink-0 transition-colors"
+                  >
+                    {playingId === item.id ? (
+                      <Pause className="w-3.5 h-3.5 text-primary" />
+                    ) : (
+                      <Play className="w-3.5 h-3.5 text-primary ml-0.5" />
+                    )}
+                  </button>
+
+                  {/* Info - clickable to select */}
+                  <button
+                    onClick={() => handlePick(item)}
+                    className="flex-1 min-w-0 text-right"
+                  >
                     <p className="text-[11px] font-medium text-foreground truncate">
                       {item.tool_name || "مقطع صوتي"}
                     </p>
                     {item.prompt && (
                       <p className="text-[10px] text-muted-foreground truncate">{item.prompt}</p>
                     )}
-                  </div>
+                  </button>
+
                   <span className="text-[9px] text-muted-foreground flex-shrink-0">
                     {new Date(item.created_at).toLocaleDateString("ar")}
                   </span>
-                </button>
+                </div>
               ))}
             </div>
           )}
