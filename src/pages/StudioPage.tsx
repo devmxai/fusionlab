@@ -107,10 +107,15 @@ const StudioPage = () => {
   const [audioPickerOpen, setAudioPickerOpen] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
 
+  const bottomBarRef = useRef<HTMLDivElement>(null);
+
   // Close dropdown on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const inHeader = headerRef.current?.contains(target);
+      const inBottomBar = bottomBarRef.current?.contains(target);
+      if (!inHeader && !inBottomBar) {
         setOpenMenu(null);
         setModelSubPage(null);
       }
