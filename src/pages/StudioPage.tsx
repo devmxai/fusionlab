@@ -437,7 +437,7 @@ const StudioPage = () => {
           input,
           resolution: resolution || null,
           quality: quality || null,
-          durationSeconds: videoDuration ? parseInt(videoDuration) : null,
+          durationSeconds: effectiveDurationSeconds,
           hasAudio: false,
           idempotencyKey,
           prompt: prompt || tool.title,
