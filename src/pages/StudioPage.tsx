@@ -344,8 +344,16 @@ const StudioPage = () => {
       toast.error("يجب رفع صورة ومقطع صوتي");
       return;
     }
+    if (isAvatarAudioModel && mediaDurationSeconds === null) {
+      toast.error("لم يتم استخراج مدة الملف الصوتي — يرجى إعادة رفعه");
+      return;
+    }
     if (isAvatarAnimateModel && (!avatarImage || !avatarVideo)) {
       toast.error("يجب رفع صورة وفيديو مرجعي");
+      return;
+    }
+    if (isAvatarAnimateModel && mediaDurationSeconds === null) {
+      toast.error("لم يتم استخراج مدة الفيديو — يرجى إعادة رفعه");
       return;
     }
     if (!isImageOnlyTool && !isRemixTool && !isAvatarTool && !prompt.trim() && refImages.length === 0 && !firstFrame) {
