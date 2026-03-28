@@ -608,6 +608,9 @@ const StudioPage = () => {
       const idempotencyKey = `gen_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const fileType = (isVideoTool || isAvatarTool) ? "video" : "image";
 
+      // Use avatar-specific resolution for avatar models, general resolution otherwise
+      const serverResolution = isAvatarTool ? avatarPricingResolution : (resolution || null);
+
       const { data: startResult, error: startError } = await supabase.functions.invoke("start-generation", {
         body: {
           toolId: tool.id,
@@ -615,7 +618,7 @@ const StudioPage = () => {
           model: tool.model,
           apiType,
           input,
-          resolution: resolution || null,
+          resolution: serverResolution,
           quality: quality || null,
           durationSeconds: effectiveDurationSeconds,
           hasAudio: hasAudioForPricing,
