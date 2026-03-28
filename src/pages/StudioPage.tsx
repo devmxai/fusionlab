@@ -1280,31 +1280,40 @@ const StudioPage = () => {
           {/* ── Avatar upload strip ── */}
           {isAvatarTool && selectedTool && (
             <div className="flex gap-2 items-stretch">
-              {/* Image slot - square */}
-              <button
-                onClick={() => avatarImageInputRef.current?.click()}
-                className={`relative rounded-xl border-2 border-dashed transition-all overflow-hidden flex-shrink-0 ${
-                  avatarImage ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
-                }`}
-                style={{ width: "56px", height: "56px" }}
-              >
-                {avatarImage ? (
-                  <div className="relative w-full h-full">
-                    <img src={avatarImage.preview} alt="Avatar" className="w-full h-full object-cover rounded-lg" />
-                    <button
-                      onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }}
-                      className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
-                    >
-                      <X className="w-2.5 h-2.5 text-destructive-foreground" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center gap-0.5 w-full h-full">
-                    <Upload className="w-4 h-4 text-muted-foreground/60" />
-                    <span className="text-[8px] font-semibold text-muted-foreground/70">صورة</span>
-                  </div>
-                )}
-              </button>
+              {/* Image slot - square with upload/library options */}
+              {avatarImage ? (
+                <div
+                  className="relative rounded-xl border-2 border-primary/40 bg-primary/5 overflow-hidden flex-shrink-0"
+                  style={{ width: "56px", height: "56px" }}
+                >
+                  <img src={avatarImage.preview} alt="Avatar" className="w-full h-full object-cover rounded-lg" />
+                  <button
+                    onClick={() => { URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }}
+                    className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                  >
+                    <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => avatarImageInputRef.current?.click()}
+                    className="rounded-xl border-2 border-dashed border-border/40 bg-secondary/30 hover:border-primary/30 transition-all flex flex-col items-center justify-center gap-0.5"
+                    style={{ width: "44px", height: "56px" }}
+                  >
+                    <Upload className="w-3.5 h-3.5 text-muted-foreground/60" />
+                    <span className="text-[7px] font-semibold text-muted-foreground/70">رفع</span>
+                  </button>
+                  <button
+                    onClick={() => setImagePickerOpen(true)}
+                    className="rounded-xl border-2 border-dashed border-border/40 bg-secondary/30 hover:border-primary/30 transition-all flex flex-col items-center justify-center gap-0.5"
+                    style={{ width: "44px", height: "56px" }}
+                  >
+                    <FolderOpen className="w-3.5 h-3.5 text-muted-foreground/60" />
+                    <span className="text-[7px] font-semibold text-muted-foreground/70">مكتبة</span>
+                  </button>
+                </div>
+              )}
 
               {/* Audio slot - wide bar with play button */}
               {isAvatarAudioModel && (
