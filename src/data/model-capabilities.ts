@@ -176,6 +176,8 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
 
   // ─── Avatar Models ───
   // Docs: image_url + audio_url + prompt only, no resolution
+  // Kling Avatar: resolution is fixed per model (720p standard, 1080p pro)
+  // No user-selectable resolution — it's implicit in the model choice
   "kling/ai-avatar-standard": {},
   "kling/ai-avatar-pro": {},
   // Docs: image_url + audio_url + prompt + resolution (480p/720p)

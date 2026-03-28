@@ -273,18 +273,30 @@ const StudioPage = () => {
     return selectedTool.inputType === "avatar"; // avatar models use audio input
   }, [selectedTool]);
 
+  // Get the correct resolution for avatar models (fixed per model, not from dropdown)
+  const avatarPricingResolution = useMemo((): string | null => {
+    if (!selectedTool) return null;
+    if (selectedTool.model === "kling/ai-avatar-standard") return "720p";
+    if (selectedTool.model === "kling/ai-avatar-pro") return "1080p";
+    if (selectedTool.model === "infinitalk/from-audio") return resolution; // user-selected
+    if (selectedTool.model === "wan/2-2-animate-move") return resolution; // user-selected
+    return null;
+  }, [selectedTool, resolution]);
+
   // Dynamic pricing based on selected model + options
   const pricingParams = useMemo(() => {
     if (!selectedTool) return null;
     const t = selectedTool;
+    const isAvatar = t.inputType === "avatar" || t.inputType === "animate";
+
     return {
       model: t.model,
-      resolution: resolution || null,
+      resolution: isAvatar ? avatarPricingResolution : (resolution || null),
       quality: quality || null,
       durationSeconds: effectiveDurationSeconds,
       hasAudio: hasAudioForPricing,
     };
-  }, [selectedTool, resolution, quality, effectiveDurationSeconds, hasAudioForPricing]);
+  }, [selectedTool, resolution, quality, effectiveDurationSeconds, hasAudioForPricing, avatarPricingResolution]);
 
   const { price } = usePricing(pricingParams);
   const { checkAccess } = usePlanGating(selectedTool?.model || null);
@@ -596,6 +608,9 @@ const StudioPage = () => {
       const idempotencyKey = `gen_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const fileType = (isVideoTool || isAvatarTool) ? "video" : "image";
 
+      // Use avatar-specific resolution for avatar models, general resolution otherwise
+      const serverResolution = isAvatarTool ? avatarPricingResolution : (resolution || null);
+
       const { data: startResult, error: startError } = await supabase.functions.invoke("start-generation", {
         body: {
           toolId: tool.id,
@@ -603,7 +618,7 @@ const StudioPage = () => {
           model: tool.model,
           apiType,
           input,
-          resolution: resolution || null,
+          resolution: serverResolution,
           quality: quality || null,
           durationSeconds: effectiveDurationSeconds,
           hasAudio: hasAudioForPricing,

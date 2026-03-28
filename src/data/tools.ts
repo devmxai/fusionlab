@@ -324,10 +324,10 @@ export const tools: AITool[] = [
 
   // ─── Avatar Models ───
   {
-    id: "kling-avatar-standard",
-    title: "Kling Avatar",
+    id: "kling-avatar-720",
+    title: "Kling 720p",
     provider: "Kling",
-    description: "أفتار ناطق من صورة وصوت",
+    description: "أفتار ناطق بدقة 720p — 8 كريدت/ثانية",
     image: "ai-influencer",
     isPro: false,
     category: "افتار",
@@ -335,10 +335,10 @@ export const tools: AITool[] = [
     inputType: "avatar",
   },
   {
-    id: "kling-avatar-pro",
-    title: "Kling Avatar Pro",
+    id: "kling-avatar-1080",
+    title: "Kling 1080p",
     provider: "Kling",
-    description: "أفتار احترافي بجودة فائقة",
+    description: "أفتار احترافي بدقة 1080p — 16 كريدت/ثانية",
     image: "ai-influencer",
     isPro: true,
     category: "افتار",
