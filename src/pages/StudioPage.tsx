@@ -1273,7 +1273,7 @@ const StudioPage = () => {
                         )}
                       </div>
                       <button
-                        onClick={(e) => { e.stopPropagation(); setAvatarAudio(null); }}
+                        onClick={(e) => { e.stopPropagation(); setAvatarAudio(null); setAudioDurationSeconds(null); }}
                         className="w-4 h-4 rounded-full bg-destructive flex items-center justify-center flex-shrink-0"
                       >
                         <X className="w-2.5 h-2.5 text-destructive-foreground" />
