@@ -273,11 +273,21 @@ const StudioPage = () => {
     return selectedTool.inputType === "avatar"; // avatar models use audio input
   }, [selectedTool]);
 
-  // Get the correct resolution for avatar models (fixed per model, not from dropdown)
+  // For Kling Avatar: resolution maps to different API models
+  // kling/ai-avatar-standard + 720p → model stays kling/ai-avatar-standard
+  // kling/ai-avatar-standard + 1080p → model becomes kling/ai-avatar-pro (for pricing & API)
+  const effectiveAvatarModel = useMemo((): string | null => {
+    if (!selectedTool) return null;
+    if (selectedTool.model === "kling/ai-avatar-standard" && resolution === "1080p") {
+      return "kling/ai-avatar-pro";
+    }
+    return selectedTool.model;
+  }, [selectedTool, resolution]);
+
+  // Get the correct resolution for avatar pricing
   const avatarPricingResolution = useMemo((): string | null => {
     if (!selectedTool) return null;
-    if (selectedTool.model === "kling/ai-avatar-standard") return "720p";
-    if (selectedTool.model === "kling/ai-avatar-pro") return "1080p";
+    if (selectedTool.model === "kling/ai-avatar-standard") return resolution; // 720p or 1080p from dropdown
     if (selectedTool.model === "infinitalk/from-audio") return resolution; // user-selected
     if (selectedTool.model === "wan/2-2-animate-move") return resolution; // user-selected
     return null;
@@ -286,17 +296,17 @@ const StudioPage = () => {
   // Dynamic pricing based on selected model + options
   const pricingParams = useMemo(() => {
     if (!selectedTool) return null;
-    const t = selectedTool;
-    const isAvatar = t.inputType === "avatar" || t.inputType === "animate";
+    const isAvatar = selectedTool.inputType === "avatar" || selectedTool.inputType === "animate";
+    const modelForPricing = isAvatar ? (effectiveAvatarModel || selectedTool.model) : selectedTool.model;
 
     return {
-      model: t.model,
+      model: modelForPricing,
       resolution: isAvatar ? avatarPricingResolution : (resolution || null),
       quality: quality || null,
       durationSeconds: effectiveDurationSeconds,
       hasAudio: hasAudioForPricing,
     };
-  }, [selectedTool, resolution, quality, effectiveDurationSeconds, hasAudioForPricing, avatarPricingResolution]);
+  }, [selectedTool, resolution, quality, effectiveDurationSeconds, hasAudioForPricing, avatarPricingResolution, effectiveAvatarModel]);
 
   const { price } = usePricing(pricingParams);
   const { checkAccess } = usePlanGating(selectedTool?.model || null);
