@@ -1355,13 +1355,23 @@ const StudioPage = () => {
                       </button>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => avatarAudioInputRef.current?.click()}
-                      className="flex items-center justify-center gap-2 w-full h-full py-2"
-                    >
-                      <Music className="w-4 h-4 text-muted-foreground/60" />
-                      <span className="text-[10px] font-semibold text-muted-foreground/70">ارفع مقطع صوتي</span>
-                    </button>
+                    <div className="flex items-center justify-center gap-3 w-full h-full py-2">
+                      <button
+                        onClick={() => avatarAudioInputRef.current?.click()}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-secondary/60 transition-colors"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-muted-foreground/60" />
+                        <span className="text-[10px] font-semibold text-muted-foreground/70">رفع صوت</span>
+                      </button>
+                      <div className="w-px h-6 bg-border/40" />
+                      <button
+                        onClick={() => setAudioPickerOpen(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-secondary/60 transition-colors"
+                      >
+                        <FolderOpen className="w-3.5 h-3.5 text-muted-foreground/60" />
+                        <span className="text-[10px] font-semibold text-muted-foreground/70">من المكتبة</span>
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
