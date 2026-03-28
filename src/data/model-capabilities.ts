@@ -190,6 +190,16 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
     resolutions: ["480p", "580p", "720p"],
   },
 
+  // ─── Transfer / Motion Control Models ───
+  // Docs: mode 720p|1080p, character_orientation image|video, input_urls 1 image, video_urls 1 video
+  "kling-3.0/motion-control": {
+    resolutions: ["720p", "1080p"],
+  },
+  // Docs: mode 720p|1080p, character_orientation image|video, input_urls 1 image, video_urls 1 video
+  "kling-2.6/motion-control": {
+    resolutions: ["720p", "1080p"],
+  },
+
   // ─── Utility Models ───
   "recraft/remove-background": {},
   "recraft/crisp-upscale": {},
