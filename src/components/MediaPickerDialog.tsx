@@ -76,7 +76,7 @@ const MediaPickerDialog = ({ open, onClose, mediaType, onSelect }: MediaPickerDi
               </p>
             </div>
           ) : mediaType === "image" ? (
-            <div className="grid grid-cols-3 gap-2 p-1">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-1">
               {items.map((item) => (
                 <button
                   key={item.id}

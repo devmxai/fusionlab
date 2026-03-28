@@ -1619,36 +1619,35 @@ const StudioPage = () => {
         open={imagePickerOpen}
         onClose={() => setImagePickerOpen(false)}
         mediaType="image"
-        onSelect={async (url) => {
-          try {
-            const res = await fetch(url);
-            const blob = await res.blob();
-            const file = new File([blob], "library_image.png", { type: blob.type });
-            if (avatarImage) URL.revokeObjectURL(avatarImage.preview);
-            setAvatarImage({ file, preview: URL.createObjectURL(file) });
-          } catch {
-            toast.error("فشل في تحميل الصورة من المكتبة");
-          }
+        onSelect={(url) => {
+          if (avatarImage?.preview?.startsWith("blob:")) URL.revokeObjectURL(avatarImage.preview);
+          setAvatarImage({ preview: url, sourceUrl: url });
         }}
       />
       <MediaPickerDialog
         open={audioPickerOpen}
         onClose={() => setAudioPickerOpen(false)}
         mediaType="audio"
-        onSelect={async (url, fileName) => {
-          try {
-            const res = await fetch(url);
-            const blob = await res.blob();
-            const file = new File([blob], fileName || "library_audio.mp3", { type: blob.type });
-            setAvatarAudio({ file, name: file.name });
-            // Detect duration
-            const audioEl = document.createElement("audio");
-            audioEl.src = URL.createObjectURL(file);
-            audioEl.addEventListener("loadedmetadata", () => {
-              if (audioEl.duration && isFinite(audioEl.duration)) {
-                setMediaDurationSeconds(audioEl.duration);
-              }
-              URL.revokeObjectURL(audioEl.src);
+        onSelect={(url, fileName) => {
+          if (avatarAudio?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl);
+          setAvatarAudio({
+            name: fileName || "library_audio.mp3",
+            sourceUrl: url,
+            previewUrl: url,
+          });
+
+          // Detect duration from source URL
+          const audioEl = document.createElement("audio");
+          audioEl.preload = "metadata";
+          audioEl.src = url;
+          audioEl.addEventListener("loadedmetadata", () => {
+            if (audioEl.duration && isFinite(audioEl.duration)) {
+              setMediaDurationSeconds(audioEl.duration);
+            }
+          });
+          audioEl.addEventListener("error", () => {
+            setMediaDurationSeconds(null);
+            toast.error("تعذر قراءة مدة الملف الصوتي من المكتبة");
             });
           } catch {
             toast.error("فشل في تحميل الصوت من المكتبة");
