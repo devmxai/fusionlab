@@ -1386,7 +1386,7 @@ const StudioPage = () => {
               {/* Audio slot - single icon with dropdown */}
               {isAvatarAudioModel && (
                 <div
-                  className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
+                  className={`flex-1 relative rounded-xl border-2 border-dashed transition-all ${
                     avatarAudio ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
                   }`}
                   style={{ minHeight: "56px" }}
