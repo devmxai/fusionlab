@@ -371,14 +371,25 @@ export const tools: AITool[] = [
     inputType: "animate",
   },
   {
-    id: "wan-animate",
-    title: "Wan Animate",
+    id: "wan-animate-move",
+    title: "Wan Animate Move",
     provider: "Alibaba",
-    description: "تحريك صورة حسب فيديو مرجعي",
+    description: "تحريك صورة حسب فيديو مرجعي مع الحفاظ على الخلفية",
     image: "ai-influencer",
     isPro: false,
     category: "ترانسفير",
     model: "wan/2-2-animate-move",
+    inputType: "animate",
+  },
+  {
+    id: "wan-animate-replace",
+    title: "Wan Animate Replace",
+    provider: "Alibaba",
+    description: "استبدال الشخصية في الفيديو بصورة جديدة بدمج طبيعي",
+    image: "ai-influencer",
+    isPro: false,
+    category: "ترانسفير",
+    model: "wan/2-2-animate-replace",
     inputType: "animate",
   },
 ];
@@ -591,7 +602,7 @@ export function buildModelInput(
     };
   }
 
-  if (model === "wan/2-2-animate-move") {
+  if (model === "wan/2-2-animate-move" || model === "wan/2-2-animate-replace") {
     return {
       video_url: extraParams?.video_url || "",
       image_url: extraParams?.image_url || (imageUrls?.[0] ?? ""),

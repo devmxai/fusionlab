@@ -294,6 +294,7 @@ const StudioPage = () => {
     if (selectedTool.model === "kling/ai-avatar-standard") return resolution;
     if (selectedTool.model === "infinitalk/from-audio") return resolution;
     if (selectedTool.model === "wan/2-2-animate-move") return resolution;
+    if (selectedTool.model === "wan/2-2-animate-replace") return resolution;
     if (selectedTool.model === "kling-3.0/motion-control") return resolution;
     if (selectedTool.model === "kling-2.6/motion-control") return resolution;
     return null;
