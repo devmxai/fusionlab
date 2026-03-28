@@ -1158,25 +1158,24 @@ const StudioPage = () => {
           <input ref={avatarImageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
             const file = e.target.files?.[0];
             if (!file) return;
-            if (avatarImage) URL.revokeObjectURL(avatarImage.preview);
-            setAvatarImage({ file, preview: URL.createObjectURL(file) });
+            const objectUrl = URL.createObjectURL(file);
+            if (avatarImage?.preview?.startsWith("blob:")) URL.revokeObjectURL(avatarImage.preview);
+            setAvatarImage({ file, preview: objectUrl, sourceUrl: objectUrl });
             if (avatarImageInputRef.current) avatarImageInputRef.current.value = "";
           }} />
           <input ref={avatarAudioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => {
             const file = e.target.files?.[0];
             if (!file) return;
-            setAvatarAudio({ file, name: file.name });
+            const objectUrl = URL.createObjectURL(file);
+            if (avatarAudio?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl);
+            setAvatarAudio({ file, name: file.name, previewUrl: objectUrl, sourceUrl: objectUrl });
             // Detect actual audio duration for accurate pricing
             const audioEl = document.createElement("audio");
-            audioEl.src = URL.createObjectURL(file);
+            audioEl.src = objectUrl;
             audioEl.addEventListener("loadedmetadata", () => {
               if (audioEl.duration && isFinite(audioEl.duration)) {
                 setMediaDurationSeconds(audioEl.duration);
               }
-              URL.revokeObjectURL(audioEl.src);
-            });
-            audioEl.addEventListener("error", () => {
-              URL.revokeObjectURL(audioEl.src);
             });
             if (avatarAudioInputRef.current) avatarAudioInputRef.current.value = "";
           }} />
