@@ -10,6 +10,37 @@ function generateOTP(): string {
   return String(Math.floor(1000 + Math.random() * 9000));
 }
 
+async function sendWhatsAppMessage(phone: string, message: string): Promise<boolean> {
+  const wasenderKey = Deno.env.get("WASENDER_API_KEY");
+  if (!wasenderKey) {
+    console.error("WASENDER_API_KEY not configured");
+    return false;
+  }
+
+  const whatsappPhone = phone.startsWith("964") ? phone : "964" + phone;
+
+  const res = await fetch("https://api.wasenderapi.com/api/send-message", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${wasenderKey}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      to: whatsappPhone,
+      type: "text",
+      text: message,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error("WASender error:", errText);
+    return false;
+  }
+  return true;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -40,13 +71,14 @@ Deno.serve(async (req) => {
     }
     const userId = claimsData.claims.sub;
 
-    const { action, phone_number, otp_code } = await req.json();
+    const { action, phone_number, otp_code, subscription_data } = await req.json();
 
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // ── Send OTP ──
     if (action === "send_otp") {
       if (!phone_number || !/^7\d{9}$/.test(phone_number)) {
         return new Response(
@@ -55,7 +87,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Check rate limit - max 3 OTPs per hour
       const { count } = await adminClient
         .from("phone_verifications")
         .select("*", { count: "exact", head: true })
@@ -69,7 +100,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Check if phone already verified by another user
       const { data: existingPhone } = await adminClient
         .from("profiles")
         .select("id")
@@ -87,7 +117,6 @@ Deno.serve(async (req) => {
 
       const otp = generateOTP();
 
-      // Store OTP
       await adminClient.from("phone_verifications").insert({
         user_id: userId,
         phone_number,
@@ -95,38 +124,10 @@ Deno.serve(async (req) => {
         expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
       });
 
-      // Format phone for WhatsApp: 7xxxxxxxxx → 9647xxxxxxxxx
-      const whatsappPhone = "964" + phone_number;
-
-      // Send via WASender API
-      const wasenderKey = Deno.env.get("WASENDER_API_KEY");
-      if (!wasenderKey) {
-        console.error("WASENDER_API_KEY not configured");
-        return new Response(
-          JSON.stringify({ error: "config_error", message: "خطأ في إعدادات الخدمة" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
       const messageBody = `🔐 رمز التحقق الخاص بك في FusionLab:\n\n*${otp}*\n\nصالح لمدة 5 دقائق. لا تشاركه مع أحد.`;
 
-      const wasenderRes = await fetch("https://api.wasenderapi.com/api/send-message", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${wasenderKey}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          to: whatsappPhone,
-          type: "text",
-          text: messageBody,
-        }),
-      });
-
-      if (!wasenderRes.ok) {
-        const errText = await wasenderRes.text();
-        console.error("WASender error:", errText);
+      const sent = await sendWhatsAppMessage(phone_number, messageBody);
+      if (!sent) {
         return new Response(
           JSON.stringify({ error: "send_failed", message: "فشل إرسال رمز التحقق. تأكد من أن الرقم مسجل على WhatsApp." }),
           { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -139,6 +140,7 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ── Verify OTP ──
     if (action === "verify_otp") {
       if (!otp_code || !phone_number) {
         return new Response(
@@ -147,7 +149,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Get latest unverified OTP for this user+phone
       const { data: verification } = await adminClient
         .from("phone_verifications")
         .select("*")
@@ -165,7 +166,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Check expiry
       if (new Date(verification.expires_at) < new Date()) {
         return new Response(
           JSON.stringify({ error: "expired", message: "انتهت صلاحية الرمز. أعد الإرسال." }),
@@ -173,7 +173,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Check attempts
       if (verification.attempts >= 5) {
         return new Response(
           JSON.stringify({ error: "max_attempts", message: "تم تجاوز عدد المحاولات" }),
@@ -181,7 +180,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Increment attempts
       await adminClient
         .from("phone_verifications")
         .update({ attempts: verification.attempts + 1 })
@@ -194,13 +192,11 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Mark as verified
       await adminClient
         .from("phone_verifications")
         .update({ verified: true })
         .eq("id", verification.id);
 
-      // Update profile with verified phone
       await adminClient
         .from("profiles")
         .update({ phone_number, phone_verified: true })
@@ -208,6 +204,62 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify({ success: true, message: "تم التحقق بنجاح" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── Send Subscription Confirmation WhatsApp ──
+    if (action === "send_subscription_confirmation") {
+      // Only admins can trigger this
+      const { data: adminRole } = await adminClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .in("role", ["admin", "super_admin"])
+        .maybeSingle();
+
+      if (!adminRole) {
+        return new Response(
+          JSON.stringify({ error: "unauthorized", message: "غير مصرح" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (!subscription_data?.phone_number || !subscription_data?.plan_name || !subscription_data?.credits) {
+        return new Response(
+          JSON.stringify({ error: "missing_data", message: "بيانات ناقصة" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { phone_number: targetPhone, plan_name, credits, starts_at, expires_at } = subscription_data;
+
+      const formatDate = (d: string) => {
+        try {
+          return new Date(d).toLocaleDateString("ar-IQ", { year: "numeric", month: "long", day: "numeric" });
+        } catch {
+          return d;
+        }
+      };
+
+      const message = `✅ *تم تفعيل اشتراكك في FusionLab!*\n\n` +
+        `📋 *الخطة:* ${plan_name}\n` +
+        `💰 *الرصيد:* ${credits} كريدت\n` +
+        `📅 *من:* ${formatDate(starts_at)}\n` +
+        `📅 *إلى:* ${formatDate(expires_at)}\n\n` +
+        `شكراً لاشتراكك! يمكنك البدء بالاستخدام الآن.\n` +
+        `🔗 fusionlab.pro`;
+
+      const sent = await sendWhatsAppMessage(targetPhone, message);
+      if (!sent) {
+        return new Response(
+          JSON.stringify({ error: "send_failed", message: "فشل إرسال رسالة التأكيد" }),
+          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, message: "تم إرسال تأكيد الاشتراك" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
