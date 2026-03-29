@@ -95,6 +95,7 @@ const StudioPage = () => {
   const [lastFrame, setLastFrame] = useState<{ file: File; preview: string } | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState("");
+  const [resultNaturalRatio, setResultNaturalRatio] = useState<string | null>(null);
 
   type AvatarImageValue = { preview: string; file?: File; sourceUrl?: string };
   type AvatarAudioValue = { name: string; file?: File; sourceUrl?: string; previewUrl?: string };
@@ -323,6 +324,7 @@ const StudioPage = () => {
     setSelectedTool(t);
     setOpenMenu(null);
     setResultUrls([]);
+    setResultNaturalRatio(null);
     // Reset frames
     if (firstFrame) { URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }
     if (lastFrame) { URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }
@@ -562,6 +564,7 @@ const StudioPage = () => {
     setStatus("جاري التحضير...");
     setProgress(1);
     setResultUrls([]);
+    setResultNaturalRatio(null);
 
     let reservationId: string | null = null;
 
@@ -972,9 +975,17 @@ const StudioPage = () => {
         <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
           className="w-full h-full cursor-pointer relative group" onClick={() => openViewer(resultUrls[0])}>
           {(isVideoTool || isAvatarTool) ? (
-            <video src={resultUrls[0]} controls autoPlay playsInline className="w-full h-full object-contain rounded-2xl" />
+            <video src={resultUrls[0]} controls autoPlay playsInline className="w-full h-full object-contain rounded-2xl"
+              onLoadedMetadata={(e) => {
+                const v = e.currentTarget;
+                if (v.videoWidth && v.videoHeight) setResultNaturalRatio(`${v.videoWidth}/${v.videoHeight}`);
+              }} />
           ) : (
-            <img src={resultUrls[0]} alt="Result" className="w-full h-full object-contain rounded-2xl" />
+            <img src={resultUrls[0]} alt="Result" className="w-full h-full object-contain rounded-2xl"
+              onLoad={(e) => {
+                const img = e.currentTarget;
+                if (img.naturalWidth && img.naturalHeight) setResultNaturalRatio(`${img.naturalWidth}/${img.naturalHeight}`);
+              }} />
           )}
         </motion.div>
       );
@@ -1290,13 +1301,17 @@ const StudioPage = () => {
           className={`relative rounded-2xl overflow-hidden flex items-center justify-center border ${
             resultUrls.length > 0 && !loading ? "border-transparent" : loading ? "border-primary/30" : "border-border/30"
           }`}
-          style={shootsPlaceholderStyle || {
-            width: "100%",
-            maxWidth: currentRatio.placeholderMaxW,
-            aspectRatio: currentRatio.cssAspect,
-            maxHeight: "calc(100dvh - 180px)",
-            background: resultUrls.length > 0 && !loading ? "transparent" : undefined,
-          }}
+          style={shootsPlaceholderStyle || (() => {
+            const hasResult = resultUrls.length > 0 && !loading;
+            const useNatural = hasResult && resultNaturalRatio;
+            return {
+              width: "100%",
+              maxWidth: useNatural ? "min(96vw, 820px)" : currentRatio.placeholderMaxW,
+              aspectRatio: useNatural ? resultNaturalRatio : currentRatio.cssAspect,
+              maxHeight: "calc(100dvh - 180px)",
+              background: hasResult ? "transparent" : undefined,
+            };
+          })()}
         >
           {resultUrls.length === 0 && !loading && (
             <div className="absolute inset-0 shimmer-effect opacity-[0.06] pointer-events-none" />
