@@ -107,11 +107,13 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
   // ─── Video Models ───
 
   // Docs: aspect_ratio 2:3,3:2,1:1,16:9,9:16 | duration 6,10 | resolution 480p,720p | mode fun,normal,spicy
+  // Supports image-to-video with up to 7 reference images (switches to grok-imagine/image-to-video)
   "grok-imagine/text-to-video": {
     aspectRatios: ["1:1", "2:3", "3:2", "9:16", "16:9"],
     durations: ["6", "10"],
     resolutions: ["480p", "720p"],
     qualities: ["fun", "normal", "spicy"],
+    maxImages: 7,
   },
 
   // Docs: aspect_ratio 9:16,16:9 | duration 8 | first+last frame via imageUrls
