@@ -410,13 +410,8 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
                 const isImage = gen.file_type?.startsWith("image");
 
                 return (
-                  <motion.div
+                  <div
                     key={gen.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.2, delay: i * 0.02 }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       setViewerItem(gen);
                       onClose();
