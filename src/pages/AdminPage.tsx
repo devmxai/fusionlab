@@ -98,12 +98,13 @@ const PlanCard = ({ plan, onSaved }: { plan: any; onSaved: () => void }) => {
   );
 };
 
-type Tab = "dashboard" | "users" | "subscriptions" | "plans" | "pricing" | "ledger" | "trials" | "audit" | "generations" | "content" | "roles";
+type Tab = "dashboard" | "users" | "subscriptions" | "sub_requests" | "plans" | "pricing" | "ledger" | "trials" | "audit" | "generations" | "content" | "roles";
 
 const tabs: { id: Tab; label: string; icon: any; superOnly?: boolean }[] = [
   { id: "dashboard", label: "لوحة التحكم", icon: BarChart3 },
   { id: "users", label: "المستخدمون", icon: Users },
   { id: "roles", label: "إدارة الأدوار", icon: UserCog, superOnly: true },
+  { id: "sub_requests", label: "طلبات الاشتراك", icon: ClipboardList },
   { id: "subscriptions", label: "الاشتراكات", icon: Crown },
   { id: "plans", label: "الخطط", icon: CreditCard },
   { id: "pricing", label: "التسعير", icon: Tag, superOnly: true },
