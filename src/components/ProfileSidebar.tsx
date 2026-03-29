@@ -38,11 +38,11 @@ interface ProfileSidebarProps {
 
 type SidebarView = "main" | "account" | "plan" | "library";
 
-const bounceIn = {
-  hidden: { opacity: 0, y: 20, scale: 0.95 },
+const fadeIn = {
+  hidden: { opacity: 0, y: 6 },
   visible: (i: number) => ({
-    opacity: 1, y: 0, scale: 1,
-    transition: { type: "spring" as const, stiffness: 400, damping: 20, delay: i * 0.06 },
+    opacity: 1, y: 0,
+    transition: { duration: 0.2, ease: [0.25, 0.1, 0.25, 1] as const, delay: i * 0.03 },
   }),
 };
 
@@ -200,19 +200,19 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
 
   const renderMainView = () => (
     <motion.div className="flex flex-col h-full" initial="hidden" animate="visible">
-      <motion.div custom={0} variants={bounceIn} className="flex flex-col items-center pt-8 pb-3">
+      <motion.div custom={0} variants={fadeIn} className="flex flex-col items-center pt-8 pb-3">
         <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary/50 shadow-[0_0_20px_hsl(var(--primary)/0.3)]">
           <img src={userAvatar} alt="avatar" className="w-full h-full object-cover" />
         </div>
       </motion.div>
-      <motion.p custom={1} variants={bounceIn} className="text-center text-sm font-bold text-foreground">
+      <motion.p custom={1} variants={fadeIn} className="text-center text-sm font-bold text-foreground">
         {displayName}
       </motion.p>
-      <motion.div custom={2} variants={bounceIn} className="flex items-center justify-center gap-1.5 mt-1.5">
+      <motion.div custom={2} variants={fadeIn} className="flex items-center justify-center gap-1.5 mt-1.5">
         <Coins className="w-3.5 h-3.5 text-primary" />
         <span className="text-xs font-semibold text-muted-foreground">{creditsDisplay}</span>
       </motion.div>
-      <motion.div custom={3} variants={bounceIn} className="flex justify-center mt-2">
+      <motion.div custom={3} variants={fadeIn} className="flex justify-center mt-2">
         <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
           <Crown className="w-3 h-3 text-primary" />
           <span className="text-[10px] font-bold text-primary">{planName || "مجاني"}</span>
@@ -220,7 +220,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
       </motion.div>
       <div className="flex-1 px-4 mt-6 space-y-2">
         {isAdmin && (
-          <motion.button custom={4} variants={bounceIn}
+          <motion.button custom={4} variants={fadeIn}
             onClick={() => { navigate("/admin"); onClose(); }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary/8 hover:bg-primary/15 border border-primary/15 transition-all">
             <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
@@ -230,7 +230,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
           </motion.button>
         )}
         {menuCards.map((item, i) => (
-          <motion.button key={item.label} custom={i + 5} variants={bounceIn}
+          <motion.button key={item.label} custom={i + 5} variants={fadeIn}
             onClick={item.action}
             className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl bg-secondary/30 hover:bg-secondary/50 border border-border/20 transition-all group">
             <div className="flex items-center gap-3">
@@ -243,7 +243,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
           </motion.button>
         ))}
       </div>
-      <motion.div custom={8} variants={bounceIn} className="px-4 pb-8 pt-3">
+      <motion.div custom={8} variants={fadeIn} className="px-4 pb-8 pt-3">
         <button onClick={handleSignOut}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-destructive/8 transition-all group">
           <div className="w-9 h-9 rounded-xl bg-destructive/10 group-hover:bg-destructive/20 flex items-center justify-center transition-colors">
@@ -257,14 +257,14 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
 
   const renderAccountView = () => (
     <motion.div className="flex flex-col h-full" initial="hidden" animate="visible">
-      <motion.div custom={0} variants={bounceIn} className="flex items-center gap-3 px-4 pt-5 pb-3">
+      <motion.div custom={0} variants={fadeIn} className="flex items-center gap-3 px-4 pt-5 pb-3">
         <button onClick={() => setView("main")} className="p-1.5 rounded-full hover:bg-secondary/50 transition-colors">
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </button>
         <span className="text-sm font-bold text-foreground">إدارة الحساب</span>
       </motion.div>
       <div className="flex-1 px-4 space-y-4 overflow-y-auto pb-8">
-        <motion.div custom={1} variants={bounceIn} className="flex flex-col items-center py-4">
+        <motion.div custom={1} variants={fadeIn} className="flex flex-col items-center py-4">
           <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/50 shadow-[0_0_20px_hsl(var(--primary)/0.3)]">
             <img src={userAvatar} alt="avatar" className="w-full h-full object-cover" />
           </div>
@@ -272,21 +272,21 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
             <RefreshCw className="w-3 h-3" /> تغيير الصورة
           </button>
         </motion.div>
-        <motion.div custom={2} variants={bounceIn} className="space-y-1.5">
+        <motion.div custom={2} variants={fadeIn} className="space-y-1.5">
           <label className="text-[10px] font-bold text-muted-foreground flex items-center gap-1"><User className="w-3 h-3" /> الاسم</label>
           <div className="flex gap-2">
             <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="text-xs bg-secondary/30 border-border/30 h-9" dir="rtl" />
             <Button size="sm" onClick={handleUpdateName} disabled={saving} className="text-[10px] h-9 px-3">حفظ</Button>
           </div>
         </motion.div>
-        <motion.div custom={3} variants={bounceIn} className="space-y-1.5">
+        <motion.div custom={3} variants={fadeIn} className="space-y-1.5">
           <label className="text-[10px] font-bold text-muted-foreground flex items-center gap-1"><Mail className="w-3 h-3" /> البريد الإلكتروني</label>
           <div className="flex gap-2">
             <Input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="text-xs bg-secondary/30 border-border/30 h-9" dir="ltr" />
             <Button size="sm" onClick={handleUpdateEmail} disabled={saving} className="text-[10px] h-9 px-3">حفظ</Button>
           </div>
         </motion.div>
-        <motion.div custom={4} variants={bounceIn} className="space-y-1.5">
+        <motion.div custom={4} variants={fadeIn} className="space-y-1.5">
           <label className="text-[10px] font-bold text-muted-foreground flex items-center gap-1"><Lock className="w-3 h-3" /> كلمة المرور الجديدة</label>
           <div className="flex gap-2">
             <Input type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="••••••••" className="text-xs bg-secondary/30 border-border/30 h-9" />
@@ -301,14 +301,14 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
     if (!planData) {
       return (
         <motion.div className="flex flex-col h-full" initial="hidden" animate="visible">
-          <motion.div custom={0} variants={bounceIn} className="flex items-center gap-3 px-4 pt-5 pb-3">
+          <motion.div custom={0} variants={fadeIn} className="flex items-center gap-3 px-4 pt-5 pb-3">
             <button onClick={() => setView("main")} className="p-1.5 rounded-full hover:bg-secondary/50 transition-colors">
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
             <span className="text-sm font-bold text-foreground">الخطة</span>
           </motion.div>
           <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-            <motion.div custom={1} variants={bounceIn}>
+            <motion.div custom={1} variants={fadeIn}>
               <Crown className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-sm text-muted-foreground mb-4">لا يوجد اشتراك نشط</p>
               <Button onClick={() => { navigate("/pricing"); onClose(); }} className="text-xs">عرض الخطط والأسعار</Button>
@@ -321,25 +321,25 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
     const daysLeft = expiresAt ? Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / 86400000)) : null;
     return (
       <motion.div className="flex flex-col h-full" initial="hidden" animate="visible">
-        <motion.div custom={0} variants={bounceIn} className="flex items-center gap-3 px-4 pt-5 pb-3">
+        <motion.div custom={0} variants={fadeIn} className="flex items-center gap-3 px-4 pt-5 pb-3">
           <button onClick={() => setView("main")} className="p-1.5 rounded-full hover:bg-secondary/50 transition-colors">
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </button>
           <span className="text-sm font-bold text-foreground">الخطة</span>
         </motion.div>
         <div className="flex-1 px-4 space-y-3 pb-8 overflow-y-auto">
-          <motion.div custom={1} variants={bounceIn} className="p-4 rounded-2xl bg-primary/10 border border-primary/20 text-center">
+          <motion.div custom={1} variants={fadeIn} className="p-4 rounded-2xl bg-primary/10 border border-primary/20 text-center">
             <Crown className="w-8 h-8 text-primary mx-auto mb-2" />
             <p className="text-base font-extrabold text-primary">{planData.name_ar}</p>
             <p className="text-[10px] text-muted-foreground mt-1">{planData.name}</p>
           </motion.div>
-          <motion.div custom={2} variants={bounceIn} className="p-3.5 rounded-2xl bg-secondary/30 border border-border/20">
+          <motion.div custom={2} variants={fadeIn} className="p-3.5 rounded-2xl bg-secondary/30 border border-border/20">
             <div className="flex items-center gap-2 mb-1"><Coins className="w-4 h-4 text-primary" /><span className="text-xs font-bold text-foreground">الرصيد</span></div>
             <p className="text-lg font-extrabold text-primary">{credits}</p>
             <p className="text-[10px] text-muted-foreground">{planData.credits_per_month} كردت شهرياً</p>
           </motion.div>
           {expiresAt && (
-            <motion.div custom={3} variants={bounceIn} className="p-3.5 rounded-2xl bg-secondary/30 border border-border/20">
+            <motion.div custom={3} variants={fadeIn} className="p-3.5 rounded-2xl bg-secondary/30 border border-border/20">
               <div className="flex items-center gap-2 mb-1"><Calendar className="w-4 h-4 text-primary" /><span className="text-xs font-bold text-foreground">الفترة</span></div>
               <p className="text-xs text-foreground">ينتهي: {expiresAt.toLocaleDateString("ar")}</p>
               {daysLeft !== null && (
@@ -350,7 +350,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
               )}
             </motion.div>
           )}
-          <motion.div custom={4} variants={bounceIn}>
+          <motion.div custom={4} variants={fadeIn}>
             <Button variant="outline" className="w-full text-xs border-primary/30 text-primary hover:bg-primary/10"
               onClick={() => { navigate("/pricing"); onClose(); }}>
               <ShoppingCart className="w-3.5 h-3.5 ml-1" /> شراء نقاط إضافية
@@ -368,7 +368,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
 
     return (
       <motion.div className="flex flex-col h-full" initial="hidden" animate="visible">
-        <motion.div custom={0} variants={bounceIn} className="flex items-center justify-between px-4 pt-5 pb-3">
+        <motion.div custom={0} variants={fadeIn} className="flex items-center justify-between px-4 pt-5 pb-3">
           <div className="flex items-center gap-3">
             <button onClick={() => setView("main")} className="p-1.5 rounded-full hover:bg-secondary/50 transition-colors">
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
@@ -383,7 +383,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
           onTouchMove={(e) => e.stopPropagation()}
           onWheel={(e) => e.stopPropagation()}>
           {/* Stats */}
-          <motion.div custom={1} variants={bounceIn} className="grid grid-cols-2 gap-2">
+          <motion.div custom={1} variants={fadeIn} className="grid grid-cols-2 gap-2">
             {[
               { icon: Image, label: "صور", count: images.length },
               { icon: Video, label: "فيديو", count: videos.length },
@@ -398,30 +398,25 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
 
           {/* Masonry grid - tight collage */}
           {generations.length === 0 ? (
-            <motion.div custom={2} variants={bounceIn} className="text-center py-8">
+            <motion.div custom={2} variants={fadeIn} className="text-center py-8">
               <Sparkles className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
               <p className="text-xs text-muted-foreground">لا توجد عناصر بعد</p>
             </motion.div>
           ) : (
-            <motion.div custom={2} variants={bounceIn} className="columns-2 gap-[6px]" style={{ orphans: 1, widows: 1 }}>
+            <motion.div custom={2} variants={fadeIn} className="columns-2 gap-[6px]" style={{ orphans: 1, widows: 1 }}>
               {displayItems.map((gen, i) => {
                 const isAudio = gen.file_type?.startsWith("audio");
                 const isVideo = gen.file_type?.startsWith("video");
                 const isImage = gen.file_type?.startsWith("image");
 
                 return (
-                  <motion.div
+                  <div
                     key={gen.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.2, delay: i * 0.02 }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       setViewerItem(gen);
                       onClose();
                     }}
-                    className="break-inside-avoid mb-[6px] rounded-xl overflow-hidden bg-secondary/30 border border-border/20 cursor-pointer relative group"
+                    className="break-inside-avoid mb-[6px] rounded-xl overflow-hidden bg-secondary/30 border border-border/20 cursor-pointer relative group hover:scale-[1.02] active:scale-[0.98] transition-transform"
                   >
                     {isImage ? (
                       <img
@@ -464,7 +459,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
                       </div>
                     )}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors pointer-events-none" />
-                  </motion.div>
+                  </div>
                 );
               })}
             </motion.div>

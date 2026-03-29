@@ -393,26 +393,33 @@ const StudioPage = () => {
   const remixMaxImages = isRemixTool ? (caps?.maxImages ?? 3) : 0;
   const remixMinImages = isRemixTool ? (caps?.minImages ?? 0) : 0;
 
-  // Transfer showcase: animated text
-  const transferTexts = ["نقل الحركة من فيديو إلى صورة", "استبدال الشخصية في الفيديو", "تحريك صورة ثابتة بحركة واقعية", "دمج ملامح جديدة بسلاسة"];
-  const [transferTextIdx, setTransferTextIdx] = useState(0);
+  // Showcase: animated cycling text per category
+  const showcaseTexts: Record<string, string[]> = {
+    transfer: ["نقل الحركة من فيديو إلى صورة", "استبدال الشخصية في الفيديو", "تحريك صورة ثابتة بحركة واقعية", "دمج ملامح جديدة بسلاسة"],
+    images: ["توليد صور بالذكاء الاصطناعي", "تصميم شخصيات واقعية", "إنشاء مشاهد خيالية", "أسلوب فني فريد بكل مرة"],
+    video: ["توليد فيديو من النص", "تحويل الأفكار لمقاطع متحركة", "مؤثرات بصرية سينمائية", "حركة طبيعية وسلسة"],
+    remix: ["تعديل الصور بالذكاء الاصطناعي", "دمج صورتين في واحدة", "تغيير الأسلوب الفني", "تحرير احترافي بنقرة"],
+    avatar: ["تحريك صورة بالصوت", "إنشاء أفتار متحدث", "دمج الصوت مع الوجه", "شخصية رقمية نابضة بالحياة"],
+  };
+  const currentShowcaseTexts = showcaseTexts[category || ""] || [];
+  const [showcaseTextIdx, setShowcaseTextIdx] = useState(0);
   useEffect(() => {
-    if (category !== "transfer") return;
-    const interval = setInterval(() => setTransferTextIdx((p) => (p + 1) % transferTexts.length), 3000);
+    if (!currentShowcaseTexts.length) return;
+    const interval = setInterval(() => setShowcaseTextIdx((p) => (p + 1) % currentShowcaseTexts.length), 3000);
     return () => clearInterval(interval);
-  }, [category]);
+  }, [category, currentShowcaseTexts.length]);
 
-  const TransferShowcaseText = () => (
+  const ShowcaseText = () => (
     <AnimatePresence mode="wait">
       <motion.p
-        key={transferTextIdx}
+        key={showcaseTextIdx}
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}
         transition={{ duration: 0.4 }}
         className="text-sm font-bold text-primary/80 text-center"
       >
-        {transferTexts[transferTextIdx]}
+        {currentShowcaseTexts[showcaseTextIdx]}
       </motion.p>
     </AnimatePresence>
   );
@@ -980,20 +987,32 @@ const StudioPage = () => {
       );
     }
 
-    // Transfer showcase: show demo videos when no files uploaded yet
-    if (category === "transfer" && !avatarImage && !avatarVideo) {
+    // Showcase: show demo content when no files uploaded yet
+    const showcaseCategories = ["transfer", "images", "video", "remix", "avatar"];
+    const hasNoInput = !avatarImage && !avatarVideo && refImages.length === 0 && !firstFrame && !prompt.trim();
+    if (category && showcaseCategories.includes(category) && hasNoInput && currentShowcaseTexts.length > 0) {
+      const isTransfer = category === "transfer";
       return (
-        <motion.div key="transfer-showcase" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="w-full h-full flex flex-col items-center justify-center gap-4 px-4">
-          <div className="flex gap-3 w-full max-w-[600px]">
-            <div className="flex-1 rounded-xl overflow-hidden border border-border/30 shadow-lg">
-              <video src="/demos/transfer-demo-1.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover" />
+        <motion.div key={`${category}-showcase`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="w-full h-full flex flex-col items-center justify-center gap-5 px-4">
+          {isTransfer ? (
+            <div className="flex gap-3 w-full max-w-[700px]">
+              <div className="flex-1 rounded-2xl overflow-hidden shadow-xl">
+                <video src="/demos/transfer-demo-1.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1 rounded-2xl overflow-hidden shadow-xl">
+                <video src="/demos/transfer-demo-2.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover" />
+              </div>
             </div>
-            <div className="flex-1 rounded-xl overflow-hidden border border-border/30 shadow-lg">
-              <video src="/demos/transfer-demo-2.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover" />
+          ) : (
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-primary" />
+              </div>
+              <p className="text-xs text-muted-foreground/60">{tool.description}</p>
             </div>
-          </div>
-          <TransferShowcaseText />
+          )}
+          <ShowcaseText />
         </motion.div>
       );
     }
