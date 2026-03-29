@@ -324,6 +324,7 @@ const StudioPage = () => {
     setSelectedTool(t);
     setOpenMenu(null);
     setResultUrls([]);
+    setResultNaturalRatio(null);
     // Reset frames
     if (firstFrame) { URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }
     if (lastFrame) { URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }
