@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import HomeHeader from "@/components/HomeHeader";
 import CategoryFilter from "@/components/CategoryFilter";
 import BannerCarousel from "@/components/BannerCarousel";
+import AIShowcase from "@/components/AIShowcase";
 import ToolCard from "@/components/ToolCard";
 import { supabase } from "@/integrations/supabase/client";
 import { tools, AITool } from "@/data/tools";
