@@ -414,7 +414,7 @@ const UserManagement = ({ plans, onDataRefresh }: UserManagementProps) => {
             <Coins className="w-3.5 h-3.5" />
             منح كريدت
           </Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => { setSubOpen(!subOpen); setGrantOpen(false); setConfirmAction(null); }}>
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => { const opening = !subOpen; setSubOpen(opening); setGrantOpen(false); setConfirmAction(null); if (opening && plans.length > 0 && !selectedPlanId) setSelectedPlanId(plans[0].id); }}>
             <Crown className="w-3.5 h-3.5" />
             تفعيل اشتراك
           </Button>
