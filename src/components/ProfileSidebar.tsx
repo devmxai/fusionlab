@@ -416,7 +416,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
                       setViewerItem(gen);
                       onClose();
                     }}
-                    className="break-inside-avoid mb-[6px] rounded-xl overflow-hidden bg-secondary/30 border border-border/20 cursor-pointer relative group"
+                    className="break-inside-avoid mb-[6px] rounded-xl overflow-hidden bg-secondary/30 border border-border/20 cursor-pointer relative group hover:scale-[1.02] active:scale-[0.98] transition-transform"
                   >
                     {isImage ? (
                       <img
