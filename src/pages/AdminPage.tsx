@@ -165,7 +165,7 @@ const AdminPage = () => {
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("subscription_plans").select("*").order("price"),
       supabase.from("trial_requests").select("*, profiles(email, full_name)").order("created_at", { ascending: false }),
-      supabase.from("user_subscriptions").select("*, profiles(email, full_name), subscription_plans(name, name_ar, type)").order("created_at", { ascending: false }),
+      supabase.from("user_subscriptions").select("*, subscription_plans(name, name_ar, type)").order("created_at", { ascending: false }),
       supabase.from("pricing_rules").select("*").order("model"),
       supabase.from("credit_transactions").select("*, profiles(email, full_name)").order("created_at", { ascending: false }).limit(200),
       supabase.from("audit_logs").select("*, profiles:actor_id(email, full_name)").order("created_at", { ascending: false }).limit(100),
@@ -740,17 +740,20 @@ const AdminPage = () => {
               <h2 className="text-lg font-bold text-foreground">الاشتراكات</h2>
               {subscriptions.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-8">لا توجد اشتراكات</p>
-              ) : subscriptions.map((s) => (
-                <div key={s.id} className="bg-card rounded-xl border border-border/50 p-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-xs font-semibold text-foreground">{(s as any).profiles?.email || "—"}</p>
-                    {statusBadge(s.status)}
+              ) : subscriptions.map((s) => {
+                const profile = users.find((u: any) => u.id === s.user_id);
+                return (
+                  <div key={s.id} className="bg-card rounded-xl border border-border/50 p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs font-semibold text-foreground">{profile?.email || "—"}</p>
+                      {statusBadge(s.status)}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      {(s as any).subscription_plans?.name_ar || "—"} • ينتهي: {s.expires_at ? formatDate(s.expires_at) : "—"}
+                    </p>
                   </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    {(s as any).subscription_plans?.name_ar || "—"} • ينتهي: {s.expires_at ? formatDate(s.expires_at) : "—"}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 

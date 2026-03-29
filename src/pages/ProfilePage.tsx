@@ -34,7 +34,7 @@ const bounceIn = {
 };
 
 const ProfilePage = () => {
-  const { user, credits, isAdmin, signOut, loading } = useAuth();
+  const { user, credits, isAdmin, signOut, loading, refreshCredits } = useAuth();
   const navigate = useNavigate();
   const [subscription, setSubscription] = useState<any>(null);
   const [plan, setPlan] = useState<any>(null);
@@ -51,6 +51,8 @@ const ProfilePage = () => {
     if (!user) return;
     setEditName(user.user_metadata?.full_name || "");
     setEditEmail(user.email || "");
+    // Always refresh credits from DB to ensure accuracy
+    refreshCredits();
     const fetchData = async () => {
       // Fetch phone info
       const { data: profile } = await supabase

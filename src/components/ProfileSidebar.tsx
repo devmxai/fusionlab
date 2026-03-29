@@ -67,6 +67,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
 
   useEffect(() => {
     if (!user || !open) return;
+    refreshCredits();
     const fetchData = async () => {
       const { data: sub } = await supabase
         .from("user_subscriptions")
