@@ -38,11 +38,11 @@ interface ProfileSidebarProps {
 
 type SidebarView = "main" | "account" | "plan" | "library";
 
-const bounceIn = {
-  hidden: { opacity: 0, y: 20, scale: 0.95 },
+const fadeIn = {
+  hidden: { opacity: 0, y: 6 },
   visible: (i: number) => ({
-    opacity: 1, y: 0, scale: 1,
-    transition: { type: "spring" as const, stiffness: 400, damping: 20, delay: i * 0.06 },
+    opacity: 1, y: 0,
+    transition: { duration: 0.2, ease: "easeOut", delay: i * 0.03 },
   }),
 };
 
