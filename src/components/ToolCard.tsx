@@ -230,15 +230,13 @@ const ToolCard = ({
         className="group cursor-pointer rounded-xl overflow-hidden bg-card hover:bg-card-hover transition-all duration-300 border border-border/50 hover:border-primary/30 hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)]"
       >
         <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
-          {!imgLoaded && (
-            <div className="absolute inset-0 bg-secondary">
-              <div className="absolute inset-0 shimmer-effect" />
-            </div>
-          )}
+          <div className={`absolute inset-0 bg-secondary transition-opacity duration-300 ${imgLoaded ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+            <div className="absolute inset-0 shimmer-effect" />
+          </div>
           <img
             src={imgSrc}
             alt={title}
-            className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+            className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
             loading={shouldEagerLoad ? "eager" : "lazy"}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 360px"
             decoding="async"
