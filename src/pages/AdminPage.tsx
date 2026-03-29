@@ -128,6 +128,7 @@ const AdminPage = () => {
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [generations, setGenerations] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [subRequests, setSubRequests] = useState<any[]>([]);
   const [stats, setStats] = useState({
     totalUsers: 0, activeSubscriptions: 0, pendingTrials: 0,
     totalCreditsGranted: 0, totalCreditsSpent: 0, pendingPricing: 0, totalGenerations: 0,
