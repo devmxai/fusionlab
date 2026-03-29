@@ -161,7 +161,7 @@ const AdminPage = () => {
   }, [isAdmin, tab]);
 
   const fetchData = async () => {
-    const [profilesRes, plansRes, trialsRes, subsRes, pricingRes, ledgerRes, auditRes, gensRes] = await Promise.all([
+    const [profilesRes, plansRes, trialsRes, subsRes, pricingRes, ledgerRes, auditRes, gensRes, subReqRes] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("subscription_plans").select("*").order("price"),
       supabase.from("trial_requests").select("*, profiles(email, full_name)").order("created_at", { ascending: false }),
@@ -170,6 +170,7 @@ const AdminPage = () => {
       supabase.from("credit_transactions").select("*, profiles(email, full_name)").order("created_at", { ascending: false }).limit(200),
       supabase.from("audit_logs").select("*, profiles:actor_id(email, full_name)").order("created_at", { ascending: false }).limit(100),
       supabase.from("generations").select("*, profiles:user_id(email)").order("created_at", { ascending: false }).limit(100),
+      supabase.from("subscription_requests" as any).select("*, profiles:user_id(email, full_name, phone_number), subscription_plans:plan_id(name, name_ar, type, credits_per_month, price)").order("created_at", { ascending: false }),
     ]);
 
     setUsers(profilesRes.data || []);
@@ -180,8 +181,11 @@ const AdminPage = () => {
     setLedger(ledgerRes.data || []);
     setAuditLogs(auditRes.data || []);
     setGenerations(gensRes.data || []);
+    setSubRequests((subReqRes.data as any[]) || []);
 
     if (plansRes.data?.length && !selectedPlanId) setSelectedPlanId(plansRes.data[0]?.id || "");
+
+    const pendingSubReqs = ((subReqRes.data as any[]) || []).filter((r: any) => r.status === "pending").length;
 
     setStats({
       totalUsers: profilesRes.data?.length || 0,
@@ -191,6 +195,7 @@ const AdminPage = () => {
       totalCreditsSpent: (ledgerRes.data || []).filter((l: any) => l.action === "spent").reduce((a: number, b: any) => a + b.amount, 0),
       pendingPricing: pricingRes.data?.filter((p: any) => p.status === "pending_review").length || 0,
       totalGenerations: gensRes.data?.length || 0,
+      pendingSubRequests: pendingSubReqs,
     });
   };
 
