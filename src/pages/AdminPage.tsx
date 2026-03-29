@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Users, Crown, Coins, Clock, Shield, Check, X,
   Search, BarChart3, FileText, CreditCard, Tag, History, Settings,
-  ChevronDown, AlertCircle, RefreshCw, Eye, Pencil, Save, PanelTop, UserCog
+  ChevronDown, AlertCircle, RefreshCw, Eye, Pencil, Save, PanelTop, UserCog, Bell
 } from "lucide-react";
 import ContentTab from "@/components/admin/ContentTab";
 import PricingCatalog from "@/components/admin/PricingCatalog";
@@ -140,6 +140,7 @@ const AdminPage = () => {
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const [subDays, setSubDays] = useState("30");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [roleSearchQuery, setRoleSearchQuery] = useState("");
   const [roleSearchResults, setRoleSearchResults] = useState<any[]>([]);
   const [roleLoading, setRoleLoading] = useState(false);
@@ -290,6 +291,91 @@ const AdminPage = () => {
 
   if (!user || !isAdmin) return null;
 
+  // Compute notifications
+  const now24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const newSignups = users.filter(u => u.created_at >= now24h);
+  const pendingTrialsList = trials.filter((t: any) => t.status === "pending");
+  const recentSubs = subscriptions.filter((s: any) => s.created_at >= now24h && s.status === "active");
+  const totalNotifs = newSignups.length + pendingTrialsList.length + recentSubs.length;
+
+  const formatDate = (d: string) => new Date(d).toLocaleDateString("ar", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+
+  const NotifBell = ({ className = "" }: { className?: string }) => (
+    <div className={`relative ${className}`}>
+      <button onClick={() => setNotifOpen(!notifOpen)} className="p-2 rounded-lg hover:bg-secondary transition-colors relative">
+        <Bell className="w-5 h-5 text-muted-foreground" />
+        {totalNotifs > 0 && (
+          <span className="absolute -top-0.5 -left-0.5 w-4.5 h-4.5 min-w-[18px] rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center px-1">
+            {totalNotifs > 99 ? "99+" : totalNotifs}
+          </span>
+        )}
+      </button>
+      <AnimatePresence>
+        {notifOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              className="absolute left-0 md:left-auto md:right-0 top-full mt-2 w-80 max-h-[70vh] overflow-y-auto bg-card border border-border/50 rounded-xl shadow-2xl z-50"
+            >
+              <div className="p-3 border-b border-border/30">
+                <p className="text-xs font-bold text-foreground">الإشعارات</p>
+              </div>
+              <div className="divide-y divide-border/20">
+                {pendingTrialsList.length > 0 && pendingTrialsList.slice(0, 5).map((t: any) => (
+                  <button key={t.id} onClick={() => { setTab("trials"); setNotifOpen(false); }}
+                    className="w-full p-3 flex items-start gap-3 hover:bg-secondary/50 transition-colors text-right">
+                    <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0 mt-0.5">
+                      <Clock className="w-4 h-4 text-amber-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-semibold text-foreground">طلب تجربة جديد</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{(t.profiles as any)?.email || "مستخدم"}</p>
+                      <p className="text-[9px] text-muted-foreground/60">{formatDate(t.created_at)}</p>
+                    </div>
+                  </button>
+                ))}
+                {newSignups.slice(0, 5).map((u: any) => (
+                  <button key={u.id} onClick={() => { setTab("users"); setNotifOpen(false); }}
+                    className="w-full p-3 flex items-start gap-3 hover:bg-secondary/50 transition-colors text-right">
+                    <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                      <Users className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-semibold text-foreground">تسجيل جديد</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{u.email || u.full_name || "مستخدم"}</p>
+                      <p className="text-[9px] text-muted-foreground/60">{formatDate(u.created_at)}</p>
+                    </div>
+                  </button>
+                ))}
+                {recentSubs.slice(0, 5).map((s: any) => (
+                  <button key={s.id} onClick={() => { setTab("subscriptions"); setNotifOpen(false); }}
+                    className="w-full p-3 flex items-start gap-3 hover:bg-secondary/50 transition-colors text-right">
+                    <div className="w-8 h-8 rounded-full bg-purple-500/15 flex items-center justify-center shrink-0 mt-0.5">
+                      <Crown className="w-4 h-4 text-purple-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-semibold text-foreground">اشتراك جديد</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{(s.profiles as any)?.email || "مستخدم"} — {(s.subscription_plans as any)?.name_ar}</p>
+                      <p className="text-[9px] text-muted-foreground/60">{formatDate(s.created_at)}</p>
+                    </div>
+                  </button>
+                ))}
+                {totalNotifs === 0 && (
+                  <div className="p-6 text-center">
+                    <Bell className="w-6 h-6 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-[11px] text-muted-foreground">لا توجد إشعارات جديدة</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
   const filteredUsers = users.filter((u) =>
     !searchQuery || u.email?.toLowerCase().includes(searchQuery.toLowerCase()) || u.full_name?.includes(searchQuery)
   );
@@ -321,15 +407,18 @@ const AdminPage = () => {
     return <span className={`text-[10px] font-bold ${a.color}`}>{a.label}</span>;
   };
 
-  const formatDate = (d: string) => new Date(d).toLocaleDateString("ar", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  
 
   return (
     <div className="min-h-screen bg-background flex" dir="rtl">
       {/* ── Sidebar (desktop) ── */}
       <aside className="hidden md:flex w-56 shrink-0 flex-col border-l border-border/30 bg-card/50">
-        <div className="p-4 border-b border-border/30 flex items-center gap-2">
-          <Shield className="w-5 h-5 text-primary" />
-          <h1 className="text-sm font-bold text-foreground">لوحة الإدارة</h1>
+        <div className="p-4 border-b border-border/30 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" />
+            <h1 className="text-sm font-bold text-foreground">لوحة الإدارة</h1>
+          </div>
+          <NotifBell />
         </div>
         <nav className="flex-1 p-2 space-y-0.5">
           {visibleTabs.map((t) => (
@@ -367,9 +456,12 @@ const AdminPage = () => {
               <Shield className="w-4 h-4 text-primary" />
               <h1 className="text-base font-bold text-foreground">لوحة التحكم</h1>
             </div>
-            <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg hover:bg-secondary transition-colors">
-              <BarChart3 className="w-5 h-5 text-muted-foreground" />
-            </button>
+            <div className="flex items-center gap-1">
+              <NotifBell />
+              <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg hover:bg-secondary transition-colors">
+                <BarChart3 className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
           </div>
         </header>
 

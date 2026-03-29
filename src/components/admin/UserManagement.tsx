@@ -442,13 +442,19 @@ const UserManagement = ({ plans, onDataRefresh }: UserManagementProps) => {
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
               className="bg-card rounded-xl border border-purple-500/30 p-4 space-y-3 overflow-hidden">
               <p className="text-xs font-bold text-foreground">تفعيل اشتراك</p>
-              <select value={selectedPlanId} onChange={(e) => setSelectedPlanId(e.target.value)}
-                className="w-full h-9 rounded-lg bg-secondary border border-border/50 text-xs px-3 text-foreground">
-                {plans.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name_ar} — {p.credits_per_month} كريدت</option>
-                ))}
-              </select>
-              <Input type="number" placeholder="عدد الأيام" value={subDays} onChange={(e) => setSubDays(e.target.value)} className="text-xs h-9" dir="ltr" />
+              <div>
+                <label className="text-[10px] text-muted-foreground mb-1 block">الخطة</label>
+                <select value={selectedPlanId} onChange={(e) => setSelectedPlanId(e.target.value)}
+                  className="w-full h-9 rounded-lg bg-secondary border border-border/50 text-xs px-3 text-foreground">
+                  {plans.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name_ar} — {p.credits_per_month} كريدت</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground mb-1 block">مدة الاشتراك (بالأيام)</label>
+                <Input type="number" placeholder="30" value={subDays} onChange={(e) => setSubDays(e.target.value)} className="text-xs h-9" dir="ltr" />
+              </div>
               <div className="flex gap-2">
                 <Button size="sm" className="text-xs" onClick={activateSubscription}>تفعيل</Button>
                 <Button size="sm" variant="ghost" className="text-xs" onClick={() => setSubOpen(false)}>إلغاء</Button>
