@@ -108,20 +108,20 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
   const previewType = previewJob?.file_type === "video" ? "video" : previewJob?.file_type === "audio" ? "audio" : "image";
 
   const sidebarLayer = (
-    <AnimatePresence>
+    <AnimatePresence initial={false}>
       {isOpen && (
         <motion.div key="queue-sidebar-layer" className="fixed inset-0 z-50" initial={{ opacity: 1 }} animate={{ opacity: 1 }} exit={{ opacity: 1 }}>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-black/50 backdrop-blur-[6px]"
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18, ease: "easeOut" }}
+            className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
             onClick={() => { if (Date.now() - openedAt < 250) return; handleClose(); }}
           />
           <motion.aside dir="rtl"
             initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 320 }}
+            transition={{ duration: 0.24, ease: "easeOut" }}
             className="absolute top-0 left-0 h-full w-[300px] flex flex-col overflow-y-auto overflow-x-hidden touch-auto"
             style={{
               background: "linear-gradient(180deg, hsl(240 15% 8% / 0.97) 0%, hsl(240 12% 5% / 0.99) 100%)",
-              backdropFilter: "blur(40px)",
+              backdropFilter: "blur(18px)",
               borderRight: "1px solid hsl(var(--border) / 0.3)",
               borderTopRightRadius: "24px",
               borderBottomRightRadius: "24px",
@@ -161,17 +161,17 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
                     return (
                       <motion.div
                         key={job.id}
-                        initial={{ opacity: 0, x: -10 }}
+                        initial={{ opacity: 0, x: -6 }}
                         animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20, height: 0 }}
-                        layout
-                        className={`p-3 rounded-xl border transition-all ${
+                        exit={{ opacity: 0, x: -8, height: 0 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className={`p-3 rounded-xl border transition-colors duration-200 ${
                           job.status === "succeeded" && isUnseen
                             ? "bg-green-500/5 border-green-500/30"
                             : isUnseen
                             ? "bg-destructive/5 border-destructive/30"
                             : "bg-secondary/30 border-border/20"
-                        } ${isClickable ? "cursor-pointer hover:bg-secondary/50 active:scale-[0.98]" : ""}`}
+                        } ${isClickable ? "cursor-pointer hover:bg-secondary/50" : ""}`}
                         onClick={() => isClickable && handleJobClick(job)}
                       >
                         <div className="flex items-center gap-2.5">
@@ -221,7 +221,7 @@ const GenerationQueueSidebar = ({ open = false, onOpen, onClose }: GenerationQue
                               <motion.div
                                 className="h-full bg-primary rounded-full"
                                 animate={{ width: `${job.progress}%` }}
-                                transition={{ duration: 0.8, ease: "easeOut" }}
+                                transition={{ duration: 0.5, ease: "linear" }}
                                 style={{ boxShadow: "0 0 8px hsl(var(--primary) / 0.4)" }}
                               />
                             </div>

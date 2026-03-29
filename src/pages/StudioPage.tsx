@@ -406,23 +406,25 @@ const StudioPage = () => {
   const [showcaseTextIdx, setShowcaseTextIdx] = useState(0);
   useEffect(() => {
     if (!currentShowcaseTexts.length) return;
-    const interval = setInterval(() => setShowcaseTextIdx((p) => (p + 1) % currentShowcaseTexts.length), 5500);
+    const interval = setInterval(() => setShowcaseTextIdx((p) => (p + 1) % currentShowcaseTexts.length), 8500);
     return () => clearInterval(interval);
   }, [category, currentShowcaseTexts.length]);
 
   const ShowcaseText = () => (
-    <AnimatePresence mode="wait">
-      <motion.p
-        key={showcaseTextIdx}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
-        transition={{ duration: 0.6 }}
-        className="text-sm font-bold text-primary/80 text-center"
-      >
-        {currentShowcaseTexts[showcaseTextIdx]}
-      </motion.p>
-    </AnimatePresence>
+    <div className="min-h-[30px] flex items-center justify-center">
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.p
+          key={showcaseTextIdx}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.9, ease: "easeInOut" }}
+          className="text-sm font-bold text-primary/80 text-center leading-relaxed"
+        >
+          {currentShowcaseTexts[showcaseTextIdx]}
+        </motion.p>
+      </AnimatePresence>
+    </div>
   );
 
   if (isShootsTool) {
@@ -598,7 +600,7 @@ const StudioPage = () => {
 
       if (hasFrameMode && (firstFrame || lastFrame)) {
         setStatus("جاري رفع الصور...");
-        setProgress(10);
+        setProgress(3);
         imageUrls = [];
         if (firstFrame) {
           const b64 = await fileToBase64(firstFrame.file);
@@ -610,23 +612,23 @@ const StudioPage = () => {
           const url = await uploadFileBase64(b64, `last_frame_${Date.now()}.png`);
           imageUrls.push(url);
         }
-        setProgress(20);
+        setProgress(9);
       } else if (refImages.length > 0) {
         setStatus("جاري رفع الصور...");
-        setProgress(10);
+        setProgress(3);
         imageUrls = [];
         for (let i = 0; i < refImages.length; i++) {
           const b64 = await fileToBase64(refImages[i].file);
           const url = await uploadFileBase64(b64, `ref_${Date.now()}_${i}.png`);
           imageUrls.push(url);
-          setProgress(10 + ((i + 1) / refImages.length) * 10);
+          setProgress(3 + ((i + 1) / refImages.length) * 6);
         }
       }
 
       // Avatar file uploads
       if (isAvatarTool && avatarImage) {
         setStatus("جاري رفع الملفات...");
-        setProgress(10);
+        setProgress(3);
 
         if (avatarImage.file) {
           const imgB64 = await fileToBase64(avatarImage.file);
@@ -638,7 +640,7 @@ const StudioPage = () => {
           throw new Error("تعذر قراءة الصورة المحددة");
         }
 
-        setProgress(18);
+        setProgress(8);
       }
 
       let avatarAudioUrl = "";
@@ -653,12 +655,12 @@ const StudioPage = () => {
         } else {
           throw new Error("تعذر قراءة الملف الصوتي المحدد");
         }
-        setProgress(22);
+        setProgress(10);
       }
       if (isAvatarAnimateModel && avatarVideo) {
         setStatus("جاري رفع الفيديو...");
         avatarVideoUrl = await smartUploadFile(avatarVideo.file, "avatar_video");
-        setProgress(22);
+        setProgress(10);
       }
 
       // ── Step 2: Build model input ──
@@ -682,7 +684,7 @@ const StudioPage = () => {
 
       // ── Step 3: Start generation (server: auth → entitlement → price → reserve → create task + job record) ──
       setStatus("جاري التحقق والإنشاء...");
-      setProgress((prev) => Math.max(prev, 5));
+      setProgress((prev) => Math.max(prev, 12));
 
       const idempotencyKey = `gen_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const fileType = (isVideoTool || isAvatarTool) ? "video" : "image";
@@ -960,7 +962,7 @@ const StudioPage = () => {
   const renderCardContent = () => {
     if (loading) {
       return (
-        <motion.div key="loading" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
+        <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22, ease: "easeOut" }}
           className="flex flex-col items-center justify-center gap-3">
           <CircularProgress progress={progress} size={110} status={status} />
           {isAvatarTool && (
@@ -977,13 +979,13 @@ const StudioPage = () => {
       if (resultUrls.length > 1 && !isVideoTool && !isAvatarTool) {
         const cols = resultUrls.length <= 2 ? "grid-cols-2" : resultUrls.length <= 4 ? "grid-cols-2" : "grid-cols-3";
         return (
-          <motion.div key="multi-result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+          <motion.div key="multi-result" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2, ease: "easeOut" }}
             className={`w-full h-full grid gap-2 ${cols}`}>
             {resultUrls.map((url, i) => (
               <motion.div key={i}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.08 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: i * 0.06, duration: 0.2 }}
                 className={`cursor-pointer rounded-xl overflow-hidden border border-border/20 hover:border-primary/40 transition-all ${
                   resultUrls.length === 3 && i === 2 ? "col-span-2" : ""
                 } ${resultUrls.length === 5 && i === 4 ? "col-span-3" : ""}`}
@@ -997,7 +999,7 @@ const StudioPage = () => {
       }
       // Single result
       return (
-        <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+        <motion.div key="result" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2, ease: "easeOut" }}
           className="w-full h-full cursor-pointer relative group" onClick={() => openViewer(resultUrls[0])}>
           {(isVideoTool || isAvatarTool) ? (
             <video src={resultUrls[0]} controls autoPlay playsInline className="w-full h-full object-contain rounded-2xl"
@@ -1018,7 +1020,7 @@ const StudioPage = () => {
 
     if (!selectedTool) {
       return (
-        <motion.div key="no-model" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        <motion.div key="no-model" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2, ease: "easeOut" }}
           className="flex flex-col items-center justify-center gap-3 text-center px-4">
           <Sparkles className="w-9 h-9 text-primary opacity-40" />
           <h2 className="text-base font-bold text-foreground/70">اختر النموذج</h2>
@@ -1033,7 +1035,7 @@ const StudioPage = () => {
     if (category && showcaseCategories.includes(category) && hasNoInput && currentShowcaseTexts.length > 0) {
       const isTransfer = category === "transfer";
       return (
-        <motion.div key={`${category}-showcase`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        <motion.div key={`${category}-showcase`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.24, ease: "easeOut" }}
           className="w-full h-full flex flex-col items-center justify-center gap-5 px-4">
           {isTransfer ? (
             <div className="flex justify-center w-full max-w-[420px]">
@@ -1055,7 +1057,7 @@ const StudioPage = () => {
     }
 
     return (
-      <motion.div key="placeholder" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      <motion.div key="placeholder" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2, ease: "easeOut" }}
         className="flex flex-col items-center justify-center gap-3 text-center px-4">
         <Sparkles className="w-9 h-9 text-primary opacity-40" />
         <h2 className="text-base font-bold text-foreground/70">{isShootsTool ? "شوتس" : tool.title}</h2>
@@ -1319,7 +1321,7 @@ const StudioPage = () => {
       <div className="relative z-0 flex-1 flex flex-col items-center justify-center px-4 md:px-8 min-h-0">
         <motion.div
           layout
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          transition={{ duration: 0.28, ease: "easeOut" }}
           className={`relative rounded-2xl overflow-hidden flex items-center justify-center border ${
             resultUrls.length > 0 && !loading ? "border-transparent" : loading ? "border-primary/30" : "border-transparent"
           }`}
@@ -1341,14 +1343,14 @@ const StudioPage = () => {
           {loading && (
             <>
               <div className="absolute inset-0 shimmer-effect opacity-[0.15] pointer-events-none" />
-              <div className="absolute inset-0 bg-background/60 backdrop-blur-sm pointer-events-none" />
+              <div className="absolute inset-0 bg-background/65 pointer-events-none" />
             </>
           )}
           {(resultUrls.length === 0 || loading) && (
             <div className="absolute inset-0 bg-secondary/20 pointer-events-none" />
           )}
           <div className="relative z-10 w-full h-full flex items-center justify-center p-2">
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               {renderCardContent()}
             </AnimatePresence>
           </div>
