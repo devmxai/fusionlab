@@ -107,7 +107,7 @@ const UserManagement = ({ plans, onDataRefresh }: UserManagementProps) => {
     setConfirmAction(null);
 
     const [gensRes, txRes] = await Promise.all([
-      supabase.from("generations").select("id, tool_id, tool_name, created_at, file_type").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
+      supabase.from("generation_jobs").select("id, tool_id, tool_name, model, status, file_type, error_message, result_url, created_at, completed_at, reservation_id").eq("user_id", user.id).order("created_at", { ascending: false }).limit(30),
       supabase.from("credit_transactions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(30),
     ]);
     setUserGenerations(gensRes.data || []);
