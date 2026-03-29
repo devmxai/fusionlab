@@ -504,14 +504,20 @@ export function buildModelInput(
 
   // ─── VIDEO MODELS ───
 
-  if (model === "grok-imagine/text-to-video") {
-    return {
+  if (model === "grok-imagine/text-to-video" || model === "grok-imagine/image-to-video") {
+    const input: Record<string, unknown> = {
       prompt,
       aspect_ratio: aspectRatio || "2:3",
       mode: (extraParams?.quality as string) || "normal",
       duration: (extraParams?.duration as string) || "6",
       resolution: (extraParams?.resolution as string) || "480p",
     };
+    // If images provided, add image_urls (up to 7) — spicy mode not available with external images
+    if (imageUrls?.length) {
+      input.image_urls = imageUrls.slice(0, 7);
+      if (input.mode === "spicy") input.mode = "normal";
+    }
+    return input;
   }
 
   if (model === "kling-3.0") {
