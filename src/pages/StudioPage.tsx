@@ -1299,13 +1299,17 @@ const StudioPage = () => {
           className={`relative rounded-2xl overflow-hidden flex items-center justify-center border ${
             resultUrls.length > 0 && !loading ? "border-transparent" : loading ? "border-primary/30" : "border-border/30"
           }`}
-          style={shootsPlaceholderStyle || {
-            width: "100%",
-            maxWidth: currentRatio.placeholderMaxW,
-            aspectRatio: currentRatio.cssAspect,
-            maxHeight: "calc(100dvh - 180px)",
-            background: resultUrls.length > 0 && !loading ? "transparent" : undefined,
-          }}
+          style={shootsPlaceholderStyle || (() => {
+            const hasResult = resultUrls.length > 0 && !loading;
+            const useNatural = hasResult && resultNaturalRatio;
+            return {
+              width: "100%",
+              maxWidth: useNatural ? "min(96vw, 820px)" : currentRatio.placeholderMaxW,
+              aspectRatio: useNatural ? resultNaturalRatio : currentRatio.cssAspect,
+              maxHeight: "calc(100dvh - 180px)",
+              background: hasResult ? "transparent" : undefined,
+            };
+          })()}
         >
           {resultUrls.length === 0 && !loading && (
             <div className="absolute inset-0 shimmer-effect opacity-[0.06] pointer-events-none" />
