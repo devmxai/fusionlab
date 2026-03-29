@@ -407,7 +407,7 @@ const AdminPage = () => {
     return <span className={`text-[10px] font-bold ${a.color}`}>{a.label}</span>;
   };
 
-  const formatDate2 = (d: string) => new Date(d).toLocaleDateString("ar", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  
 
   return (
     <div className="min-h-screen bg-background flex" dir="rtl">
