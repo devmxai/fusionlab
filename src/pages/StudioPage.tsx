@@ -894,7 +894,9 @@ const StudioPage = () => {
           console.error("Failed to release credits:", releaseErr);
         }
       }
-      toast.error(err instanceof Error ? err.message : "حدث خطأ");
+      const errMsg = err instanceof Error ? err.message : "حدث خطأ غير متوقع";
+      console.error("Generation error:", err);
+      toast.error(errMsg);
       setStatus("");
       setProgress(0);
       await refreshCredits();
