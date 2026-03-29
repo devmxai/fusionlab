@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { downloadMediaWithFallback } from "@/lib/download-media";
 
 import avatar1 from "@/assets/avatars/avatar-1.png";
 import avatar2 from "@/assets/avatars/avatar-2.png";
@@ -173,18 +174,8 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
   };
 
   const handleDownload = async (url: string, filename?: string) => {
-    try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = filename || "download";
-      a.click();
-      URL.revokeObjectURL(a.href);
-      toast.success("تم التحميل");
-    } catch {
-      toast.error("فشل التحميل");
-    }
+    await downloadMediaWithFallback(url, filename || "download");
+    toast.success("تم بدء التحميل");
   };
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "مستخدم";

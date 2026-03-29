@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { downloadMediaWithFallback } from "@/lib/download-media";
 
 interface ImageViewerProps {
   src: string;
@@ -87,19 +88,8 @@ const ImageViewer = ({ src, alt = "Result", open, onClose, type = "image" }: Ima
   };
 
   const handleDownload = async () => {
-    try {
-      const resp = await fetch(src);
-      const blob = await resp.blob();
-      const ext = type === "video" ? "mp4" : "png";
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `result.${ext}`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      window.open(src, "_blank");
-    }
+    const ext = type === "video" ? "mp4" : "png";
+    await downloadMediaWithFallback(src, `result.${ext}`);
   };
 
   const isVideo = type === "video";
