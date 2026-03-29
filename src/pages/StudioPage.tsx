@@ -656,9 +656,8 @@ const StudioPage = () => {
         setProgress(22);
       }
       if (isAvatarAnimateModel && avatarVideo) {
-        const videoB64 = await fileToBase64(avatarVideo.file);
-        const ext = avatarVideo.file.name.split(".").pop() || "mp4";
-        avatarVideoUrl = await uploadFileBase64(videoB64, `avatar_video_${Date.now()}.${ext}`);
+        setStatus("جاري رفع الفيديو...");
+        avatarVideoUrl = await smartUploadFile(avatarVideo.file, "avatar_video");
         setProgress(22);
       }
 
