@@ -17,8 +17,8 @@ const CircularProgress = ({ progress, size = 90, strokeWidth = 5, status }: Circ
       <motion.div
         className="relative"
         style={{ width: size, height: size }}
-        animate={{ scale: [1, 1.08, 1] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        animate={{ scale: [1, 1.03, 1] }}
+        transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
       >
         <svg width={size} height={size} className="-rotate-90">
           <circle
@@ -40,9 +40,9 @@ const CircularProgress = ({ progress, size = 90, strokeWidth = 5, status }: Circ
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={offset}
-            className="transition-all duration-500 ease-out"
+            className="transition-all duration-700 ease-out"
             style={{
-              filter: "drop-shadow(0 0 8px hsl(var(--primary) / 0.6))",
+              filter: "drop-shadow(0 0 6px hsl(var(--primary) / 0.5))",
             }}
           />
         </svg>
