@@ -165,7 +165,7 @@ const AdminPage = () => {
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("subscription_plans").select("*").order("price"),
       supabase.from("trial_requests").select("*, profiles(email, full_name)").order("created_at", { ascending: false }),
-      supabase.from("user_subscriptions").select("*, profiles(email, full_name), subscription_plans(name, name_ar, type)").order("created_at", { ascending: false }),
+      supabase.from("user_subscriptions").select("*, subscription_plans(name, name_ar, type)").order("created_at", { ascending: false }),
       supabase.from("pricing_rules").select("*").order("model"),
       supabase.from("credit_transactions").select("*, profiles(email, full_name)").order("created_at", { ascending: false }).limit(200),
       supabase.from("audit_logs").select("*, profiles:actor_id(email, full_name)").order("created_at", { ascending: false }).limit(100),
