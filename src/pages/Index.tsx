@@ -173,6 +173,10 @@ const Index = () => {
         <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
         <BannerCarousel />
 
+        <div className="px-3 sm:px-6 lg:px-10 xl:px-16">
+          <AIShowcase />
+        </div>
+
         <main className="px-3 sm:px-6 lg:px-10 xl:px-16 pb-8 space-y-10">
           {showCategorized ? (
             <>
