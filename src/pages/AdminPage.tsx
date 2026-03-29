@@ -442,6 +442,9 @@ const AdminPage = () => {
               {t.id === "pricing" && stats.pendingPricing > 0 && (
                 <span className="mr-auto w-5 h-5 rounded-full bg-amber-500 text-white text-[9px] flex items-center justify-center">{stats.pendingPricing}</span>
               )}
+              {t.id === "sub_requests" && stats.pendingSubRequests > 0 && (
+                <span className="mr-auto w-5 h-5 rounded-full bg-purple-500 text-white text-[9px] flex items-center justify-center">{stats.pendingSubRequests}</span>
+              )}
             </button>
           ))}
         </nav>
