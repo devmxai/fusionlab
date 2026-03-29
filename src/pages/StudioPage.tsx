@@ -512,6 +512,31 @@ const StudioPage = () => {
       reader.readAsDataURL(file);
     });
 
+  // Upload large files (videos) directly to Supabase Storage, returning a public URL
+  const uploadViaStorage = async (file: File, prefix: string): Promise<string> => {
+    const ext = file.name.split(".").pop() || "mp4";
+    const path = `${user!.id}/${prefix}_${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("temp-uploads")
+      .upload(path, file, { contentType: file.type || "video/mp4", upsert: false });
+    if (uploadError) throw new Error("فشل رفع الملف: " + uploadError.message);
+    const { data: urlData } = supabase.storage.from("temp-uploads").getPublicUrl(path);
+    if (!urlData?.publicUrl) throw new Error("تعذر الحصول على رابط الملف");
+    return urlData.publicUrl;
+  };
+
+  // Smart upload: use Storage for large files (>3MB), base64 for smaller ones
+  const smartUploadFile = async (file: File, prefix: string): Promise<string> => {
+    const THREE_MB = 3 * 1024 * 1024;
+    if (file.size > THREE_MB) {
+      console.log(`Using Storage upload for ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`);
+      return uploadViaStorage(file, prefix);
+    }
+    const b64 = await fileToBase64(file);
+    const ext = file.name.split(".").pop() || "bin";
+    return uploadFileBase64(b64, `${prefix}_${Date.now()}.${ext}`);
+  };
+
   const estimatedCost = price?.credits ?? 0;
   const insufficientCredits = estimatedCost > 0 && credits < estimatedCost;
 
@@ -631,9 +656,8 @@ const StudioPage = () => {
         setProgress(22);
       }
       if (isAvatarAnimateModel && avatarVideo) {
-        const videoB64 = await fileToBase64(avatarVideo.file);
-        const ext = avatarVideo.file.name.split(".").pop() || "mp4";
-        avatarVideoUrl = await uploadFileBase64(videoB64, `avatar_video_${Date.now()}.${ext}`);
+        setStatus("جاري رفع الفيديو...");
+        avatarVideoUrl = await smartUploadFile(avatarVideo.file, "avatar_video");
         setProgress(22);
       }
 
@@ -870,7 +894,9 @@ const StudioPage = () => {
           console.error("Failed to release credits:", releaseErr);
         }
       }
-      toast.error(err instanceof Error ? err.message : "حدث خطأ");
+      const errMsg = err instanceof Error ? err.message : "حدث خطأ غير متوقع";
+      console.error("Generation error:", err);
+      toast.error(errMsg);
       setStatus("");
       setProgress(0);
       await refreshCredits();
