@@ -1321,7 +1321,7 @@ const StudioPage = () => {
           layout
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           className={`relative rounded-2xl overflow-hidden flex items-center justify-center border ${
-            resultUrls.length > 0 && !loading ? "border-transparent" : loading ? "border-primary/30" : "border-border/30"
+            resultUrls.length > 0 && !loading ? "border-transparent" : loading ? "border-primary/30" : "border-transparent"
           }`}
           style={shootsPlaceholderStyle || (() => {
             const hasResult = resultUrls.length > 0 && !loading;
