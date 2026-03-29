@@ -554,18 +554,33 @@ const UserManagement = ({ plans, onDataRefresh }: UserManagementProps) => {
           <div className="space-y-2">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
               <RefreshCw className="w-4 h-4 text-muted-foreground" />
-              آخر التوليدات
+              سجل التوليدات
             </h3>
-            <div className="space-y-1.5 max-h-48 overflow-y-auto">
-              {userGenerations.map((g) => (
-                <div key={g.id} className="bg-card rounded-lg border border-border/30 px-3 py-2 flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] font-semibold text-foreground">{g.tool_name || g.tool_id}</p>
-                    <p className="text-[9px] text-muted-foreground">{g.file_type}</p>
+            <div className="space-y-1.5 max-h-60 overflow-y-auto">
+              {userGenerations.map((g) => {
+                const statusMap: Record<string, { color: string; label: string }> = {
+                  completed: { color: "text-green-400", label: "مكتمل" },
+                  failed: { color: "text-destructive", label: "فشل" },
+                  pending: { color: "text-amber-400", label: "قيد الانتظار" },
+                  processing: { color: "text-blue-400", label: "جاري التوليد" },
+                };
+                const st = statusMap[g.status] || { color: "text-muted-foreground", label: g.status };
+                return (
+                  <div key={g.id} className="bg-card rounded-lg border border-border/30 px-3 py-2">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <p className="text-[10px] font-semibold text-foreground">{g.tool_name || g.tool_id}</p>
+                      <span className={`text-[9px] font-bold ${st.color}`}>{st.label}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[9px] text-muted-foreground">{g.model} • {g.file_type}</p>
+                      <p className="text-[8px] text-muted-foreground">{formatDate(g.created_at)}</p>
+                    </div>
+                    {g.error_message && (
+                      <p className="text-[9px] text-destructive/80 mt-0.5 truncate" title={g.error_message}>⚠ {g.error_message}</p>
+                    )}
                   </div>
-                  <p className="text-[9px] text-muted-foreground">{formatDate(g.created_at)}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
