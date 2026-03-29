@@ -140,6 +140,7 @@ const AdminPage = () => {
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const [subDays, setSubDays] = useState("30");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [roleSearchQuery, setRoleSearchQuery] = useState("");
   const [roleSearchResults, setRoleSearchResults] = useState<any[]>([]);
   const [roleLoading, setRoleLoading] = useState(false);
