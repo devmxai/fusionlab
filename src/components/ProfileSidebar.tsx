@@ -200,7 +200,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
 
   const renderMainView = () => (
     <motion.div className="flex flex-col h-full" initial="hidden" animate="visible">
-      <motion.div custom={0} variants={bounceIn} className="flex flex-col items-center pt-8 pb-3">
+      <motion.div custom={0} variants={fadeIn} className="flex flex-col items-center pt-8 pb-3">
         <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary/50 shadow-[0_0_20px_hsl(var(--primary)/0.3)]">
           <img src={userAvatar} alt="avatar" className="w-full h-full object-cover" />
         </div>
