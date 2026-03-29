@@ -637,7 +637,11 @@ const StudioPage = () => {
 
       // ── Step 2: Build model input ──
       // For Kling Avatar: use the effective model (pro when 1080p selected)
-      const apiModel = isAvatarTool ? (effectiveAvatarModel || tool.model) : tool.model;
+      // For Grok Video: switch to image-to-video model when images are provided
+      let apiModel = isAvatarTool ? (effectiveAvatarModel || tool.model) : tool.model;
+      if (tool.model === "grok-imagine/text-to-video" && imageUrls?.length) {
+        apiModel = "grok-imagine/image-to-video";
+      }
       const extraParams: Record<string, unknown> = {
         upscale_factor: upscaleFactor,
         duration: videoDuration,
