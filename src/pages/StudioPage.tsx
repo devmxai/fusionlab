@@ -95,6 +95,7 @@ const StudioPage = () => {
   const [lastFrame, setLastFrame] = useState<{ file: File; preview: string } | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState("");
+  const [resultNaturalRatio, setResultNaturalRatio] = useState<string | null>(null);
 
   type AvatarImageValue = { preview: string; file?: File; sourceUrl?: string };
   type AvatarAudioValue = { name: string; file?: File; sourceUrl?: string; previewUrl?: string };
