@@ -563,6 +563,7 @@ const StudioPage = () => {
     setStatus("جاري التحضير...");
     setProgress(1);
     setResultUrls([]);
+    setResultNaturalRatio(null);
 
     let reservationId: string | null = null;
 
