@@ -453,9 +453,12 @@ const AdminPage = () => {
               <Shield className="w-4 h-4 text-primary" />
               <h1 className="text-base font-bold text-foreground">لوحة التحكم</h1>
             </div>
-            <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg hover:bg-secondary transition-colors">
-              <BarChart3 className="w-5 h-5 text-muted-foreground" />
-            </button>
+            <div className="flex items-center gap-1">
+              <NotifBell />
+              <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg hover:bg-secondary transition-colors">
+                <BarChart3 className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
           </div>
         </header>
 
