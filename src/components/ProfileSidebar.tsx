@@ -463,15 +463,15 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
 
   return (
     <>
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {open && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[6px]"
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px]"
               onClick={onClose}
             />
             <motion.div
@@ -479,11 +479,11 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 320 }}
+              transition={{ duration: 0.24, ease: "easeOut" }}
               className="fixed top-0 right-0 z-50 h-full w-[300px] flex flex-col overflow-y-auto overflow-x-hidden touch-auto"
               style={{
                 background: "linear-gradient(180deg, hsl(240 15% 8% / 0.97) 0%, hsl(240 12% 5% / 0.99) 100%)",
-                backdropFilter: "blur(40px)",
+                backdropFilter: "blur(18px)",
                 borderLeft: "1px solid hsl(var(--border) / 0.3)",
                 borderTopLeftRadius: "24px",
                 borderBottomLeftRadius: "24px",
@@ -496,11 +496,11 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
                 className="absolute top-4 left-4 z-10 p-1.5 rounded-full bg-secondary/40 hover:bg-secondary/70 transition-colors">
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
-              <AnimatePresence mode="wait">
-                {view === "main" && <motion.div key="main" className="flex-1 flex flex-col" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>{renderMainView()}</motion.div>}
-                {view === "account" && <motion.div key="account" className="flex-1 flex flex-col" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }}>{renderAccountView()}</motion.div>}
-                {view === "plan" && <motion.div key="plan" className="flex-1 flex flex-col" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }}>{renderPlanView()}</motion.div>}
-                {view === "library" && <motion.div key="library" className="flex-1 flex flex-col" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }}>{renderLibraryView()}</motion.div>}
+              <AnimatePresence mode="wait" initial={false}>
+                {view === "main" && <motion.div key="main" className="flex-1 flex flex-col" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.18, ease: "easeOut" }}>{renderMainView()}</motion.div>}
+                {view === "account" && <motion.div key="account" className="flex-1 flex flex-col" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.18, ease: "easeOut" }}>{renderAccountView()}</motion.div>}
+                {view === "plan" && <motion.div key="plan" className="flex-1 flex flex-col" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.18, ease: "easeOut" }}>{renderPlanView()}</motion.div>}
+                {view === "library" && <motion.div key="library" className="flex-1 flex flex-col" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.18, ease: "easeOut" }}>{renderLibraryView()}</motion.div>}
               </AnimatePresence>
             </motion.div>
           </>
