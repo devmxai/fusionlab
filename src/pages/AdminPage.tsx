@@ -740,17 +740,20 @@ const AdminPage = () => {
               <h2 className="text-lg font-bold text-foreground">الاشتراكات</h2>
               {subscriptions.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-8">لا توجد اشتراكات</p>
-              ) : subscriptions.map((s) => (
-                <div key={s.id} className="bg-card rounded-xl border border-border/50 p-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-xs font-semibold text-foreground">{(s as any).profiles?.email || "—"}</p>
-                    {statusBadge(s.status)}
+              ) : subscriptions.map((s) => {
+                const profile = users.find((u: any) => u.id === s.user_id);
+                return (
+                  <div key={s.id} className="bg-card rounded-xl border border-border/50 p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs font-semibold text-foreground">{profile?.email || "—"}</p>
+                      {statusBadge(s.status)}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      {(s as any).subscription_plans?.name_ar || "—"} • ينتهي: {s.expires_at ? formatDate(s.expires_at) : "—"}
+                    </p>
                   </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    {(s as any).subscription_plans?.name_ar || "—"} • ينتهي: {s.expires_at ? formatDate(s.expires_at) : "—"}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
