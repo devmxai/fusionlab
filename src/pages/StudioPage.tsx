@@ -406,7 +406,7 @@ const StudioPage = () => {
   const [showcaseTextIdx, setShowcaseTextIdx] = useState(0);
   useEffect(() => {
     if (!currentShowcaseTexts.length) return;
-    const interval = setInterval(() => setShowcaseTextIdx((p) => (p + 1) % currentShowcaseTexts.length), 3000);
+    const interval = setInterval(() => setShowcaseTextIdx((p) => (p + 1) % currentShowcaseTexts.length), 5500);
     return () => clearInterval(interval);
   }, [category, currentShowcaseTexts.length]);
 
@@ -417,7 +417,7 @@ const StudioPage = () => {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.6 }}
         className="text-sm font-bold text-primary/80 text-center"
       >
         {currentShowcaseTexts[showcaseTextIdx]}
@@ -1036,12 +1036,9 @@ const StudioPage = () => {
         <motion.div key={`${category}-showcase`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           className="w-full h-full flex flex-col items-center justify-center gap-5 px-4">
           {isTransfer ? (
-            <div className="flex gap-3 w-full max-w-[700px]">
-              <div className="flex-1 rounded-2xl overflow-hidden shadow-xl">
+            <div className="flex justify-center w-full max-w-[420px]">
+              <div className="rounded-2xl overflow-hidden shadow-xl">
                 <video src="/demos/transfer-demo-1.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover" />
-              </div>
-              <div className="flex-1 rounded-2xl overflow-hidden shadow-xl">
-                <video src="/demos/transfer-demo-2.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover" />
               </div>
             </div>
           ) : (
@@ -1324,7 +1321,7 @@ const StudioPage = () => {
           layout
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           className={`relative rounded-2xl overflow-hidden flex items-center justify-center border ${
-            resultUrls.length > 0 && !loading ? "border-transparent" : loading ? "border-primary/30" : "border-border/30"
+            resultUrls.length > 0 && !loading ? "border-transparent" : loading ? "border-primary/30" : "border-transparent"
           }`}
           style={shootsPlaceholderStyle || (() => {
             const hasResult = resultUrls.length > 0 && !loading;
