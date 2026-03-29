@@ -131,6 +131,7 @@ const AdminPage = () => {
   const [stats, setStats] = useState({
     totalUsers: 0, activeSubscriptions: 0, pendingTrials: 0,
     totalCreditsGranted: 0, totalCreditsSpent: 0, pendingPricing: 0, totalGenerations: 0,
+    pendingSubRequests: 0,
   });
 
   // Modals
