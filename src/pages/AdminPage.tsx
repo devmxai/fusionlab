@@ -413,9 +413,12 @@ const AdminPage = () => {
     <div className="min-h-screen bg-background flex" dir="rtl">
       {/* ── Sidebar (desktop) ── */}
       <aside className="hidden md:flex w-56 shrink-0 flex-col border-l border-border/30 bg-card/50">
-        <div className="p-4 border-b border-border/30 flex items-center gap-2">
-          <Shield className="w-5 h-5 text-primary" />
-          <h1 className="text-sm font-bold text-foreground">لوحة الإدارة</h1>
+        <div className="p-4 border-b border-border/30 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" />
+            <h1 className="text-sm font-bold text-foreground">لوحة الإدارة</h1>
+          </div>
+          <NotifBell />
         </div>
         <nav className="flex-1 p-2 space-y-0.5">
           {visibleTabs.map((t) => (
