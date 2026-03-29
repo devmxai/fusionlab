@@ -393,26 +393,33 @@ const StudioPage = () => {
   const remixMaxImages = isRemixTool ? (caps?.maxImages ?? 3) : 0;
   const remixMinImages = isRemixTool ? (caps?.minImages ?? 0) : 0;
 
-  // Transfer showcase: animated text
-  const transferTexts = ["نقل الحركة من فيديو إلى صورة", "استبدال الشخصية في الفيديو", "تحريك صورة ثابتة بحركة واقعية", "دمج ملامح جديدة بسلاسة"];
-  const [transferTextIdx, setTransferTextIdx] = useState(0);
+  // Showcase: animated cycling text per category
+  const showcaseTexts: Record<string, string[]> = {
+    transfer: ["نقل الحركة من فيديو إلى صورة", "استبدال الشخصية في الفيديو", "تحريك صورة ثابتة بحركة واقعية", "دمج ملامح جديدة بسلاسة"],
+    images: ["توليد صور بالذكاء الاصطناعي", "تصميم شخصيات واقعية", "إنشاء مشاهد خيالية", "أسلوب فني فريد بكل مرة"],
+    video: ["توليد فيديو من النص", "تحويل الأفكار لمقاطع متحركة", "مؤثرات بصرية سينمائية", "حركة طبيعية وسلسة"],
+    remix: ["تعديل الصور بالذكاء الاصطناعي", "دمج صورتين في واحدة", "تغيير الأسلوب الفني", "تحرير احترافي بنقرة"],
+    avatar: ["تحريك صورة بالصوت", "إنشاء أفتار متحدث", "دمج الصوت مع الوجه", "شخصية رقمية نابضة بالحياة"],
+  };
+  const currentShowcaseTexts = showcaseTexts[category || ""] || [];
+  const [showcaseTextIdx, setShowcaseTextIdx] = useState(0);
   useEffect(() => {
-    if (category !== "transfer") return;
-    const interval = setInterval(() => setTransferTextIdx((p) => (p + 1) % transferTexts.length), 3000);
+    if (!currentShowcaseTexts.length) return;
+    const interval = setInterval(() => setShowcaseTextIdx((p) => (p + 1) % currentShowcaseTexts.length), 3000);
     return () => clearInterval(interval);
-  }, [category]);
+  }, [category, currentShowcaseTexts.length]);
 
-  const TransferShowcaseText = () => (
+  const ShowcaseText = () => (
     <AnimatePresence mode="wait">
       <motion.p
-        key={transferTextIdx}
+        key={showcaseTextIdx}
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}
         transition={{ duration: 0.4 }}
         className="text-sm font-bold text-primary/80 text-center"
       >
-        {transferTexts[transferTextIdx]}
+        {currentShowcaseTexts[showcaseTextIdx]}
       </motion.p>
     </AnimatePresence>
   );
