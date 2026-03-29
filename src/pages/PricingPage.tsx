@@ -4,10 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { ArrowRight, Check, Crown, Sparkles, Send } from "lucide-react";
+import { ArrowRight, Check, Crown, Sparkles, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import PhoneVerificationDialog from "@/components/PhoneVerificationDialog";
-
 
 const tierColors: Record<string, string> = {
   starter: "from-blue-500/20 to-blue-600/5 border-blue-500/30",
@@ -30,6 +29,9 @@ const PricingPage = () => {
   const [showPhoneVerify, setShowPhoneVerify] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [pendingAction, setPendingAction] = useState<"trial" | "subscribe" | null>(null);
+  const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
+  const [submittingRequest, setSubmittingRequest] = useState(false);
+  const [requestedPlanIds, setRequestedPlanIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     supabase.from("subscription_plans").select("*").eq("is_active", true).order("price").then(({ data }) => setPlans(data || []));
@@ -37,14 +39,19 @@ const PricingPage = () => {
       supabase.from("trial_requests").select("id").eq("user_id", user.id).eq("status", "pending").then(({ data }) => {
         if (data && data.length > 0) setTrialRequested(true);
       });
-      // Check if phone already verified
       supabase.from("profiles").select("phone_verified").eq("id", user.id).maybeSingle().then(({ data }) => {
         if (data?.phone_verified) setPhoneVerified(true);
+      });
+      // Check existing pending subscription requests
+      supabase.from("subscription_requests" as any).select("plan_id").eq("user_id", user.id).eq("status", "pending").then(({ data }) => {
+        if (data) {
+          setRequestedPlanIds(new Set((data as any[]).map((d: any) => d.plan_id)));
+        }
       });
     }
   }, [user]);
 
-  const requirePhoneVerification = (action: "trial" | "subscribe"): boolean => {
+  const requirePhoneVerification = (action: "trial" | "subscribe", planId?: string): boolean => {
     if (!user) {
       toast.error("يجب تسجيل الدخول أولاً");
       navigate("/auth");
@@ -52,6 +59,7 @@ const PricingPage = () => {
     }
     if (!phoneVerified) {
       setPendingAction(action);
+      if (planId) setPendingPlanId(planId);
       setShowPhoneVerify(true);
       return false;
     }
@@ -61,13 +69,13 @@ const PricingPage = () => {
   const handlePhoneVerified = (phoneNumber: string) => {
     setPhoneVerified(true);
     toast.success("تم التحقق من رقمك بنجاح!");
-    // Execute pending action
     if (pendingAction === "trial") {
       doRequestTrial();
-    } else if (pendingAction === "subscribe") {
-      toast.info("تواصل مع الإدارة لتفعيل اشتراكك");
+    } else if (pendingAction === "subscribe" && pendingPlanId) {
+      doSubmitSubscriptionRequest(pendingPlanId);
     }
     setPendingAction(null);
+    setPendingPlanId(null);
   };
 
   const doRequestTrial = async () => {
@@ -82,10 +90,40 @@ const PricingPage = () => {
     setLoadingTrial(false);
   };
 
+  const doSubmitSubscriptionRequest = async (planId: string) => {
+    setSubmittingRequest(true);
+    // Get user's phone number
+    const { data: profile } = await supabase.from("profiles").select("phone_number").eq("id", user!.id).maybeSingle();
+    
+    const { error } = await supabase.from("subscription_requests" as any).insert({
+      user_id: user!.id,
+      plan_id: planId,
+      phone_number: profile?.phone_number || null,
+    } as any);
+
+    if (error) {
+      if (error.message?.includes("duplicate") || error.code === "23505") {
+        toast.error("لديك طلب اشتراك معلق بالفعل لهذه الخطة");
+      } else {
+        toast.error("حدث خطأ في إرسال الطلب");
+      }
+    } else {
+      setRequestedPlanIds(prev => new Set([...prev, planId]));
+      toast.success("تم إرسال طلب الاشتراك! سيتم مراجعته من الإدارة.");
+    }
+    setSubmittingRequest(false);
+  };
+
   const requestTrial = async () => {
     if (!user) { navigate("/auth"); return; }
     if (!requirePhoneVerification("trial")) return;
     await doRequestTrial();
+  };
+
+  const requestSubscription = async (planId: string) => {
+    if (!user) { navigate("/auth"); return; }
+    if (!requirePhoneVerification("subscribe", planId)) return;
+    await doSubmitSubscriptionRequest(planId);
   };
 
   return (
@@ -105,52 +143,70 @@ const PricingPage = () => {
           <p className="text-xs text-muted-foreground">اختر الخطة المناسبة لاحتياجاتك</p>
         </div>
 
-        {plans.map((plan, i) => (
-          <motion.div
-            key={plan.id}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className={`rounded-xl border bg-gradient-to-br p-4 ${tierColors[plan.type] || "border-border/50"} ${plan.type === "pro" ? "ring-1 ring-amber-500/30" : ""}`}
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{tierIcons[plan.type]}</span>
-                  <h3 className="text-sm font-bold text-foreground">{plan.name_ar}</h3>
-                  <span className="text-[10px] text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded-full">{plan.name}</span>
+        {plans.map((plan, i) => {
+          const alreadyRequested = requestedPlanIds.has(plan.id);
+          return (
+            <motion.div
+              key={plan.id}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className={`rounded-xl border bg-gradient-to-br p-4 ${tierColors[plan.type] || "border-border/50"} ${plan.type === "pro" ? "ring-1 ring-amber-500/30" : ""}`}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{tierIcons[plan.type]}</span>
+                    <h3 className="text-sm font-bold text-foreground">{plan.name_ar}</h3>
+                    <span className="text-[10px] text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded-full">{plan.name}</span>
+                  </div>
+                </div>
+                <div className="text-left">
+                  <p className="text-lg font-extrabold text-foreground">{plan.price.toLocaleString("ar")} <span className="text-xs">د.ع</span></p>
+                  <p className="text-[10px] text-muted-foreground">/شهرياً</p>
                 </div>
               </div>
-              <div className="text-left">
-                <p className="text-lg font-extrabold text-foreground">{plan.price.toLocaleString("ar")} <span className="text-xs">د.ع</span></p>
-                <p className="text-[10px] text-muted-foreground">/شهرياً</p>
+
+              <div className="flex items-center gap-1 mb-3 bg-secondary/30 rounded-lg px-3 py-1.5">
+                <Crown className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-bold text-primary">{plan.credits_per_month} كردت/شهر</span>
               </div>
-            </div>
 
-            <div className="flex items-center gap-1 mb-3 bg-secondary/30 rounded-lg px-3 py-1.5">
-              <Crown className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs font-bold text-primary">{plan.credits_per_month} كردت/شهر</span>
-            </div>
+              <ul className="space-y-1.5 mb-4">
+                {(plan.features as string[])?.map((f: string, fi: number) => (
+                  <li key={fi} className="flex items-center gap-2 text-xs text-foreground/80">
+                    <Check className="w-3 h-3 text-primary shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
 
-            <ul className="space-y-1.5 mb-4">
-              {(plan.features as string[])?.map((f: string, fi: number) => (
-                <li key={fi} className="flex items-center gap-2 text-xs text-foreground/80">
-                  <Check className="w-3 h-3 text-primary shrink-0" />
-                  {f}
-                </li>
-              ))}
-            </ul>
-
-            <Button className="w-full text-xs" variant={plan.type === "pro" ? "default" : "outline"} onClick={() => {
-              if (!user) { navigate("/auth"); return; }
-              if (!requirePhoneVerification("subscribe")) return;
-              toast.info("تواصل مع الإدارة لتفعيل اشتراكك");
-            }}>
-              <Send className="w-3 h-3 ml-1" />
-              اشترك الآن
-            </Button>
-          </motion.div>
-        ))}
+              <Button
+                className="w-full text-xs"
+                variant={plan.type === "pro" ? "default" : "outline"}
+                disabled={alreadyRequested || submittingRequest}
+                onClick={() => requestSubscription(plan.id)}
+              >
+                {alreadyRequested ? (
+                  <>
+                    <Check className="w-3 h-3 ml-1" />
+                    تم إرسال الطلب ✓
+                  </>
+                ) : submittingRequest ? (
+                  <>
+                    <Loader2 className="w-3 h-3 ml-1 animate-spin" />
+                    جاري الإرسال...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3 h-3 ml-1" />
+                    طلب اشتراك
+                  </>
+                )}
+              </Button>
+            </motion.div>
+          );
+        })}
 
         {/* Trial Request */}
         <motion.div

@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Users, Crown, Coins, Clock, Shield, Check, X,
   Search, BarChart3, FileText, CreditCard, Tag, History, Settings,
-  ChevronDown, AlertCircle, RefreshCw, Eye, Pencil, Save, PanelTop, UserCog, Bell
+  ChevronDown, AlertCircle, RefreshCw, Eye, Pencil, Save, PanelTop, UserCog, Bell, ClipboardList
 } from "lucide-react";
 import ContentTab from "@/components/admin/ContentTab";
 import PricingCatalog from "@/components/admin/PricingCatalog";
@@ -98,12 +98,13 @@ const PlanCard = ({ plan, onSaved }: { plan: any; onSaved: () => void }) => {
   );
 };
 
-type Tab = "dashboard" | "users" | "subscriptions" | "plans" | "pricing" | "ledger" | "trials" | "audit" | "generations" | "content" | "roles";
+type Tab = "dashboard" | "users" | "subscriptions" | "sub_requests" | "plans" | "pricing" | "ledger" | "trials" | "audit" | "generations" | "content" | "roles";
 
 const tabs: { id: Tab; label: string; icon: any; superOnly?: boolean }[] = [
   { id: "dashboard", label: "لوحة التحكم", icon: BarChart3 },
   { id: "users", label: "المستخدمون", icon: Users },
   { id: "roles", label: "إدارة الأدوار", icon: UserCog, superOnly: true },
+  { id: "sub_requests", label: "طلبات الاشتراك", icon: ClipboardList },
   { id: "subscriptions", label: "الاشتراكات", icon: Crown },
   { id: "plans", label: "الخطط", icon: CreditCard },
   { id: "pricing", label: "التسعير", icon: Tag, superOnly: true },
@@ -127,9 +128,11 @@ const AdminPage = () => {
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [generations, setGenerations] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [subRequests, setSubRequests] = useState<any[]>([]);
   const [stats, setStats] = useState({
     totalUsers: 0, activeSubscriptions: 0, pendingTrials: 0,
     totalCreditsGranted: 0, totalCreditsSpent: 0, pendingPricing: 0, totalGenerations: 0,
+    pendingSubRequests: 0,
   });
 
   // Modals
@@ -158,7 +161,7 @@ const AdminPage = () => {
   }, [isAdmin, tab]);
 
   const fetchData = async () => {
-    const [profilesRes, plansRes, trialsRes, subsRes, pricingRes, ledgerRes, auditRes, gensRes] = await Promise.all([
+    const [profilesRes, plansRes, trialsRes, subsRes, pricingRes, ledgerRes, auditRes, gensRes, subReqRes] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("subscription_plans").select("*").order("price"),
       supabase.from("trial_requests").select("*, profiles(email, full_name)").order("created_at", { ascending: false }),
@@ -167,6 +170,7 @@ const AdminPage = () => {
       supabase.from("credit_transactions").select("*, profiles(email, full_name)").order("created_at", { ascending: false }).limit(200),
       supabase.from("audit_logs").select("*, profiles:actor_id(email, full_name)").order("created_at", { ascending: false }).limit(100),
       supabase.from("generations").select("*, profiles:user_id(email)").order("created_at", { ascending: false }).limit(100),
+      supabase.from("subscription_requests" as any).select("*, profiles:user_id(email, full_name, phone_number), subscription_plans:plan_id(name, name_ar, type, credits_per_month, price)").order("created_at", { ascending: false }),
     ]);
 
     setUsers(profilesRes.data || []);
@@ -177,8 +181,11 @@ const AdminPage = () => {
     setLedger(ledgerRes.data || []);
     setAuditLogs(auditRes.data || []);
     setGenerations(gensRes.data || []);
+    setSubRequests((subReqRes.data as any[]) || []);
 
     if (plansRes.data?.length && !selectedPlanId) setSelectedPlanId(plansRes.data[0]?.id || "");
+
+    const pendingSubReqs = ((subReqRes.data as any[]) || []).filter((r: any) => r.status === "pending").length;
 
     setStats({
       totalUsers: profilesRes.data?.length || 0,
@@ -188,6 +195,7 @@ const AdminPage = () => {
       totalCreditsSpent: (ledgerRes.data || []).filter((l: any) => l.action === "spent").reduce((a: number, b: any) => a + b.amount, 0),
       pendingPricing: pricingRes.data?.filter((p: any) => p.status === "pending_review").length || 0,
       totalGenerations: gensRes.data?.length || 0,
+      pendingSubRequests: pendingSubReqs,
     });
   };
 
@@ -434,6 +442,9 @@ const AdminPage = () => {
               {t.id === "pricing" && stats.pendingPricing > 0 && (
                 <span className="mr-auto w-5 h-5 rounded-full bg-amber-500 text-white text-[9px] flex items-center justify-center">{stats.pendingPricing}</span>
               )}
+              {t.id === "sub_requests" && stats.pendingSubRequests > 0 && (
+                <span className="mr-auto w-5 h-5 rounded-full bg-purple-500 text-white text-[9px] flex items-center justify-center">{stats.pendingSubRequests}</span>
+              )}
             </button>
           ))}
         </nav>
@@ -502,6 +513,9 @@ const AdminPage = () => {
                       {t.id === "pricing" && stats.pendingPricing > 0 && (
                         <span className="mr-auto w-5 h-5 rounded-full bg-amber-500 text-white text-[9px] flex items-center justify-center">{stats.pendingPricing}</span>
                       )}
+                      {t.id === "sub_requests" && stats.pendingSubRequests > 0 && (
+                        <span className="mr-auto w-5 h-5 rounded-full bg-purple-500 text-white text-[9px] flex items-center justify-center">{stats.pendingSubRequests}</span>
+                      )}
                     </button>
                   ))}
                 </nav>
@@ -540,6 +554,97 @@ const AdminPage = () => {
                   </motion.div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Subscription Requests */}
+          {tab === "sub_requests" && (
+            <div className="space-y-3">
+              <h2 className="text-lg font-bold text-foreground">طلبات الاشتراك</h2>
+              {subRequests.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-8">لا توجد طلبات</p>
+              ) : subRequests.map((r: any) => {
+                const plan = r.subscription_plans;
+                const profile = r.profiles;
+                const isPending = r.status === "pending";
+                return (
+                  <div key={r.id} className={`bg-card rounded-xl border p-4 space-y-3 ${isPending ? "border-purple-500/30" : "border-border/50"}`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-foreground">{profile?.full_name || profile?.email || "—"}</p>
+                        <p className="text-[10px] text-muted-foreground" dir="ltr">{profile?.email}</p>
+                      </div>
+                      {statusBadge(r.status)}
+                    </div>
+                    <div className="bg-secondary/30 rounded-lg p-3 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground">الخطة</span>
+                        <span className="text-xs font-bold text-foreground">{plan?.name_ar || "—"}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground">الكريدت</span>
+                        <span className="text-xs font-bold text-primary">{plan?.credits_per_month || 0}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground">السعر</span>
+                        <span className="text-xs font-bold text-foreground">{Number(plan?.price || 0).toLocaleString("ar")} د.ع/شهر</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground">الهاتف</span>
+                        <span className="text-xs font-mono text-foreground" dir="ltr">+964{r.phone_number || profile?.phone_number || "—"}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground">تاريخ الطلب</span>
+                        <span className="text-[10px] text-muted-foreground">{formatDate(r.created_at)}</span>
+                      </div>
+                    </div>
+                    {isPending && (
+                      <Button size="sm" className="w-full text-xs gap-1.5" onClick={async () => {
+                        const days = 30;
+                        const { data, error } = await supabase.rpc("admin_activate_subscription", {
+                          p_target_user_id: r.user_id,
+                          p_plan_id: r.plan_id,
+                          p_days: days,
+                        });
+                        if (error) { toast.error(error.message); return; }
+                        const res = data as any;
+                        if (!res?.success) { toast.error(res?.error || "فشلت العملية"); return; }
+
+                        // Update request status
+                        await supabase.from("subscription_requests" as any).update({ status: "approved", reviewed_by: user!.id, reviewed_at: new Date().toISOString() } as any).eq("id", r.id);
+
+                        // Send WhatsApp confirmation
+                        const phoneNum = r.phone_number || profile?.phone_number;
+                        if (phoneNum) {
+                          const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+                          try {
+                            await supabase.functions.invoke("whatsapp-otp", {
+                              body: {
+                                action: "send_subscription_confirmation",
+                                subscription_data: {
+                                  phone_number: phoneNum,
+                                  plan_name: plan?.name_ar || plan?.name || "اشتراك",
+                                  credits: plan?.credits_per_month || 0,
+                                  starts_at: new Date().toISOString(),
+                                  expires_at: expiresAt,
+                                },
+                              },
+                            });
+                          } catch (e) {
+                            console.error("WhatsApp notification failed:", e);
+                          }
+                        }
+
+                        toast.success("تم تفعيل الاشتراك وإرسال إشعار WhatsApp");
+                        fetchData();
+                      }}>
+                        <Crown className="w-3.5 h-3.5" />
+                        تفعيل الاشتراك (30 يوم)
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
