@@ -406,7 +406,7 @@ const StudioPage = () => {
   const [showcaseTextIdx, setShowcaseTextIdx] = useState(0);
   useEffect(() => {
     if (!currentShowcaseTexts.length) return;
-    const interval = setInterval(() => setShowcaseTextIdx((p) => (p + 1) % currentShowcaseTexts.length), 3000);
+    const interval = setInterval(() => setShowcaseTextIdx((p) => (p + 1) % currentShowcaseTexts.length), 5500);
     return () => clearInterval(interval);
   }, [category, currentShowcaseTexts.length]);
 
