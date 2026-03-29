@@ -34,7 +34,7 @@ const bounceIn = {
 };
 
 const ProfilePage = () => {
-  const { user, credits, isAdmin, signOut, loading } = useAuth();
+  const { user, credits, isAdmin, signOut, loading, refreshCredits } = useAuth();
   const navigate = useNavigate();
   const [subscription, setSubscription] = useState<any>(null);
   const [plan, setPlan] = useState<any>(null);
