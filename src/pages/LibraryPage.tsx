@@ -61,15 +61,27 @@ const LibraryPage = () => {
 
   const handleDownload = async (url: string, name: string) => {
     try {
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = name;
-      a.click();
-      URL.revokeObjectURL(a.href);
+      // Use no-cors fallback: open in new tab if fetch fails (CORS on storage URLs)
+      const res = await fetch(url, { mode: "cors" }).catch(() => null);
+      if (res && res.ok) {
+        const blob = await res.blob();
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      } else {
+        // Fallback: direct link download
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.click();
+      }
     } catch {
-      toast.error("فشل في التحميل");
+      // Ultimate fallback: open in new tab
+      window.open(url, "_blank");
     }
   };
 
