@@ -973,9 +973,17 @@ const StudioPage = () => {
         <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
           className="w-full h-full cursor-pointer relative group" onClick={() => openViewer(resultUrls[0])}>
           {(isVideoTool || isAvatarTool) ? (
-            <video src={resultUrls[0]} controls autoPlay playsInline className="w-full h-full object-contain rounded-2xl" />
+            <video src={resultUrls[0]} controls autoPlay playsInline className="w-full h-full object-contain rounded-2xl"
+              onLoadedMetadata={(e) => {
+                const v = e.currentTarget;
+                if (v.videoWidth && v.videoHeight) setResultNaturalRatio(`${v.videoWidth}/${v.videoHeight}`);
+              }} />
           ) : (
-            <img src={resultUrls[0]} alt="Result" className="w-full h-full object-contain rounded-2xl" />
+            <img src={resultUrls[0]} alt="Result" className="w-full h-full object-contain rounded-2xl"
+              onLoad={(e) => {
+                const img = e.currentTarget;
+                if (img.naturalWidth && img.naturalHeight) setResultNaturalRatio(`${img.naturalWidth}/${img.naturalHeight}`);
+              }} />
           )}
         </motion.div>
       );
