@@ -557,6 +557,97 @@ const AdminPage = () => {
             </div>
           )}
 
+          {/* Subscription Requests */}
+          {tab === "sub_requests" && (
+            <div className="space-y-3">
+              <h2 className="text-lg font-bold text-foreground">طلبات الاشتراك</h2>
+              {subRequests.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-8">لا توجد طلبات</p>
+              ) : subRequests.map((r: any) => {
+                const plan = r.subscription_plans;
+                const profile = r.profiles;
+                const isPending = r.status === "pending";
+                return (
+                  <div key={r.id} className={`bg-card rounded-xl border p-4 space-y-3 ${isPending ? "border-purple-500/30" : "border-border/50"}`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-foreground">{profile?.full_name || profile?.email || "—"}</p>
+                        <p className="text-[10px] text-muted-foreground" dir="ltr">{profile?.email}</p>
+                      </div>
+                      {statusBadge(r.status)}
+                    </div>
+                    <div className="bg-secondary/30 rounded-lg p-3 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground">الخطة</span>
+                        <span className="text-xs font-bold text-foreground">{plan?.name_ar || "—"}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground">الكريدت</span>
+                        <span className="text-xs font-bold text-primary">{plan?.credits_per_month || 0}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground">السعر</span>
+                        <span className="text-xs font-bold text-foreground">{Number(plan?.price || 0).toLocaleString("ar")} د.ع/شهر</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground">الهاتف</span>
+                        <span className="text-xs font-mono text-foreground" dir="ltr">+964{r.phone_number || profile?.phone_number || "—"}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground">تاريخ الطلب</span>
+                        <span className="text-[10px] text-muted-foreground">{formatDate(r.created_at)}</span>
+                      </div>
+                    </div>
+                    {isPending && (
+                      <Button size="sm" className="w-full text-xs gap-1.5" onClick={async () => {
+                        const days = 30;
+                        const { data, error } = await supabase.rpc("admin_activate_subscription", {
+                          p_target_user_id: r.user_id,
+                          p_plan_id: r.plan_id,
+                          p_days: days,
+                        });
+                        if (error) { toast.error(error.message); return; }
+                        const res = data as any;
+                        if (!res?.success) { toast.error(res?.error || "فشلت العملية"); return; }
+
+                        // Update request status
+                        await supabase.from("subscription_requests" as any).update({ status: "approved", reviewed_by: user!.id, reviewed_at: new Date().toISOString() } as any).eq("id", r.id);
+
+                        // Send WhatsApp confirmation
+                        const phoneNum = r.phone_number || profile?.phone_number;
+                        if (phoneNum) {
+                          const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+                          try {
+                            await supabase.functions.invoke("whatsapp-otp", {
+                              body: {
+                                action: "send_subscription_confirmation",
+                                subscription_data: {
+                                  phone_number: phoneNum,
+                                  plan_name: plan?.name_ar || plan?.name || "اشتراك",
+                                  credits: plan?.credits_per_month || 0,
+                                  starts_at: new Date().toISOString(),
+                                  expires_at: expiresAt,
+                                },
+                              },
+                            });
+                          } catch (e) {
+                            console.error("WhatsApp notification failed:", e);
+                          }
+                        }
+
+                        toast.success("تم تفعيل الاشتراك وإرسال إشعار WhatsApp");
+                        fetchData();
+                      }}>
+                        <Crown className="w-3.5 h-3.5" />
+                        تفعيل الاشتراك (30 يوم)
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {/* Users */}
           {tab === "users" && (
             <UserManagement plans={plans} onDataRefresh={fetchData} />
