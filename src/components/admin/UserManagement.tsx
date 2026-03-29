@@ -48,7 +48,7 @@ const UserManagement = ({ plans, onDataRefresh }: UserManagementProps) => {
   const [grantDesc, setGrantDesc] = useState("");
 
   const [subOpen, setSubOpen] = useState(false);
-  const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [selectedPlanId, setSelectedPlanId] = useState(() => "");
   const [subDays, setSubDays] = useState("30");
 
   const [userGenerations, setUserGenerations] = useState<any[]>([]);
