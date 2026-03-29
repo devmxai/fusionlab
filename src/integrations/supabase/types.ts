@@ -944,6 +944,10 @@ export type Database = {
         Returns: Json
       }
       enforce_subscription_expiry: { Args: never; Returns: Json }
+      ensure_user_credits_row: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
