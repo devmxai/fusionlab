@@ -637,6 +637,53 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_requests: {
+        Row: {
+          activated_subscription_id: string | null
+          created_at: string
+          id: string
+          phone_number: string | null
+          plan_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activated_subscription_id?: string | null
+          created_at?: string
+          id?: string
+          phone_number?: string | null
+          plan_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activated_subscription_id?: string | null
+          created_at?: string
+          id?: string
+          phone_number?: string | null
+          plan_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_requests_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trending_images: {
         Row: {
           created_at: string | null
