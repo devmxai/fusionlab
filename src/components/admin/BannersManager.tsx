@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Trash2, GripVertical, Eye, EyeOff, Save, Upload, Pencil } from "lucide-react";
 import { compressImage } from "@/lib/image-compress";
@@ -19,23 +20,28 @@ interface Banner {
 }
 
 const studioOptions = [
-  { value: "", label: "بدون ربط" },
-  { value: "/studio/video", label: "فيديو" },
-  { value: "/studio/images", label: "صور" },
-  { value: "/studio/shoots", label: "شوتس" },
-  { value: "/studio/remix", label: "ريمكس" },
-  { value: "/studio/audio", label: "صوت" },
-  { value: "/studio/avatar", label: "افتار" },
-  { value: "/studio/transfer", label: "ترانسفير" },
-  { value: "/studio/remove-bg", label: "حذف الخلفية" },
-  { value: "/studio/upscale", label: "رفع الجودة" },
+  { value: "none", label: "بدون ربط" },
+  { value: "/studio/video", label: "🎬 فيديو" },
+  { value: "/studio/images", label: "🖼️ صور" },
+  { value: "/studio/shoots", label: "📸 شوتس" },
+  { value: "/studio/remix", label: "🔄 ريمكس" },
+  { value: "/studio/audio", label: "🎙️ صوت" },
+  { value: "/studio/avatar", label: "🧑 افتار" },
+  { value: "/studio/transfer", label: "✨ ترانسفير" },
+  { value: "/studio/remove-bg", label: "🗑️ حذف الخلفية" },
+  { value: "/studio/upscale", label: "📐 رفع الجودة" },
 ];
+
+const getStudioLabel = (value: string | null) => {
+  if (!value) return null;
+  return studioOptions.find(o => o.value === value)?.label || value;
+};
 
 const BannersManager = () => {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ title: "", subtitle: "", cta_text: "", cta_link: "", image_url: "", linked_studio: "" });
+  const [form, setForm] = useState({ title: "", subtitle: "", cta_text: "", cta_link: "", image_url: "", linked_studio: "none" });
   const [uploading, setUploading] = useState(false);
   const [adding, setAdding] = useState(false);
 
@@ -68,6 +74,8 @@ const BannersManager = () => {
     }
   };
 
+  const resolveStudio = (val: string) => val === "none" ? null : val;
+
   const handleAdd = async () => {
     const { error } = await supabase.from("homepage_banners").insert({
       image_url: form.image_url || "https://placehold.co/800x300/1a1a2e/e94560?text=Banner",
@@ -75,13 +83,13 @@ const BannersManager = () => {
       subtitle: form.subtitle || null,
       cta_text: form.cta_text || null,
       cta_link: form.cta_link || null,
-      linked_studio: form.linked_studio || null,
+      linked_studio: resolveStudio(form.linked_studio),
       sort_order: banners.length,
     });
     if (error) { toast.error(error.message); return; }
     toast.success("تم إضافة البانر");
     setAdding(false);
-    setForm({ title: "", subtitle: "", cta_text: "", cta_link: "", image_url: "", linked_studio: "" });
+    setForm({ title: "", subtitle: "", cta_text: "", cta_link: "", image_url: "", linked_studio: "none" });
     fetchBanners();
   };
 
@@ -92,7 +100,7 @@ const BannersManager = () => {
       cta_text: form.cta_text || null,
       cta_link: form.cta_link || null,
       image_url: form.image_url,
-      linked_studio: form.linked_studio || null,
+      linked_studio: resolveStudio(form.linked_studio),
       updated_at: new Date().toISOString(),
     }).eq("id", id);
     if (error) { toast.error(error.message); return; }
@@ -121,45 +129,53 @@ const BannersManager = () => {
       cta_text: b.cta_text || "",
       cta_link: b.cta_link || "",
       image_url: b.image_url,
-      linked_studio: b.linked_studio || "",
+      linked_studio: b.linked_studio || "none",
     });
   };
 
-  const StudioPicker = () => (
-    <div className="space-y-1.5">
-      <label className="text-[10px] font-bold text-muted-foreground">ربط بـ Studio</label>
-      <div className="flex flex-wrap gap-1.5">
-        {studioOptions.map(opt => (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => setForm(f => ({ ...f, linked_studio: opt.value }))}
-            className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition-colors ${
-              form.linked_studio === opt.value
-                ? "bg-primary text-primary-foreground shadow-[0_0_8px_hsl(var(--primary)/0.3)]"
-                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
+  const BannerForm = ({ onSubmit, submitLabel, onCancel }: { onSubmit: () => void; submitLabel: string; onCancel: () => void }) => (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="العنوان" className="text-xs h-8" />
+        <Input value={form.subtitle} onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))} placeholder="العنوان الفرعي" className="text-xs h-8" />
+        <Input value={form.cta_text} onChange={e => setForm(f => ({ ...f, cta_text: e.target.value }))} placeholder="نص الزر" className="text-xs h-8" />
+        <Input value={form.cta_link} onChange={e => setForm(f => ({ ...f, cta_link: e.target.value }))} placeholder="رابط الزر (اختياري)" className="text-xs h-8" dir="ltr" />
       </div>
-    </div>
-  );
 
-  const ImageUploader = () => (
-    <div className="flex items-center gap-2">
-      <label className="flex items-center gap-2 px-3 py-1.5 bg-secondary rounded-lg cursor-pointer hover:bg-secondary/80 transition-colors">
-        <Upload className="w-3 h-3" />
-        <span className="text-[10px] font-semibold">{uploading ? "جاري الرفع..." : "رفع صورة"}</span>
-        <input type="file" accept="image/*" className="hidden" onChange={async e => {
-          const file = e.target.files?.[0];
-          if (!file) return;
-          const url = await uploadImage(file);
-          if (url) setForm(f => ({ ...f, image_url: url }));
-        }} />
-      </label>
-      {form.image_url && <img src={form.image_url} alt="" className="h-10 rounded-md" />}
+      <div className="space-y-1.5">
+        <label className="text-[10px] font-bold text-muted-foreground">ربط بـ Studio</label>
+        <Select value={form.linked_studio} onValueChange={val => setForm(f => ({ ...f, linked_studio: val }))}>
+          <SelectTrigger className="h-8 text-xs">
+            <SelectValue placeholder="اختر الاستوديو" />
+          </SelectTrigger>
+          <SelectContent>
+            {studioOptions.map(opt => (
+              <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <label className="flex items-center gap-2 px-3 py-1.5 bg-secondary rounded-lg cursor-pointer hover:bg-secondary/80 transition-colors">
+          <Upload className="w-3 h-3" />
+          <span className="text-[10px] font-semibold">{uploading ? "جاري الرفع..." : "رفع صورة"}</span>
+          <input type="file" accept="image/*" className="hidden" onChange={async e => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const url = await uploadImage(file);
+            if (url) setForm(f => ({ ...f, image_url: url }));
+          }} />
+        </label>
+        {form.image_url && <img src={form.image_url} alt="" className="h-10 rounded-md" />}
+      </div>
+
+      <div className="flex gap-2">
+        <Button size="sm" className="text-xs" onClick={onSubmit}><Save className="w-3 h-3 ml-1" />{submitLabel}</Button>
+        <Button size="sm" variant="outline" className="text-xs" onClick={onCancel}>إلغاء</Button>
+      </div>
     </div>
   );
 
@@ -169,7 +185,7 @@ const BannersManager = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-foreground">البانرات الرئيسية</h3>
-        <Button size="sm" className="text-xs gap-1" onClick={() => setAdding(true)}>
+        <Button size="sm" className="text-xs gap-1" onClick={() => { setAdding(true); setForm({ title: "", subtitle: "", cta_text: "", cta_link: "", image_url: "", linked_studio: "none" }); }}>
           <Plus className="w-3 h-3" /> إضافة بانر
         </Button>
       </div>
@@ -177,38 +193,19 @@ const BannersManager = () => {
       {adding && (
         <div className="bg-card rounded-xl border border-primary/30 p-4 space-y-3">
           <h4 className="text-xs font-bold text-foreground">بانر جديد</h4>
-          <div className="grid grid-cols-2 gap-3">
-            <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="العنوان" className="text-xs h-8" />
-            <Input value={form.subtitle} onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))} placeholder="العنوان الفرعي" className="text-xs h-8" />
-            <Input value={form.cta_text} onChange={e => setForm(f => ({ ...f, cta_text: e.target.value }))} placeholder="نص الزر" className="text-xs h-8" />
-            <Input value={form.cta_link} onChange={e => setForm(f => ({ ...f, cta_link: e.target.value }))} placeholder="رابط الزر" className="text-xs h-8" dir="ltr" />
-          </div>
-          <StudioPicker />
-          <ImageUploader />
-          <div className="flex gap-2">
-            <Button size="sm" className="text-xs" onClick={handleAdd}><Save className="w-3 h-3 ml-1" />حفظ</Button>
-            <Button size="sm" variant="outline" className="text-xs" onClick={() => setAdding(false)}>إلغاء</Button>
-          </div>
+          <p className="text-[10px] text-muted-foreground">يظهر في الصفحة الرئيسية كبانر سينمائي أفقي قابل للتمرير</p>
+          <BannerForm onSubmit={handleAdd} submitLabel="حفظ" onCancel={() => setAdding(false)} />
         </div>
       )}
 
-      {banners.map((b) => (
+      {banners.map((b, idx) => (
         <div key={b.id} className={`bg-card rounded-xl border p-3 ${b.is_active ? "border-border/50" : "border-border/20 opacity-60"}`}>
+          <p className="text-[9px] text-muted-foreground/60 mb-1.5 font-medium">
+            بانر #{idx + 1} — الصفحة الرئيسية
+            {b.linked_studio && <span className="text-primary mr-1">← مربوط بـ {getStudioLabel(b.linked_studio)}</span>}
+          </p>
           {editingId === b.id ? (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="العنوان" className="text-xs h-8" />
-                <Input value={form.subtitle} onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))} placeholder="العنوان الفرعي" className="text-xs h-8" />
-                <Input value={form.cta_text} onChange={e => setForm(f => ({ ...f, cta_text: e.target.value }))} placeholder="نص الزر" className="text-xs h-8" />
-                <Input value={form.cta_link} onChange={e => setForm(f => ({ ...f, cta_link: e.target.value }))} placeholder="رابط" className="text-xs h-8" dir="ltr" />
-              </div>
-              <StudioPicker />
-              <ImageUploader />
-              <div className="flex gap-2">
-                <Button size="sm" className="text-xs" onClick={() => handleUpdate(b.id)}><Save className="w-3 h-3 ml-1" />حفظ</Button>
-                <Button size="sm" variant="outline" className="text-xs" onClick={() => setEditingId(null)}>إلغاء</Button>
-              </div>
-            </div>
+            <BannerForm onSubmit={() => handleUpdate(b.id)} submitLabel="حفظ التعديلات" onCancel={() => setEditingId(null)} />
           ) : (
             <div className="flex items-center gap-3">
               <GripVertical className="w-4 h-4 text-muted-foreground/40 shrink-0" />
@@ -216,11 +213,6 @@ const BannersManager = () => {
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-foreground truncate">{b.title || "بدون عنوان"}</p>
                 <p className="text-[10px] text-muted-foreground truncate">{b.subtitle || ""}</p>
-                {b.linked_studio && (
-                  <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full bg-primary/15 text-primary text-[9px] font-bold">
-                    {studioOptions.find(o => o.value === b.linked_studio)?.label || b.linked_studio}
-                  </span>
-                )}
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button onClick={() => toggleActive(b)} className="p-1.5 rounded-lg hover:bg-secondary" title={b.is_active ? "إخفاء" : "إظهار"}>
