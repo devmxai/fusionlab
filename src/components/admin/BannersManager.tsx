@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Plus, Trash2, GripVertical, Eye, EyeOff, Save, Upload } from "lucide-react";
+import { Plus, Trash2, GripVertical, Eye, EyeOff, Save, Upload, Pencil } from "lucide-react";
 import { compressImage } from "@/lib/image-compress";
 
 interface Banner {
