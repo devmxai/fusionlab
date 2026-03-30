@@ -57,6 +57,8 @@ type PollErrorLike = Error & { terminal?: boolean };
 function createSmoothProgress(startFrom = 0) {
   let current = Math.max(1, startFrom);
   let phase: "waiting" | "queuing" | "generating" | "finalizing" = "waiting";
+  const startedAt = Date.now();
+  let lastProviderProgress = 0;
 
   return {
     update(providerProgress: number | undefined, state: string | undefined) {
@@ -78,19 +80,29 @@ function createSmoothProgress(startFrom = 0) {
       }
 
       if (Number.isFinite(providerProgress) && (providerProgress as number) > 0) {
-        const mapped = 8 + ((providerProgress as number) / 100) * 84;
-        current = Math.max(current, mapped);
-        return { progress: Math.min(Math.round(current), 95), phase };
+        // Keep provider progress monotonic; some providers send stale/backward values.
+        lastProviderProgress = Math.max(lastProviderProgress, providerProgress as number);
       }
 
-      // Slow, steady increments to feel like 1 → 2 → 3 (no jumps)
-      const maxForPhase =
-        phase === "waiting" ? 18 : phase === "queuing" ? 36 : phase === "generating" ? 88 : 95;
-      const stepForPhase =
-        phase === "waiting" ? 0.35 : phase === "queuing" ? 0.45 : phase === "generating" ? 0.6 : 0.25;
+      // Time-based baseline curve (always advances, never freezes at a hard cap like 18%).
+      const elapsedSec = (Date.now() - startedAt) / 1000;
+      const tau = phase === "waiting" ? 520 : phase === "queuing" ? 380 : phase === "generating" ? 250 : 140;
+      const baselineTarget = 95 - 94 * Math.exp(-elapsedSec / tau);
 
-      if (current < maxForPhase) {
-        current = Math.min(maxForPhase, current + stepForPhase);
+      // Provider-informed curve (if available), mapped to pre-terminal range 6..95.
+      const providerTarget = lastProviderProgress > 0
+        ? Math.min(95, 6 + (Math.min(lastProviderProgress, 100) / 100) * 89)
+        : 0;
+
+      const target = Math.max(baselineTarget, providerTarget);
+      const stepForPhase =
+        phase === "waiting" ? 0.24 : phase === "queuing" ? 0.34 : phase === "generating" ? 0.5 : 0.28;
+
+      if (current < target) {
+        current = Math.min(target, current + stepForPhase);
+      } else {
+        // Safety nudge to avoid visual stalling when rounded integer doesn't change.
+        current = Math.min(95, current + 0.06);
       }
 
       return { progress: Math.min(Math.round(current), 95), phase };
