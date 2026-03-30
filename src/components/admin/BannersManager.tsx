@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Plus, Trash2, GripVertical, Eye, EyeOff, Save, Upload } from "lucide-react";
+import { Plus, Trash2, GripVertical, Eye, EyeOff, Save, Upload, Pencil } from "lucide-react";
 import { compressImage } from "@/lib/image-compress";
 
 interface Banner {
@@ -227,7 +227,7 @@ const BannersManager = () => {
                   {b.is_active ? <Eye className="w-3.5 h-3.5 text-green-400" /> : <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />}
                 </button>
                 <button onClick={() => startEdit(b)} className="p-1.5 rounded-lg hover:bg-secondary" title="تعديل">
-                  <Save className="w-3.5 h-3.5 text-muted-foreground" />
+                  <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
                 </button>
                 <button onClick={() => handleDelete(b.id)} className="p-1.5 rounded-lg hover:bg-destructive/15" title="حذف">
                   <Trash2 className="w-3.5 h-3.5 text-destructive" />
