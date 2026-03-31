@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { tools, buildModelInput, AITool } from "@/data/tools";
 import { getModelCapabilities } from "@/data/model-capabilities";
@@ -16,7 +16,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import CircularProgress from "@/components/CircularProgress";
 import ImageViewer from "@/components/ImageViewer";
 import { usePricing } from "@/hooks/use-pricing";
-
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { StudioSelect } from "@/components/studio/StudioSelect";
+import CropDialog from "@/components/studio/CropDialog";
 
 type AspectRatio = "1:1" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
 type Resolution = string;
