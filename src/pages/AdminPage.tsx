@@ -611,7 +611,7 @@ const AdminPage = () => {
                         if (!res?.success) { toast.error(res?.error || "فشلت العملية"); return; }
 
                         // Update request status
-                        await supabase.from("subscription_requests" as any).update({ status: "approved", reviewed_by: user!.id, reviewed_at: new Date().toISOString() } as any).eq("id", r.id);
+                        await supabase.from("subscription_requests").update({ status: "approved", reviewed_by: user!.id, reviewed_at: new Date().toISOString() }).eq("id", r.id);
 
                         // Send WhatsApp confirmation
                         const phoneNum = r.phone_number || profile?.phone_number;
