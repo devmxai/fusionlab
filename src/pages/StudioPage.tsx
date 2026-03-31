@@ -495,20 +495,65 @@ const StudioPage = () => {
     if (remixSlotInputRef.current) remixSlotInputRef.current.value = "";
   };
 
-  const handleFrameUpload = (type: "first" | "last", e: React.ChangeEvent<HTMLInputElement>) => {
+  const cropAspectNumeric = (() => {
+    const [w, h] = aspectRatio.split(":").map(Number);
+    return w / h;
+  })();
+
+  const handleFrameUpload = async (type: "first" | "last", e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const preview = URL.createObjectURL(file);
-    if (type === "first") {
+
+    // Check if image matches selected aspect ratio
+    const matches = await new Promise<boolean>((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const [rw, rh] = aspectRatio.split(":").map(Number);
+        const targetRatio = rw / rh;
+        const imageRatio = img.naturalWidth / img.naturalHeight;
+        resolve(Math.abs(imageRatio - targetRatio) / targetRatio < 0.08);
+      };
+      img.onerror = () => resolve(true);
+      img.src = preview;
+    });
+
+    if (!matches) {
+      // Open crop dialog locked to selected aspect ratio
+      setCropState({ imageSrc: preview, file, type });
+    } else {
+      if (type === "first") {
+        if (firstFrame) URL.revokeObjectURL(firstFrame.preview);
+        setFirstFrame({ file, preview });
+      } else {
+        if (lastFrame) URL.revokeObjectURL(lastFrame.preview);
+        setLastFrame({ file, preview });
+      }
+    }
+
+    if (type === "first" && firstFrameInputRef.current) firstFrameInputRef.current.value = "";
+    if (type === "last" && lastFrameInputRef.current) lastFrameInputRef.current.value = "";
+  };
+
+  const handleCropConfirm = useCallback((blob: Blob) => {
+    if (!cropState) return;
+    const file = new File([blob], cropState.file.name, { type: "image/png" });
+    const preview = URL.createObjectURL(blob);
+    if (cropState.type === "first") {
       if (firstFrame) URL.revokeObjectURL(firstFrame.preview);
       setFirstFrame({ file, preview });
     } else {
       if (lastFrame) URL.revokeObjectURL(lastFrame.preview);
       setLastFrame({ file, preview });
     }
-    if (type === "first" && firstFrameInputRef.current) firstFrameInputRef.current.value = "";
-    if (type === "last" && lastFrameInputRef.current) lastFrameInputRef.current.value = "";
-  };
+    URL.revokeObjectURL(cropState.imageSrc);
+    setCropState(null);
+  }, [cropState, firstFrame, lastFrame]);
+
+  const handleCropCancel = useCallback(() => {
+    if (cropState) URL.revokeObjectURL(cropState.imageSrc);
+    setCropState(null);
+  }, [cropState]);
 
   const removeImage = (index: number) => {
     setRefImages((prev) => {
