@@ -42,6 +42,15 @@ export default function CropDialog({ open, imageSrc, aspectRatio, onConfirm, onC
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  // Reset state when dialog opens with new image
+  useState(() => {
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+    setIsConfirming(false);
+  });
 
   const onCropComplete = useCallback((_croppedArea: Area, croppedPixels: Area) => {
     setCroppedAreaPixels(croppedPixels);
