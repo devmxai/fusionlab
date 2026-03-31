@@ -143,10 +143,10 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
   },
 
   // Docs: aspect_ratio 16:9,9:16,1:1 | duration 5,10 | no image input (separate i2v endpoint)
+  // Docs: text-to-video only — no image input (separate i2v endpoint)
   "kling/v2-1-master-text-to-video": {
     aspectRatios: ["1:1", "9:16", "16:9"],
     durations: ["5", "10"],
-    frameMode: "first-only",
   },
 
   // Docs: aspect_ratio 1:1,4:3,3:4,16:9,9:16,21:9 | duration 4,8,12 | resolution 480p,720p,1080p | 0-2 input_urls
