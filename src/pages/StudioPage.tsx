@@ -1759,62 +1759,71 @@ const StudioPage = () => {
           </div>
 
           {/* ── Bottom Bar ── */}
-          <div ref={bottomBarRef} className="shrink-0 bg-card/80 backdrop-blur-xl border-t border-border/20 px-4 py-3 z-50">
+          <div ref={bottomBarRef} className="shrink-0 bg-card/80 backdrop-blur-xl border-t border-border/20 px-4 py-3 z-50 space-y-2">
             {isImageOnlyTool ? (
-              <div className="flex items-center gap-2">
-                <button onClick={() => fileInputRef.current?.click()}
-                  className={`shrink-0 w-10 h-10 rounded-xl border flex items-center justify-center transition-colors ${
-                    refImages.length > 0 ? "bg-primary/10 border-primary/40" : "bg-secondary border-border/50 hover:bg-secondary/80"
-                  }`}>
-                  <ImageIcon className="w-4 h-4 text-muted-foreground" />
-                </button>
-                <Button onClick={handleGenerate} disabled={isGenerateDisabled} className="flex-1 rounded-xl gap-2 h-10 text-xs font-bold shadow-md">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <button onClick={() => fileInputRef.current?.click()}
+                    className={`shrink-0 w-10 h-10 rounded-xl border flex items-center justify-center transition-colors ${
+                      refImages.length > 0 ? "bg-primary/10 border-primary/40" : "bg-secondary border-border/50 hover:bg-secondary/80"
+                    }`}>
+                    <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  <span className="flex-1 text-xs text-muted-foreground text-right" dir="rtl">
+                    {refImages.length > 0 ? `تم اختيار ${refImages.length} صورة` : "اختر صورة للمعالجة"}
+                  </span>
+                </div>
+                <Button onClick={handleGenerate} disabled={isGenerateDisabled} className="w-full rounded-xl gap-2 h-11 text-sm font-bold shadow-lg">
                   <Sparkles className="w-4 h-4" /><span>{generateBtnLabel}</span>
-                  {estimatedCost > 0 && <span className="text-[10px] opacity-80">{estimatedCost}</span>}
+                  {estimatedCost > 0 && <span className="text-[11px] font-bold opacity-80">{estimatedCost} كريدت</span>}
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                {!hasFrameMode && !isRemixTool && !isAvatarTool && !isShootsTool && (caps?.maxImages ?? 0) > 0 && refImages.length < (caps?.maxImages ?? 0) && (
-                  <button onClick={() => fileInputRef.current?.click()}
-                    className="shrink-0 w-10 h-10 rounded-xl bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors">
-                    <ImageIcon className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                )}
-                {isShootsTool && (
-                  <button onClick={() => fileInputRef.current?.click()}
-                    className={`shrink-0 h-10 px-3 rounded-xl border flex items-center justify-center gap-1.5 transition-colors ${
-                      refImages.length > 0 ? "bg-primary/10 border-primary/40" : "bg-secondary border-border/50"
-                    }`}>
-                    <Upload className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-[10px] font-semibold text-foreground">{refImages.length > 0 ? "تغيير" : "صورة"}</span>
-                  </button>
-                )}
-                <input
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder={isShootsTool ? "صف الزوايا..." : isAvatarTool ? "وصف اختياري..." : isRemixTool ? "صف التعديل..." : "اكتب وصفاً لما تريد توليده..."}
-                  className="flex-1 h-10 rounded-xl bg-secondary/40 border border-border/30 px-3 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/40"
-                  dir="rtl"
-                  onKeyDown={(e) => e.key === "Enter" && !loading && handleGenerate()}
-                />
-                <Button onClick={handleGenerate} disabled={isGenerateDisabled} className="shrink-0 rounded-xl gap-2 px-4 h-10 text-xs font-bold shadow-md">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  {!hasFrameMode && !isRemixTool && !isAvatarTool && !isShootsTool && (caps?.maxImages ?? 0) > 0 && refImages.length < (caps?.maxImages ?? 0) && (
+                    <button onClick={() => fileInputRef.current?.click()}
+                      className="shrink-0 w-10 h-10 rounded-xl bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors">
+                      <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  )}
+                  {isShootsTool && (
+                    <button onClick={() => fileInputRef.current?.click()}
+                      className={`shrink-0 h-10 px-3 rounded-xl border flex items-center justify-center gap-1.5 transition-colors ${
+                        refImages.length > 0 ? "bg-primary/10 border-primary/40" : "bg-secondary border-border/50"
+                      }`}>
+                      <Upload className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-[10px] font-semibold text-foreground">{refImages.length > 0 ? "تغيير" : "صورة"}</span>
+                    </button>
+                  )}
+                  <Textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder={isShootsTool ? "صف الزوايا..." : isAvatarTool ? "وصف اختياري..." : isRemixTool ? "صف التعديل..." : "اكتب وصفاً لما تريد توليده..."}
+                    className="flex-1 min-h-[40px] max-h-[80px] resize-none rounded-xl bg-secondary/40 border border-border/30 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50"
+                    dir="rtl"
+                    rows={2}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading) { e.preventDefault(); handleGenerate(); } }}
+                  />
+                </div>
+                <Button onClick={handleGenerate} disabled={isGenerateDisabled} className="w-full rounded-xl gap-2 h-11 text-sm font-bold shadow-lg">
                   <Sparkles className="w-4 h-4" />
-                  {estimatedCost > 0 && <span className="text-[11px] font-bold">{estimatedCost}</span>}
+                  <span>{generateBtnLabel}</span>
+                  {estimatedCost > 0 && <span className="text-[11px] font-bold opacity-80">{estimatedCost} كريدت</span>}
                 </Button>
               </div>
             )}
           </div>
 
-          {/* ── Settings Drawer ── */}
-          <Drawer open={settingsSheetOpen} onOpenChange={setSettingsSheetOpen}>
-            <DrawerContent>
-              <div className="px-5 py-4 pb-8 max-h-[80vh] overflow-y-auto space-y-1" dir="rtl">
-                <h2 className="text-sm font-bold text-foreground mb-3">الإعدادات</h2>
+          {/* ── Settings Sidebar ── */}
+          <Sheet open={settingsSheetOpen} onOpenChange={setSettingsSheetOpen}>
+            <SheetContent side="right" className="w-[85vw] max-w-[360px] p-0 border-r border-border/20">
+              <div className="px-5 py-5 pb-8 h-full overflow-y-auto space-y-1 scrollbar-hide" dir="rtl">
+                <h2 className="text-base font-bold text-foreground mb-4">الإعدادات</h2>
                 {renderSettingsContent()}
               </div>
-            </DrawerContent>
-          </Drawer>
+            </SheetContent>
+          </Sheet>
         </div>
       )}
 
