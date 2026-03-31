@@ -1271,7 +1271,8 @@ const StudioPage = () => {
     <div className="space-y-5">
       {/* Model Selector */}
       {!isShootsTool && (
-        <div>          <Popover open={modelSelectorOpen} onOpenChange={(v) => { setModelSelectorOpen(v); if (!v) setModelSubPage(null); }}>
+        <div>
+          <Popover open={modelSelectorOpen} onOpenChange={(v) => { setModelSelectorOpen(v); if (!v) setModelSubPage(null); }}>
           <Popover open={modelSelectorOpen} onOpenChange={(v) => { setModelSelectorOpen(v); if (!v) setModelSubPage(null); }}>
             <PopoverTrigger asChild>
               <button className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-border/40 bg-secondary/30 hover:bg-secondary/50 transition-all">
