@@ -1817,9 +1817,8 @@ const StudioPage = () => {
 
           {/* ── Settings Sidebar ── */}
           <Sheet open={settingsSheetOpen} onOpenChange={setSettingsSheetOpen}>
-            <SheetContent side="right" className="w-[85vw] max-w-[360px] p-0 border-r border-border/20">
-              <div className="px-5 py-5 pb-8 h-full overflow-y-auto space-y-1 scrollbar-hide" dir="rtl">
-                <h2 className="text-base font-bold text-foreground mb-4">الإعدادات</h2>
+            <SheetContent side="right" className="w-[85vw] max-w-[360px] p-0 border-r border-border/20 [&>button]:left-4 [&>button]:right-auto">
+              <div className="px-5 pt-12 pb-8 h-full overflow-y-auto space-y-1 scrollbar-hide" dir="rtl">
                 {renderSettingsContent()}
               </div>
             </SheetContent>
