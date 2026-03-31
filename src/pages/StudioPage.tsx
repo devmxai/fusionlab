@@ -1691,6 +1691,7 @@ const StudioPage = () => {
   // ── Hidden file inputs ──
   const hiddenInputs = (
     <>
+      <input ref={grokRefInputRef} type="file" accept="image/*" className="hidden" onChange={handleGrokRefUpload} />
       <input ref={fileInputRef} type="file" accept="image/*" multiple={!isImageOnlyTool} className="hidden" onChange={handleImageUpload} />
       <input ref={remixSlotInputRef} type="file" accept="image/*" className="hidden" onChange={handleRemixSlotUpload} />
       <input ref={firstFrameInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFrameUpload("first", e)} />
