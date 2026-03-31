@@ -71,6 +71,7 @@ const StudioPage = () => {
   const avatarImageInputRef = useRef<HTMLInputElement>(null);
   const avatarAudioInputRef = useRef<HTMLInputElement>(null);
   const avatarVideoInputRef = useRef<HTMLInputElement>(null);
+  const grokRefInputRef = useRef<HTMLInputElement>(null);
   const [remixUploadSlot, setRemixUploadSlot] = useState<number>(-1);
 
   const { user, credits, refreshCredits } = useAuth();
@@ -121,7 +122,7 @@ const StudioPage = () => {
   const headerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
-  const [cropState, setCropState] = useState<{ imageSrc: string; file: File; type: "first" | "last" } | null>(null);
+  const [cropState, setCropState] = useState<{ imageSrc: string; file: File; type: "first" | "last" | "ref"; refIndex?: number } | null>(null);
   const [framePreviewUrl, setFramePreviewUrl] = useState<string | null>(null);
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
 
@@ -538,6 +539,32 @@ const StudioPage = () => {
     if (type === "last" && lastFrameInputRef.current) lastFrameInputRef.current.value = "";
   };
 
+  const handleGrokRefUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const preview = URL.createObjectURL(file);
+
+    const matches = await new Promise<boolean>((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const [rw, rh] = aspectRatio.split(":").map(Number);
+        const targetRatio = rw / rh;
+        const imageRatio = img.naturalWidth / img.naturalHeight;
+        resolve(Math.abs(imageRatio - targetRatio) / targetRatio < 0.08);
+      };
+      img.onerror = () => resolve(true);
+      img.src = preview;
+    });
+
+    if (!matches) {
+      setCropState({ imageSrc: preview, file, type: "ref", refIndex: 0 });
+    } else {
+      if (refImages[0]) URL.revokeObjectURL(refImages[0].preview);
+      setRefImages([{ file, preview }]);
+    }
+    if (grokRefInputRef.current) grokRefInputRef.current.value = "";
+  };
+
   const handleCropConfirm = useCallback((blob: Blob) => {
     if (!cropState) return;
     const file = new File([blob], cropState.file.name, { type: "image/png" });
@@ -545,9 +572,21 @@ const StudioPage = () => {
     if (cropState.type === "first") {
       if (firstFrame) URL.revokeObjectURL(firstFrame.preview);
       setFirstFrame({ file, preview });
-    } else {
+    } else if (cropState.type === "last") {
       if (lastFrame) URL.revokeObjectURL(lastFrame.preview);
       setLastFrame({ file, preview });
+    } else if (cropState.type === "ref") {
+      setRefImages(prev => {
+        const updated = [...prev];
+        const idx = cropState.refIndex ?? 0;
+        if (idx < updated.length) {
+          URL.revokeObjectURL(updated[idx].preview);
+          updated[idx] = { file, preview };
+        } else {
+          updated.push({ file, preview });
+        }
+        return updated;
+      });
     }
     URL.revokeObjectURL(cropState.imageSrc);
     setCropState(null);
@@ -1188,8 +1227,57 @@ const StudioPage = () => {
   const isGrokVideo = !!selectedTool && selectedTool.model.startsWith("grok-imagine/");
   const showQuality = !isShootsTool && !isGrokVideo && !!(selectedTool && caps?.qualities?.length);
   const showUpscale = !isShootsTool && !!(selectedTool && caps?.upscaleFactors?.length);
+  const isGrokVideoRef = isVideoTool && !hasFrameMode && (caps?.maxImages ?? 0) > 0;
 
-  // ── Setting chips helper ──
+  // ── Label helpers ──
+  const durationLabel = (d: string) => `${d} ثواني`;
+  const qualityLabel = (q: string) => {
+    const map: Record<string, string> = { std: "قياسي (STD)", pro: "احترافي (PRO)", normal: "عادي", fun: "مرح", basic: "أساسي", high: "عالي" };
+    return map[q] || q.toUpperCase();
+  };
+  const aspectLabelFn = (a: string) => {
+    const map: Record<string, string> = { "1:1": "1:1 — مربع", "9:16": "9:16 — عمودي", "16:9": "16:9 — أفقي", "3:4": "3:4 — بورتريه", "4:3": "4:3 — أفقي عريض", "21:9": "21:9 — سينمائي", "2:3": "2:3", "3:2": "3:2" };
+    return map[a] || a;
+  };
+
+  // ── Dropdown select helper ──
+  const renderSelect = (
+    menuId: string,
+    items: { value: string; label: string; locked?: boolean; lockLabel?: string }[],
+    selected: string,
+    onSelect: (v: string) => void
+  ) => {
+    const isOpen = openMenu === menuId;
+    const selectedItem = items.find(i => i.value === selected);
+    return (
+      <Popover open={isOpen} onOpenChange={(v) => setOpenMenu(v ? menuId : null)}>
+        <PopoverTrigger asChild>
+          <button className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-border/40 bg-secondary/30 hover:bg-secondary/50 transition-all">
+            <span className="text-sm font-semibold text-foreground truncate">{selectedItem?.label || selected}</span>
+            <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" sideOffset={8} className="w-[260px] p-1.5 bg-card/95 backdrop-blur-xl border-primary/30 z-[300]" dir="rtl">
+          <div className="space-y-0.5 max-h-[300px] overflow-y-auto">
+            {items.map(item => (
+              <button key={item.value}
+                disabled={item.locked}
+                onClick={() => { if (!item.locked) { onSelect(item.value); setOpenMenu(null); } }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-right text-sm font-medium transition-colors ${
+                  item.locked ? "opacity-40 cursor-not-allowed text-muted-foreground" :
+                  selected === item.value ? "bg-primary/10 text-primary font-bold" : "hover:bg-secondary/50 text-foreground"
+                }`}>
+                <span>{item.label}</span>
+                {item.locked && <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
+              </button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
+  // ── Setting chips helper (kept for upscale factors) ──
   const renderChips = (
     items: { value: string; label: string; locked?: boolean; lockLabel?: string }[],
     selected: string,
@@ -1463,29 +1551,57 @@ const StudioPage = () => {
             </div>
           )}
 
-          {/* ── Setting chips ── */}
+          {/* ── Grok video reference image ── */}
+          {isGrokVideoRef && (
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-muted-foreground/70">صورة مرجعية <span className="text-muted-foreground/50 font-normal">(اختياري)</span></label>
+              <div
+                onClick={() => !refImages[0] && grokRefInputRef.current?.click()}
+                className={`relative rounded-xl border-2 border-dashed transition-all overflow-hidden cursor-pointer ${refImages[0] ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/20 hover:border-primary/30"}`}
+                style={{ aspectRatio: "16/9", maxHeight: "120px" }}
+              >
+                {refImages[0] ? (
+                  <div className="relative w-full h-full">
+                    <img src={refImages[0].preview} alt="ref" className="w-full h-full object-cover cursor-pointer"
+                      onClick={(e) => { e.stopPropagation(); setFramePreviewUrl(refImages[0].preview); }} />
+                    <button onClick={(e) => { e.stopPropagation(); removeImage(0); }}
+                      className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center z-10">
+                      <X className="w-3 h-3 text-destructive-foreground" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full gap-1">
+                    <Upload className="w-5 h-5 text-muted-foreground/50" />
+                    <span className="text-[9px] font-semibold text-muted-foreground/60">رفع صورة</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Setting dropdowns ── */}
           {showDuration && (
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-muted-foreground/70">المدة</label>
-              {renderChips(caps!.durations!.map(d => ({ value: d, label: `${d}ث` })), videoDuration, setVideoDuration)}
+              {renderSelect("duration", caps!.durations!.map(d => ({ value: d, label: durationLabel(d) })), videoDuration, setVideoDuration)}
             </div>
           )}
           {showQuality && (
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-muted-foreground/70">الجودة</label>
-              {renderChips(caps!.qualities!.map(q => { const a = checkAccess(null, q, null); return { value: q, label: q.toUpperCase(), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), quality, setQuality)}
+              {renderSelect("quality", caps!.qualities!.map(q => { const a = checkAccess(null, q, null); return { value: q, label: qualityLabel(q), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), quality, setQuality)}
             </div>
           )}
           {showRes && (
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-muted-foreground/70">الدقة</label>
-              {renderChips(caps!.resolutions!.map(r => { const a = checkAccess(r, null, null); return { value: r, label: r.toUpperCase(), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), resolution, setResolution)}
+              {renderSelect("resolution", caps!.resolutions!.map(r => { const a = checkAccess(r, null, null); return { value: r, label: r.toUpperCase(), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), resolution, setResolution)}
             </div>
           )}
           {showAspect && (
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-muted-foreground/70">القياس</label>
-              {renderChips(caps!.aspectRatios!.map(r => ({ value: r, label: r })), aspectRatio, (v) => setAspectRatio(v as AspectRatio))}
+              {renderSelect("aspect", caps!.aspectRatios!.map(r => ({ value: r, label: aspectLabelFn(r) })), aspectRatio, (v) => setAspectRatio(v as AspectRatio))}
             </div>
           )}
           {showUpscale && (
@@ -1575,6 +1691,7 @@ const StudioPage = () => {
   // ── Hidden file inputs ──
   const hiddenInputs = (
     <>
+      <input ref={grokRefInputRef} type="file" accept="image/*" className="hidden" onChange={handleGrokRefUpload} />
       <input ref={fileInputRef} type="file" accept="image/*" multiple={!isImageOnlyTool} className="hidden" onChange={handleImageUpload} />
       <input ref={remixSlotInputRef} type="file" accept="image/*" className="hidden" onChange={handleRemixSlotUpload} />
       <input ref={firstFrameInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFrameUpload("first", e)} />
