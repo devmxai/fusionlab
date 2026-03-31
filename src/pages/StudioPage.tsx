@@ -52,6 +52,7 @@ const categoryTitleMap: Record<string, string> = {
 };
 
 const ratioConfig: Record<string, { label: string; cssAspect: string; placeholderMaxW: string }> = {
+  "auto": { label: "تلقائي",  cssAspect: "1/1",  placeholderMaxW: "min(92vw, 560px)" },
   "1:1":  { label: "1:1",   cssAspect: "1/1",  placeholderMaxW: "min(92vw, 560px)" },
   "3:4":  { label: "3:4",   cssAspect: "3/4",  placeholderMaxW: "min(88vw, 480px)" },
   "4:3":  { label: "4:3",   cssAspect: "4/3",  placeholderMaxW: "min(94vw, 680px)" },
