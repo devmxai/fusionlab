@@ -1386,7 +1386,13 @@ const StudioPage = () => {
                   >
                     {lastFrame ? (
                       <div className="relative w-full h-full">
-                        <img src={lastFrame.preview} alt="الكادر الأخير" className="w-full h-full object-cover rounded-lg cursor-pointer" onClick={() => setFramePreviewUrl(lastFrame.preview)} />
+                        <img src={lastFrame.preview} alt="الكادر الأخير" className="w-full h-full object-cover rounded-lg cursor-pointer" onClick={() => {
+                          if (aspectRatio !== "auto") {
+                            setCropState({ imageSrc: lastFrame.preview, file: lastFrame.file, type: "last" });
+                          } else {
+                            setFramePreviewUrl(lastFrame.preview);
+                          }
+                        }} />
                         <button onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center z-10"><X className="w-3 h-3 text-destructive-foreground" /></button>
                         <button onClick={(e) => { e.stopPropagation(); lastFrameInputRef.current?.click(); }} className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-background/80 border border-border/30 flex items-center justify-center z-10"><Upload className="w-2.5 h-2.5 text-foreground" /></button>
                         <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">الكادر الأخير</span>
