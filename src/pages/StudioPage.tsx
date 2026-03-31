@@ -1605,7 +1605,7 @@ const StudioPage = () => {
             <div>
               {renderSelect("resolution", caps!.resolutions!.map(r => { const a = checkAccess(r, null, null); return { value: r, label: r.toUpperCase(), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), resolution, setResolution)}
             </div>
-          }
+          )}
           {showUpscale && (
             <div>
               {renderChips(caps!.upscaleFactors!.map(f => ({ value: f, label: `${f}x` })), upscaleFactor, setUpscaleFactor)}
