@@ -548,8 +548,21 @@ const StudioPage = () => {
     if (!file) return;
     const preview = URL.createObjectURL(file);
 
-    // Always open crop dialog for reference images too
-    setCropState({ imageSrc: preview, file, type: "ref", refIndex: 0 });
+    if (aspectRatio === "auto") {
+      // Auto mode: use image as-is
+      setRefImages(prev => {
+        const updated = [...prev];
+        if (updated.length > 0) {
+          URL.revokeObjectURL(updated[0].preview);
+          updated[0] = { file, preview };
+        } else {
+          updated.push({ file, preview });
+        }
+        return updated;
+      });
+    } else {
+      setCropState({ imageSrc: preview, file, type: "ref", refIndex: 0 });
+    }
 
     if (grokRefInputRef.current) grokRefInputRef.current.value = "";
   };
