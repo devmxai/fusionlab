@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { tools, buildModelInput, AITool } from "@/data/tools";
 import { getModelCapabilities } from "@/data/model-capabilities";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Image as ImageIcon, Send, X, Sparkles, ChevronDown, Upload, Plus, Music, Video, Lock, Play, Pause, FolderOpen } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, X, Sparkles, ChevronDown, Upload, Plus, Music, Video, Lock, Play, Pause, FolderOpen, SlidersHorizontal } from "lucide-react";
 import MediaPickerDialog from "@/components/MediaPickerDialog";
 import { uploadFileBase64 } from "@/lib/kie-ai";
 import { supabase } from "@/integrations/supabase/client";
