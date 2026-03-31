@@ -101,7 +101,9 @@ export default function CropDialog({ open, imageSrc, aspectRatio, onConfirm, onC
           </div>
         </div>
         <div className="flex gap-2 p-4 pt-2 justify-start">
-          <Button onClick={handleConfirm} size="sm">تأكيد القص</Button>
+          <Button onClick={handleConfirm} size="sm" disabled={!croppedAreaPixels || isConfirming}>
+            {isConfirming ? "جاري القص..." : "تأكيد القص"}
+          </Button>
           <Button variant="outline" size="sm" onClick={onCancel}>إلغاء</Button>
         </div>
       </DialogContent>
