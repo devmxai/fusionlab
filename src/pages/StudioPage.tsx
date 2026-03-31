@@ -972,48 +972,89 @@ const StudioPage = () => {
     setViewerOpen(true);
   };
 
-  // ── Dropdown Button Component ──
-  const DropdownBtn = ({ id, label, value, hasValue }: { id: string; label: string; value: string; hasValue: boolean }) => (
-    <button
-      onClick={() => {
-        if (openMenu === id) {
-          setOpenMenu(null);
-        } else {
-          setOpenMenu(id);
-          if (id === "model") setModelSubPage(null);
-        }
-      }}
-      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border transition-all duration-200 ${
-        hasValue
-          ? "bg-primary/10 border-primary/50"
-          : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"
-      }`}
-    >
-      <span className={`text-xs font-bold truncate max-w-[110px] ${hasValue ? "text-primary" : "text-foreground"}`}>
-        {hasValue ? value : label}
-      </span>
-      <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${openMenu === id ? "rotate-180" : ""}`} />
-    </button>
-  );
+  // ── Model Selector Content (portalized via Popover/Drawer) ──
+  const renderModelSelectorContent = () => {
+    const groups: { provider: string; tools: AITool[] }[] = [];
+    categoryTools.forEach((t) => {
+      const existing = groups.find((g) => g.provider === t.provider);
+      if (existing) existing.tools.push(t);
+      else groups.push({ provider: t.provider, tools: [t] });
+    });
 
-  // ── Dropdown Menu Component ──
-  const DropdownMenu = ({ id, children, minW = "min-w-[120px]" }: { id: string; children: React.ReactNode; minW?: string }) => {
-    if (openMenu !== id) return null;
+    if (modelSubPage) {
+      const group = groups.find((g) => g.provider === modelSubPage);
+      if (!group) return null;
+      return (
+        <div className="p-2">
+          <button onClick={() => setModelSubPage(null)}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-right hover:bg-secondary/40 transition-colors mb-1 flex-row-reverse">
+            <ArrowLeft className="w-4 h-4 text-muted-foreground rotate-180" />
+            <span className="text-xs font-bold text-primary flex-1 text-right">{group.provider}</span>
+          </button>
+          <div className="h-px bg-border/30 mx-2 mb-1" />
+          <div className="space-y-0.5">
+            {group.tools.map((t) => (
+              <button key={t.id}
+                onClick={() => { handleSelectModel(t); setModelSubPage(null); setModelSelectorOpen(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right transition-colors ${
+                  selectedTool?.id === t.id ? "bg-primary/10" : "hover:bg-secondary/40"
+                }`}>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-semibold truncate ${selectedTool?.id === t.id ? "text-primary" : "text-foreground"}`}>{t.title}</p>
+                </div>
+                {t.isPro && <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-primary/15 text-primary shrink-0">PRO</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div
-        className={`absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] ${minW}`}
-      >
-        <div className="max-h-72 overflow-y-auto p-1.5 scrollbar-hide">{children}</div>
+      <div className="p-2 space-y-0.5">
+        {groups.map((group) => {
+          if (group.tools.length === 1) {
+            const t = group.tools[0];
+            return (
+              <button key={t.id}
+                onClick={() => { handleSelectModel(t); setModelSelectorOpen(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right transition-colors ${
+                  selectedTool?.id === t.id ? "bg-primary/10" : "hover:bg-secondary/40"
+                }`}>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-semibold truncate ${selectedTool?.id === t.id ? "text-primary" : "text-foreground"}`}>{t.title}</p>
+                </div>
+                {t.isPro && <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-primary/15 text-primary shrink-0">PRO</span>}
+              </button>
+            );
+          }
+          const hasSelectedInGroup = group.tools.some((t) => selectedTool?.id === t.id);
+          return (
+            <button key={group.provider}
+              onClick={() => setModelSubPage(group.provider)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right transition-colors ${
+                hasSelectedInGroup ? "bg-primary/5" : "hover:bg-secondary/40"
+              }`}>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-bold truncate ${hasSelectedInGroup ? "text-primary" : "text-foreground"}`}>{group.provider}</p>
+              </div>
+              <ChevronDown className="w-4 h-4 text-muted-foreground rotate-90" />
+            </button>
+          );
+        })}
       </div>
     );
   };
 
-  const DropdownItem = ({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: React.ReactNode }) => (
-    <button onClick={onClick}
-      className={`w-full px-3.5 py-2.5 rounded-lg text-right text-sm font-semibold transition-colors ${
-        selected ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary/50"
-      }`}
-    >{children}</button>
+  const modelTriggerBtn = (
+    <button className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border transition-all duration-200 ${
+      selectedTool ? "bg-primary/10 border-primary/50" : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"
+    }`}>
+      <span className={`text-xs font-bold truncate max-w-[110px] ${selectedTool ? "text-primary" : "text-foreground"}`}>
+        {selectedTool?.title || "اختر النموذج"}
+      </span>
+      <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${modelSelectorOpen ? "rotate-180" : ""}`} />
+    </button>
   );
 
   const renderCardContent = () => {
