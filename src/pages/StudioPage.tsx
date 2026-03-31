@@ -1360,7 +1360,13 @@ const StudioPage = () => {
                 >
                   {firstFrame ? (
                     <div className="relative w-full h-full">
-                      <img src={firstFrame.preview} alt="الكادر الأول" className="w-full h-full object-cover rounded-lg cursor-pointer" onClick={() => setFramePreviewUrl(firstFrame.preview)} />
+                      <img src={firstFrame.preview} alt="الكادر الأول" className="w-full h-full object-cover rounded-lg cursor-pointer" onClick={() => {
+                        if (aspectRatio !== "auto") {
+                          setCropState({ imageSrc: firstFrame.preview, file: firstFrame.file, type: "first" });
+                        } else {
+                          setFramePreviewUrl(firstFrame.preview);
+                        }
+                      }} />
                       <button onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center z-10"><X className="w-3 h-3 text-destructive-foreground" /></button>
                       <button onClick={(e) => { e.stopPropagation(); firstFrameInputRef.current?.click(); }} className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-background/80 border border-border/30 flex items-center justify-center z-10"><Upload className="w-2.5 h-2.5 text-foreground" /></button>
                       <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">الكادر الأول</span>
