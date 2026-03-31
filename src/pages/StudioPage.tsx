@@ -17,7 +17,7 @@ import CircularProgress from "@/components/CircularProgress";
 import ImageViewer from "@/components/ImageViewer";
 import { usePricing } from "@/hooks/use-pricing";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import CropDialog from "@/components/studio/CropDialog";
 import { Textarea } from "@/components/ui/textarea";
