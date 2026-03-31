@@ -1368,58 +1368,79 @@ const StudioPage = () => {
           {/* Frame upload boxes for first/last frame video models */}
           {hasFrameMode && selectedTool && (
             <div className="flex gap-2">
-              <button
-                onClick={() => firstFrameInputRef.current?.click()}
+              <div
+                onClick={() => !firstFrame && firstFrameInputRef.current?.click()}
                 className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
-                  firstFrame ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
+                  firstFrame ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30 cursor-pointer"
                 }`}
                 style={{ minHeight: "56px" }}
               >
                 {firstFrame ? (
                   <div className="relative w-full h-14">
-                    <img src={firstFrame.preview} alt="First frame" className="w-full h-full object-cover rounded-lg" />
+                    <img src={firstFrame.preview} alt="الكادر الأول" className="w-full h-full object-cover rounded-lg cursor-pointer"
+                      onClick={() => setFramePreviewUrl(firstFrame.preview)} />
                     <button
                       onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }}
-                      className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                      className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center z-10"
                     >
                       <X className="w-2.5 h-2.5 text-destructive-foreground" />
                     </button>
-                    <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">First Frame</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); firstFrameInputRef.current?.click(); }}
+                      className="absolute top-1 right-1 w-4 h-4 rounded-full bg-background/80 border border-border/30 flex items-center justify-center z-10 hover:bg-background"
+                    >
+                      <Upload className="w-2 h-2 text-foreground" />
+                    </button>
+                    <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">الكادر الأول</span>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center gap-1 py-2">
                     <Upload className="w-4 h-4 text-muted-foreground/60" />
-                    <span className="text-[9px] font-semibold text-muted-foreground/70">First Frame</span>
+                    <span className="text-[9px] font-semibold text-muted-foreground/70">الكادر الأول</span>
                   </div>
                 )}
-              </button>
+              </div>
               {frameMode === "first-last" && (
-                <button
-                  onClick={() => lastFrameInputRef.current?.click()}
+                <div
+                  onClick={() => !lastFrame && lastFrameInputRef.current?.click()}
                   className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
-                    lastFrame ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
+                    lastFrame ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30 cursor-pointer"
                   }`}
                   style={{ minHeight: "56px" }}
                 >
                   {lastFrame ? (
                     <div className="relative w-full h-14">
-                      <img src={lastFrame.preview} alt="Last frame" className="w-full h-full object-cover rounded-lg" />
+                      <img src={lastFrame.preview} alt="الكادر الأخير" className="w-full h-full object-cover rounded-lg cursor-pointer"
+                        onClick={() => setFramePreviewUrl(lastFrame.preview)} />
                       <button
                         onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }}
-                        className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+                        className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center z-10"
                       >
                         <X className="w-2.5 h-2.5 text-destructive-foreground" />
                       </button>
-                      <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">Last Frame</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); lastFrameInputRef.current?.click(); }}
+                        className="absolute top-1 right-1 w-4 h-4 rounded-full bg-background/80 border border-border/30 flex items-center justify-center z-10 hover:bg-background"
+                      >
+                        <Upload className="w-2 h-2 text-foreground" />
+                      </button>
+                      <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">الكادر الأخير</span>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center gap-1 py-2">
                       <Upload className="w-4 h-4 text-muted-foreground/60" />
-                      <span className="text-[9px] font-semibold text-muted-foreground/70">Last Frame</span>
+                      <span className="text-[9px] font-semibold text-muted-foreground/70">الكادر الأخير</span>
                     </div>
                   )}
-                </button>
+                </div>
               )}
+            </div>
+          )}
+
+          {/* Grok Video reference images label */}
+          {isGrokVideo && isVideoTool && !hasFrameMode && refImages.length > 0 && (
+            <div className="flex items-center gap-1 px-1">
+              <span className="text-[9px] text-muted-foreground/70 font-semibold">صور مرجعية ({refImages.length}/{caps?.maxImages ?? 7})</span>
             </div>
           )}
 
