@@ -219,9 +219,11 @@ const StudioPage = () => {
       const target = e.target as Node;
       const inHeader = headerRef.current?.contains(target);
       const inBottomBar = bottomBarRef.current?.contains(target);
-      if (!inHeader && !inBottomBar) {
+      // Don't interfere with portalized popover/drawer clicks (they live outside headerRef)
+      const inPortal = (target as Element)?.closest?.("[data-radix-popper-content-wrapper], [vaul-drawer]");
+      if (!inHeader && !inBottomBar && !inPortal) {
         setOpenMenu(null);
-        setModelSubPage(null);
+        // Don't reset modelSubPage here — it's managed by the Popover/Drawer onOpenChange
       }
     };
     document.addEventListener("mousedown", handleClick);
