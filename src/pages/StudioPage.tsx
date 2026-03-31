@@ -1192,226 +1192,72 @@ const StudioPage = () => {
       <header ref={headerRef} className="relative shrink-0 bg-card/90 backdrop-blur-xl border-b border-border/30 z-[120] rounded-b-2xl shadow-lg">
         <div className="flex items-center gap-2 px-3 py-2.5 w-full flex-row-reverse relative">
           {/* Back button - pinned to left edge */}
-          <button
-            onClick={() => navigate("/")}
-            className="shrink-0 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all absolute left-3 top-1/2 -translate-y-1/2"
-          >
+          <button onClick={() => navigate("/")}
+            className="shrink-0 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all absolute left-3 top-1/2 -translate-y-1/2">
             <ArrowLeft className="w-5 h-5" />
           </button>
 
           <div className="flex-1" />
 
-          {/* Settings dropdowns - only show after model is selected */}
+          {/* Settings dropdowns - portalized via Popover/Drawer */}
           {selectedTool && (
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Upscale Factor */}
-                {showUpscale && (
-                  <div className="relative shrink-0">
-                    <DropdownBtn id="upscale" label="التكبير" value={`${upscaleFactor}x`} hasValue={!!selectedTool} />
-                    <DropdownMenu id="upscale">
-                      {caps!.upscaleFactors!.map((f) => (
-                        <DropdownItem key={f} selected={upscaleFactor === f} onClick={() => { setUpscaleFactor(f); setOpenMenu(null); }}>
-                          {f}x
-                        </DropdownItem>
-                      ))}
-                    </DropdownMenu>
-                  </div>
-                )}
+            <div className="flex items-center gap-2 flex-wrap">
+              {showUpscale && (
+                <StudioSelect label="التكبير" displayValue={`${upscaleFactor}x`} selected={upscaleFactor}
+                  items={caps!.upscaleFactors!.map(f => ({ value: f, label: `${f}x` }))}
+                  onSelect={setUpscaleFactor} />
+              )}
+              {showDuration && (
+                <StudioSelect label="المدة" displayValue={`${videoDuration} ثانية`} selected={videoDuration}
+                  items={caps!.durations!.map(d => ({ value: d, label: `${d} ثانية` }))}
+                  onSelect={setVideoDuration} />
+              )}
+              {showQuality && (
+                <StudioSelect label="الجودة" displayValue={quality.toUpperCase()} selected={quality}
+                  items={caps!.qualities!.map(q => {
+                    const access = checkAccess(null, q, null);
+                    return { value: q, label: q.toUpperCase(), locked: !access.available, lockLabel: access.requiredPlanLabel };
+                  })}
+                  onSelect={setQuality} />
+              )}
+              {showRes && (
+                <StudioSelect label="الدقة" displayValue={resolution.toUpperCase()} selected={resolution}
+                  items={caps!.resolutions!.map(r => {
+                    const access = checkAccess(r, null, null);
+                    return { value: r, label: r.toUpperCase(), locked: !access.available, lockLabel: access.requiredPlanLabel };
+                  })}
+                  onSelect={setResolution} />
+              )}
+              {showAspect && (
+                <StudioSelect label="القياس" displayValue={aspectRatio} selected={aspectRatio}
+                  items={caps!.aspectRatios!.map(r => ({ value: r, label: r }))}
+                  onSelect={(v) => setAspectRatio(v as AspectRatio)} />
+              )}
+            </div>
+          )}
 
-                {/* Duration */}
-                {showDuration && (
-                  <div className="relative shrink-0">
-                    <DropdownBtn id="duration" label="المدة" value={`${videoDuration} ثانية`} hasValue={!!selectedTool} />
-                    <DropdownMenu id="duration">
-                      {caps!.durations!.map((d) => (
-                        <DropdownItem key={d} selected={videoDuration === d} onClick={() => { setVideoDuration(d); setOpenMenu(null); }}>
-                          {d} ثانية
-                        </DropdownItem>
-                      ))}
-                    </DropdownMenu>
-                  </div>
-                )}
-
-                {/* Quality / Mode with Plan Gating */}
-                {showQuality && (
-                  <div className="relative shrink-0">
-                    <DropdownBtn id="quality" label="الجودة" value={quality.toUpperCase()} hasValue={!!selectedTool} />
-                    <DropdownMenu id="quality">
-                      {caps!.qualities!.map((q) => {
-                        const access = checkAccess(null, q, null);
-                        const locked = !access.available;
-                        return (
-                          <button key={q}
-                            disabled={locked}
-                            onClick={() => { if (!locked) { setQuality(q); setOpenMenu(null); } }}
-                            className={`w-full px-3.5 py-2.5 rounded-lg text-right text-sm font-semibold transition-colors flex items-center justify-between gap-2 ${
-                              locked ? "opacity-50 cursor-not-allowed text-muted-foreground"
-                                : quality === q ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary/50"
-                            }`}
-                          >
-                            <span>{q.toUpperCase()}</span>
-                            {locked && (
-                              <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
-                                <Lock className="w-2.5 h-2.5" />{access.requiredPlanLabel}
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </DropdownMenu>
-                  </div>
-                )}
-
-                {/* Resolution with Plan Gating */}
-                {showRes && (
-                  <div className="relative shrink-0">
-                    <DropdownBtn id="resolution" label="الدقة" value={resolution.toUpperCase()} hasValue={!!selectedTool} />
-                    <DropdownMenu id="resolution">
-                      {caps!.resolutions!.map((r) => {
-                        const access = checkAccess(r, null, null);
-                        const locked = !access.available;
-                        return (
-                          <button key={r}
-                            disabled={locked}
-                            onClick={() => { if (!locked) { setResolution(r); setOpenMenu(null); } }}
-                            className={`w-full px-3.5 py-2.5 rounded-lg text-right text-sm font-semibold transition-colors flex items-center justify-between gap-2 ${
-                              locked
-                                ? "opacity-50 cursor-not-allowed text-muted-foreground"
-                                : resolution === r
-                                ? "bg-primary/10 text-primary"
-                                : "text-foreground hover:bg-secondary/50"
-                            }`}
-                          >
-                            <span>{r.toUpperCase()}</span>
-                            {locked && (
-                              <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
-                                <Lock className="w-2.5 h-2.5" />
-                                {access.requiredPlanLabel}
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </DropdownMenu>
-                  </div>
-                )}
-
-                {/* Aspect Ratio */}
-                {showAspect && (
-                  <div className="relative shrink-0">
-                    <DropdownBtn id="aspect" label="القياس" value={aspectRatio} hasValue={!!selectedTool} />
-                    <DropdownMenu id="aspect" minW="min-w-[90px]">
-                      {caps!.aspectRatios!.map((r) => (
-                        <DropdownItem key={r} selected={aspectRatio === r} onClick={() => { setAspectRatio(r as AspectRatio); setOpenMenu(null); }}>
-                          {r}
-                        </DropdownItem>
-                      ))}
-                    </DropdownMenu>
-                  </div>
-                )}
-              </div>
-            )}
-
-          {/* Model dropdown - hidden for shoots */}
+          {/* Model selector - portalized */}
           {!isShootsTool && (
-          <div className="relative shrink-0">
-            <DropdownBtn id="model" label="النموذج" value={selectedTool?.title || ""} hasValue={!!selectedTool} />
-            {openMenu === "model" && (
-              <motion.div
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
-                className="absolute top-full right-0 mt-2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-2xl shadow-2xl overflow-hidden z-[220] min-w-[260px] w-[280px]"
-              >
-                <div className="max-h-[380px] overflow-y-auto">
-                  {(() => {
-                    // Group tools by provider
-                    const groups: { provider: string; tools: AITool[] }[] = [];
-                    categoryTools.forEach((t) => {
-                      const existing = groups.find((g) => g.provider === t.provider);
-                      if (existing) existing.tools.push(t);
-                      else groups.push({ provider: t.provider, tools: [t] });
-                    });
-
-                    // Sub-page mode: showing models of a specific provider
-                    if (modelSubPage) {
-                      const group = groups.find((g) => g.provider === modelSubPage);
-                      if (!group) return null;
-                      return (
-                        <div className="p-2">
-                          {/* Sub-page header with back */}
-                          <button
-                            onClick={() => setModelSubPage(null)}
-                            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-right hover:bg-secondary/40 transition-colors mb-1 flex-row-reverse"
-                          >
-                            <ArrowLeft className="w-4 h-4 text-muted-foreground rotate-180" />
-                            <span className="text-xs font-bold text-primary flex-1 text-right">{group.provider}</span>
-                          </button>
-                          <div className="h-px bg-border/30 mx-2 mb-1" />
-                          <div className="space-y-0.5">
-                            {group.tools.map((t) => (
-                              <button key={t.id}
-                                onClick={() => { handleSelectModel(t); setModelSubPage(null); }}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right transition-colors ${
-                                  tool.id === t.id ? "bg-primary/10" : "hover:bg-secondary/40"
-                                }`}
-                              >
-                                <div className="flex-1 min-w-0">
-                                  <p className={`text-sm font-semibold truncate ${tool.id === t.id ? "text-primary" : "text-foreground"}`}>{t.title}</p>
-                                </div>
-                                {t.isPro && <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-primary/15 text-primary shrink-0">PRO</span>}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    // Main page: list providers
-                    return (
-                      <div className="p-2 space-y-0.5">
-                        {groups.map((group) => {
-                          if (group.tools.length === 1) {
-                            const t = group.tools[0];
-                            return (
-                              <button key={t.id}
-                                onClick={() => handleSelectModel(t)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right transition-colors ${
-                                  tool.id === t.id ? "bg-primary/10" : "hover:bg-secondary/40"
-                                }`}
-                              >
-                                <div className="flex-1 min-w-0">
-                                  <p className={`text-sm font-semibold truncate ${tool.id === t.id ? "text-primary" : "text-foreground"}`}>{t.title}</p>
-                                </div>
-                                {t.isPro && <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-primary/15 text-primary shrink-0">PRO</span>}
-                              </button>
-                            );
-                          }
-
-                          // Multi-model provider: navigate to sub-page on click
-                          const hasSelectedInGroup = group.tools.some((t) => tool.id === t.id);
-                          return (
-                            <button key={group.provider}
-                              onClick={() => setModelSubPage(group.provider)}
-                              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right transition-colors ${
-                                hasSelectedInGroup ? "bg-primary/5" : "hover:bg-secondary/40"
-                              }`}
-                            >
-                              <div className="flex-1 min-w-0">
-                                <p className={`text-sm font-bold truncate ${hasSelectedInGroup ? "text-primary" : "text-foreground"}`}>{group.provider}</p>
-                                
-                              </div>
-                              <ChevronDown className="w-4 h-4 text-muted-foreground rotate-90" />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
-                </div>
-              </motion.div>
-            )}
-          </div>
+            isMobile ? (
+              <Drawer open={modelSelectorOpen} onOpenChange={(v) => { setModelSelectorOpen(v); if (!v) setModelSubPage(null); }}>
+                <DrawerTrigger asChild>{modelTriggerBtn}</DrawerTrigger>
+                <DrawerContent>
+                  <div className="px-2 py-3 pb-8 max-h-[60vh] overflow-y-auto" dir="rtl">
+                    <p className="text-sm font-bold text-foreground mb-2 px-2 text-right">اختر النموذج</p>
+                    {renderModelSelectorContent()}
+                  </div>
+                </DrawerContent>
+              </Drawer>
+            ) : (
+              <Popover open={modelSelectorOpen} onOpenChange={(v) => { setModelSelectorOpen(v); if (!v) setModelSubPage(null); }}>
+                <PopoverTrigger asChild>{modelTriggerBtn}</PopoverTrigger>
+                <PopoverContent align="end" sideOffset={8} className="w-[280px] p-0 bg-card/95 backdrop-blur-xl border-primary/30 z-[220]" dir="rtl">
+                  <div className="max-h-[380px] overflow-y-auto">
+                    {renderModelSelectorContent()}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )
           )}
         </div>
       </header>
