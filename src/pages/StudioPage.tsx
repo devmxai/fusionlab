@@ -1189,669 +1189,567 @@ const StudioPage = () => {
   const showQuality = !isShootsTool && !isGrokVideo && !!(selectedTool && caps?.qualities?.length);
   const showUpscale = !isShootsTool && !!(selectedTool && caps?.upscaleFactors?.length);
 
-  return (
-    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden" dir="rtl">
-      {/* ── Header / App Bar ── */}
-      <header ref={headerRef} className="relative shrink-0 bg-card/90 backdrop-blur-xl border-b border-border/30 z-[120] rounded-b-2xl shadow-lg">
-        <div className="flex items-center gap-2 px-3 py-2.5 w-full flex-row-reverse relative">
-          {/* Back button - pinned to left edge */}
-          <button onClick={() => navigate("/")}
-            className="shrink-0 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all absolute left-3 top-1/2 -translate-y-1/2">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-
-          <div className="flex-1" />
-
-          {/* Settings dropdowns - portalized via Popover/Drawer */}
-          {selectedTool && (
-            <div className="flex items-center gap-2 flex-wrap">
-              {showUpscale && (
-                <StudioSelect label="التكبير" displayValue={`${upscaleFactor}x`} selected={upscaleFactor}
-                  items={caps!.upscaleFactors!.map(f => ({ value: f, label: `${f}x` }))}
-                  onSelect={setUpscaleFactor} />
-              )}
-              {showDuration && (
-                <StudioSelect label="المدة" displayValue={`${videoDuration} ثانية`} selected={videoDuration}
-                  items={caps!.durations!.map(d => ({ value: d, label: `${d} ثانية` }))}
-                  onSelect={setVideoDuration} />
-              )}
-              {showQuality && (
-                <StudioSelect label="الجودة" displayValue={quality.toUpperCase()} selected={quality}
-                  items={caps!.qualities!.map(q => {
-                    const access = checkAccess(null, q, null);
-                    return { value: q, label: q.toUpperCase(), locked: !access.available, lockLabel: access.requiredPlanLabel };
-                  })}
-                  onSelect={setQuality} />
-              )}
-              {showRes && (
-                <StudioSelect label="الدقة" displayValue={resolution.toUpperCase()} selected={resolution}
-                  items={caps!.resolutions!.map(r => {
-                    const access = checkAccess(r, null, null);
-                    return { value: r, label: r.toUpperCase(), locked: !access.available, lockLabel: access.requiredPlanLabel };
-                  })}
-                  onSelect={setResolution} />
-              )}
-              {showAspect && (
-                <StudioSelect label="القياس" displayValue={aspectRatio} selected={aspectRatio}
-                  items={caps!.aspectRatios!.map(r => ({ value: r, label: r }))}
-                  onSelect={(v) => setAspectRatio(v as AspectRatio)} />
-              )}
-            </div>
-          )}
-
-          {/* Model selector - portalized */}
-          {!isShootsTool && (
-            isMobile ? (
-              <Drawer open={modelSelectorOpen} onOpenChange={(v) => { setModelSelectorOpen(v); if (!v) setModelSubPage(null); }}>
-                <DrawerTrigger asChild>{modelTriggerBtn}</DrawerTrigger>
-                <DrawerContent>
-                  <div className="px-2 py-3 pb-8 max-h-[60vh] overflow-y-auto" dir="rtl">
-                    <p className="text-sm font-bold text-foreground mb-2 px-2 text-right">اختر النموذج</p>
-                    {renderModelSelectorContent()}
-                  </div>
-                </DrawerContent>
-              </Drawer>
-            ) : (
-              <Popover open={modelSelectorOpen} onOpenChange={(v) => { setModelSelectorOpen(v); if (!v) setModelSubPage(null); }}>
-                <PopoverTrigger asChild>{modelTriggerBtn}</PopoverTrigger>
-                <PopoverContent align="end" sideOffset={8} className="w-[280px] p-0 bg-card/95 backdrop-blur-xl border-primary/30 z-[220]" dir="rtl">
-                  <div className="max-h-[380px] overflow-y-auto">
-                    {renderModelSelectorContent()}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )
-          )}
-        </div>
-      </header>
-
-      {/* ── Center area ── */}
-      <div className="relative z-0 flex-1 flex flex-col items-center justify-center px-4 md:px-8 min-h-0">
-        <motion.div
-          layout
-          transition={{ duration: 0.28, ease: "easeOut" }}
-          className={`relative rounded-2xl overflow-hidden flex items-center justify-center border ${
-            resultUrls.length > 0 && !loading ? "border-transparent" : loading ? "border-primary/30" : "border-transparent"
+  // ── Setting chips helper ──
+  const renderChips = (
+    items: { value: string; label: string; locked?: boolean; lockLabel?: string }[],
+    selected: string,
+    onSelect: (v: string) => void
+  ) => (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((item) => (
+        <button
+          key={item.value}
+          disabled={item.locked}
+          onClick={() => !item.locked && onSelect(item.value)}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            item.locked
+              ? "opacity-40 cursor-not-allowed bg-secondary/30 text-muted-foreground"
+              : selected === item.value
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "bg-secondary/60 text-foreground hover:bg-secondary"
           }`}
-          style={shootsPlaceholderStyle || (() => {
-            const hasResult = resultUrls.length > 0 && !loading;
-            const useNatural = hasResult && resultNaturalRatio;
-            return {
-              width: "100%",
-              maxWidth: useNatural ? "min(96vw, 820px)" : currentRatio.placeholderMaxW,
-              aspectRatio: useNatural ? resultNaturalRatio : currentRatio.cssAspect,
-              maxHeight: "calc(100dvh - 180px)",
-              background: hasResult ? "transparent" : undefined,
-            };
-          })()}
         >
-          {resultUrls.length === 0 && !loading && (
-            <div className="absolute inset-0 shimmer-effect opacity-[0.06] pointer-events-none" />
-          )}
-          {loading && (
-            <>
-              <div className="absolute inset-0 shimmer-effect opacity-[0.15] pointer-events-none" />
-              <div className="absolute inset-0 bg-background/65 pointer-events-none" />
-            </>
-          )}
-          {(resultUrls.length === 0 || loading) && (
-            <div className="absolute inset-0 bg-secondary/20 pointer-events-none" />
-          )}
-          <div className="relative z-10 w-full h-full flex items-center justify-center p-2">
-            <AnimatePresence mode="wait" initial={false}>
-              {renderCardContent()}
-            </AnimatePresence>
-          </div>
-        </motion.div>
+          {item.label}
+          {item.locked && <Lock className="w-2.5 h-2.5 inline mr-1" />}
+        </button>
+      ))}
+    </div>
+  );
 
-        {resultUrls.length > 0 && !loading && (
-          <div className="mt-3 flex gap-2">
-            {resultUrls.map((url, i) => (
-              <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                className="text-xs text-primary hover:underline bg-primary/10 px-3 py-1 rounded-full">
-                تحميل {resultUrls.length > 1 ? `${i + 1}` : ""}
-              </a>
-            ))}
-          </div>
-        )}
-      </div>
+  // ── Shared settings content (desktop panel & mobile sheet) ──
+  const renderSettingsContent = () => (
+    <div className="space-y-5">
+      {/* Model Selector */}
+      {!isShootsTool && (
+        <div className="space-y-2">
+          <label className="text-[11px] font-bold text-muted-foreground/70">النموذج</label>
+          <Popover open={modelSelectorOpen} onOpenChange={(v) => { setModelSelectorOpen(v); if (!v) setModelSubPage(null); }}>
+            <PopoverTrigger asChild>
+              <button className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-border/40 bg-secondary/30 hover:bg-secondary/50 transition-all">
+                <span className={`text-sm font-bold truncate ${selectedTool ? "text-primary" : "text-muted-foreground"}`}>
+                  {selectedTool?.title || "اختر النموذج"}
+                </span>
+                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${modelSelectorOpen ? "rotate-180" : ""}`} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" sideOffset={8} className="w-[280px] p-0 bg-card/95 backdrop-blur-xl border-primary/30 z-[300]" dir="rtl">
+              <div className="max-h-[380px] overflow-y-auto">{renderModelSelectorContent()}</div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
 
-      {/* ── Bottom bar ── */}
-      <div ref={bottomBarRef} className="shrink-0 bg-card/90 backdrop-blur-xl border-t border-border/30 px-4 py-3 z-50">
-        <div className="w-full space-y-2">
-          {/* Hidden file inputs */}
-          <input ref={fileInputRef} type="file" accept="image/*" multiple={!isImageOnlyTool} className="hidden" onChange={handleImageUpload} />
-          <input ref={remixSlotInputRef} type="file" accept="image/*" className="hidden" onChange={handleRemixSlotUpload} />
-          <input ref={firstFrameInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFrameUpload("first", e)} />
-          <input ref={lastFrameInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFrameUpload("last", e)} />
-          <input ref={avatarImageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            const objectUrl = URL.createObjectURL(file);
-            if (avatarImage?.preview?.startsWith("blob:")) URL.revokeObjectURL(avatarImage.preview);
-            setAvatarImage({ file, preview: objectUrl, sourceUrl: objectUrl });
-            if (avatarImageInputRef.current) avatarImageInputRef.current.value = "";
-          }} />
-          <input ref={avatarAudioInputRef} type="file" accept="audio/*" className="hidden" onChange={async (e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            const objectUrl = URL.createObjectURL(file);
-            if (avatarAudio?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl);
-            stopAvatarAudioPreview();
-            setAvatarAudio({ file, name: file.name, previewUrl: objectUrl, sourceUrl: objectUrl });
-            const duration = await detectAudioDuration(objectUrl);
-            if (duration !== null) {
-              setMediaDurationSeconds(duration);
-            } else {
-              setMediaDurationSeconds(null);
-              toast.error("تعذر قراءة مدة الملف الصوتي");
-            }
-            if (avatarAudioInputRef.current) avatarAudioInputRef.current.value = "";
-          }} />
-          <input ref={avatarVideoInputRef} type="file" accept="video/*" className="hidden" onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            setAvatarVideo({ file, name: file.name });
-            // Detect video duration for animate models
-            const videoEl = document.createElement("video");
-            videoEl.preload = "metadata";
-            videoEl.src = URL.createObjectURL(file);
-            videoEl.addEventListener("loadedmetadata", () => {
-              if (videoEl.duration && isFinite(videoEl.duration)) {
-                setMediaDurationSeconds(videoEl.duration);
-              }
-              URL.revokeObjectURL(videoEl.src);
-            });
-            videoEl.addEventListener("error", () => {
-              URL.revokeObjectURL(videoEl.src);
-            });
-            if (avatarVideoInputRef.current) avatarVideoInputRef.current.value = "";
-          }} />
-
-          {/* Frame upload boxes for first/last frame video models */}
-          {hasFrameMode && selectedTool && (
-            <div className="flex gap-2">
-              <div
-                onClick={() => !firstFrame && firstFrameInputRef.current?.click()}
-                className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
-                  firstFrame ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30 cursor-pointer"
-                }`}
-                style={{ minHeight: "56px" }}
-              >
-                {firstFrame ? (
-                  <div className="relative w-full h-14">
-                    <img src={firstFrame.preview} alt="الكادر الأول" className="w-full h-full object-cover rounded-lg cursor-pointer"
-                      onClick={() => setFramePreviewUrl(firstFrame.preview)} />
-                    <button
-                      onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }}
-                      className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center z-10"
-                    >
-                      <X className="w-2.5 h-2.5 text-destructive-foreground" />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); firstFrameInputRef.current?.click(); }}
-                      className="absolute top-1 right-1 w-4 h-4 rounded-full bg-background/80 border border-border/30 flex items-center justify-center z-10 hover:bg-background"
-                    >
-                      <Upload className="w-2 h-2 text-foreground" />
-                    </button>
-                    <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">الكادر الأول</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center gap-1 py-2">
-                    <Upload className="w-4 h-4 text-muted-foreground/60" />
-                    <span className="text-[9px] font-semibold text-muted-foreground/70">الكادر الأول</span>
+      {!selectedTool ? (
+        <div className="flex flex-col items-center py-10 gap-2">
+          <Sparkles className="w-6 h-6 text-muted-foreground/30" />
+          <p className="text-xs text-muted-foreground/50">اختر نموذجاً للبدء</p>
+        </div>
+      ) : (
+        <>
+          {/* ── Frame uploads ── */}
+          {hasFrameMode && (
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-muted-foreground/70">
+                {frameMode === "first-last" ? "الإطارات" : "الكادر الأول"}
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <div
+                  onClick={() => !firstFrame && firstFrameInputRef.current?.click()}
+                  className={`relative rounded-xl border-2 border-dashed transition-all overflow-hidden cursor-pointer ${firstFrame ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/20 hover:border-primary/30"}`}
+                  style={{ aspectRatio: "4/3" }}
+                >
+                  {firstFrame ? (
+                    <div className="relative w-full h-full">
+                      <img src={firstFrame.preview} alt="الكادر الأول" className="w-full h-full object-cover rounded-lg cursor-pointer" onClick={() => setFramePreviewUrl(firstFrame.preview)} />
+                      <button onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center z-10"><X className="w-3 h-3 text-destructive-foreground" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); firstFrameInputRef.current?.click(); }} className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-background/80 border border-border/30 flex items-center justify-center z-10"><Upload className="w-2.5 h-2.5 text-foreground" /></button>
+                      <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">الكادر الأول</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-1.5 h-full">
+                      <Upload className="w-5 h-5 text-muted-foreground/50" />
+                      <span className="text-[10px] font-semibold text-muted-foreground/60">الكادر الأول</span>
+                    </div>
+                  )}
+                </div>
+                {frameMode === "first-last" && (
+                  <div
+                    onClick={() => !lastFrame && lastFrameInputRef.current?.click()}
+                    className={`relative rounded-xl border-2 border-dashed transition-all overflow-hidden cursor-pointer ${lastFrame ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/20 hover:border-primary/30"}`}
+                    style={{ aspectRatio: "4/3" }}
+                  >
+                    {lastFrame ? (
+                      <div className="relative w-full h-full">
+                        <img src={lastFrame.preview} alt="الكادر الأخير" className="w-full h-full object-cover rounded-lg cursor-pointer" onClick={() => setFramePreviewUrl(lastFrame.preview)} />
+                        <button onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center z-10"><X className="w-3 h-3 text-destructive-foreground" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); lastFrameInputRef.current?.click(); }} className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-background/80 border border-border/30 flex items-center justify-center z-10"><Upload className="w-2.5 h-2.5 text-foreground" /></button>
+                        <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">الكادر الأخير</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-1.5 h-full">
+                        <Upload className="w-5 h-5 text-muted-foreground/50" />
+                        <span className="text-[10px] font-semibold text-muted-foreground/60">الكادر الأخير</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-              {frameMode === "first-last" && (
-                <div
-                  onClick={() => !lastFrame && lastFrameInputRef.current?.click()}
-                  className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
-                    lastFrame ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30 cursor-pointer"
-                  }`}
-                  style={{ minHeight: "56px" }}
-                >
-                  {lastFrame ? (
-                    <div className="relative w-full h-14">
-                      <img src={lastFrame.preview} alt="الكادر الأخير" className="w-full h-full object-cover rounded-lg cursor-pointer"
-                        onClick={() => setFramePreviewUrl(lastFrame.preview)} />
-                      <button
-                        onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }}
-                        className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center z-10"
-                      >
-                        <X className="w-2.5 h-2.5 text-destructive-foreground" />
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); lastFrameInputRef.current?.click(); }}
-                        className="absolute top-1 right-1 w-4 h-4 rounded-full bg-background/80 border border-border/30 flex items-center justify-center z-10 hover:bg-background"
-                      >
-                        <Upload className="w-2 h-2 text-foreground" />
-                      </button>
-                      <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">الكادر الأخير</span>
+            </div>
+          )}
+
+          {/* ── Reference images (Grok Video & others with maxImages) ── */}
+          {!hasFrameMode && !isRemixTool && !isAvatarTool && !isImageOnlyTool && !isShootsTool && (caps?.maxImages ?? 0) > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold text-muted-foreground/70">صور مرجعية</label>
+                {refImages.length > 0 && <span className="text-[10px] text-muted-foreground">{refImages.length}/{caps?.maxImages ?? 3}</span>}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {refImages.map((img, i) => (
+                  <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-border/50">
+                    <img src={img.preview} alt="" className="w-full h-full object-cover" />
+                    <button onClick={() => removeImage(i)} className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"><X className="w-2.5 h-2.5 text-destructive-foreground" /></button>
+                  </div>
+                ))}
+                {refImages.length < (caps?.maxImages ?? 3) && (
+                  <button onClick={() => fileInputRef.current?.click()} className="w-16 h-16 rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex items-center justify-center transition-all"><Plus className="w-5 h-5 text-muted-foreground/50" /></button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Remix image slots ── */}
+          {isRemixTool && !hasFrameMode && (
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-muted-foreground/70">الصور</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => { setRemixUploadSlot(0); remixSlotInputRef.current?.click(); }}
+                  className={`relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${refImages[0] ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/20 hover:border-primary/30"}`}
+                  style={{ aspectRatio: "4/3" }}>
+                  {refImages[0] ? (
+                    <div className="relative w-full h-full">
+                      <img src={refImages[0].preview} alt="صورة 1" className="w-full h-full object-cover rounded-lg" />
+                      <button onClick={(e) => { e.stopPropagation(); removeImage(0); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"><X className="w-3 h-3 text-destructive-foreground" /></button>
+                      <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">صورة 1</span>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center gap-1 py-2">
-                      <Upload className="w-4 h-4 text-muted-foreground/60" />
-                      <span className="text-[9px] font-semibold text-muted-foreground/70">الكادر الأخير</span>
-                    </div>
+                    <div className="flex flex-col items-center justify-center gap-1.5 h-full"><Upload className="w-5 h-5 text-muted-foreground/50" /><span className="text-[10px] font-semibold text-muted-foreground/60">صورة 1</span></div>
                   )}
-                </div>
-              )}
+                </button>
+                {remixMaxImages >= 2 && (
+                  <button onClick={() => { setRemixUploadSlot(1); remixSlotInputRef.current?.click(); }}
+                    className={`relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${refImages[1] ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/20 hover:border-primary/30"}`}
+                    style={{ aspectRatio: "4/3" }}>
+                    {refImages[1] ? (
+                      <div className="relative w-full h-full">
+                        <img src={refImages[1].preview} alt="صورة 2" className="w-full h-full object-cover rounded-lg" />
+                        <button onClick={(e) => { e.stopPropagation(); removeImage(1); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"><X className="w-3 h-3 text-destructive-foreground" /></button>
+                        <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">صورة 2</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-1.5 h-full"><Upload className="w-5 h-5 text-muted-foreground/50" /><span className="text-[10px] font-semibold text-muted-foreground/60">صورة 2</span></div>
+                    )}
+                  </button>
+                )}
+                {remixMaxImages > 2 && refImages.length >= 2 && refImages.length < remixMaxImages && (
+                  <button onClick={() => { setRemixUploadSlot(refImages.length); remixSlotInputRef.current?.click(); }}
+                    className="rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex flex-col items-center justify-center gap-1 transition-all"
+                    style={{ aspectRatio: "4/3" }}>
+                    <Plus className="w-5 h-5 text-muted-foreground/50" />
+                    <span className="text-[9px] text-muted-foreground/60">{refImages.length}/{remixMaxImages}</span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Grok Video reference images label */}
-          {isGrokVideo && isVideoTool && !hasFrameMode && refImages.length > 0 && (
-            <div className="flex items-center gap-1 px-1">
-              <span className="text-[9px] text-muted-foreground/70 font-semibold">صور مرجعية ({refImages.length}/{caps?.maxImages ?? 7})</span>
-            </div>
-          )}
-
-          {/* ── Remix image strip (like frame boxes) ── */}
-          {isRemixTool && selectedTool && !hasFrameMode && (
-            <div className="flex gap-2">
-              {/* Slot 1: الصورة الأساسية - always visible */}
-              <button
-                onClick={() => { setRemixUploadSlot(0); remixSlotInputRef.current?.click(); }}
-                className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
-                  refImages[0] ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
-                }`}
-                style={{ minHeight: "56px" }}
-              >
-                {refImages[0] ? (
-                  <div className="relative w-full h-14">
-                    <img src={refImages[0].preview} alt="صورة 1" className="w-full h-full object-cover rounded-lg" />
-                    <button
-                      onClick={(e) => { e.stopPropagation(); removeImage(0); }}
-                      className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
-                    >
-                      <X className="w-2.5 h-2.5 text-destructive-foreground" />
-                    </button>
-                    <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">صورة 1</span>
+          {/* ── Avatar uploads ── */}
+          {isAvatarTool && (
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-muted-foreground/70">الملفات</label>
+              <div className="flex gap-2 items-stretch">
+                {avatarImage ? (
+                  <div className="relative w-20 h-20 rounded-xl border-2 border-primary/40 bg-primary/5 overflow-hidden shrink-0">
+                    <img src={avatarImage.preview} alt="Avatar" className="w-full h-full object-cover" />
+                    <button onClick={() => { if (avatarImage.preview.startsWith("blob:")) URL.revokeObjectURL(avatarImage.preview); setAvatarImage(null); }}
+                      className="absolute top-1 left-1 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"><X className="w-3 h-3 text-destructive-foreground" /></button>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center gap-1 py-2">
-                    <Upload className="w-4 h-4 text-muted-foreground/60" />
-                    <span className="text-[9px] font-semibold text-muted-foreground/70">صورة 1</span>
-                  </div>
-                )}
-              </button>
-
-              {/* Slot 2: visible if maxImages >= 2 */}
-              {remixMaxImages >= 2 && (
-                <button
-                  onClick={() => { setRemixUploadSlot(1); remixSlotInputRef.current?.click(); }}
-                  className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
-                    refImages[1] ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
-                  }`}
-                  style={{ minHeight: "56px" }}
-                >
-                  {refImages[1] ? (
-                    <div className="relative w-full h-14">
-                      <img src={refImages[1].preview} alt="صورة 2" className="w-full h-full object-cover rounded-lg" />
-                      <button
-                        onClick={(e) => { e.stopPropagation(); removeImage(1); }}
-                        className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
-                      >
-                        <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="w-20 h-20 rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex flex-col items-center justify-center gap-1 transition-all shrink-0">
+                        <ImageIcon className="w-5 h-5 text-muted-foreground/50" /><span className="text-[9px] font-semibold text-muted-foreground/60">صورة</span>
                       </button>
-                      <span className="absolute bottom-1 right-1 text-[8px] font-bold bg-background/80 text-foreground px-1.5 py-0.5 rounded">صورة 2</span>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" sideOffset={8} className="w-[160px] p-1 bg-card/95 backdrop-blur-xl border-primary/30 z-[300]" dir="rtl">
+                      <button onClick={() => avatarImageInputRef.current?.click()} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50"><Upload className="w-3.5 h-3.5 text-muted-foreground" /> رفع من الجهاز</button>
+                      <button onClick={() => setImagePickerOpen(true)} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50"><FolderOpen className="w-3.5 h-3.5 text-muted-foreground" /> من المكتبة</button>
+                    </PopoverContent>
+                  </Popover>
+                )}
+                {isAvatarAudioModel && (
+                  avatarAudio ? (
+                    <div className="flex-1 rounded-xl border-2 border-primary/40 bg-primary/5 overflow-hidden flex items-center gap-2 px-3 min-h-[80px]">
+                      <button onClick={toggleAvatarAudioPreview} className="w-8 h-8 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center shrink-0">
+                        {isAvatarAudioPlaying ? <Pause className="w-3.5 h-3.5 text-primary" /> : <Play className="w-3.5 h-3.5 text-primary ml-0.5" />}
+                      </button>
+                      <audio ref={avatarAudioPreviewRef} key={avatarAudio.previewUrl || avatarAudio.sourceUrl || ""} src={avatarAudio.previewUrl || avatarAudio.sourceUrl || ""} preload="metadata" className="hidden"
+                        onPlay={() => setIsAvatarAudioPlaying(true)} onPause={() => setIsAvatarAudioPlaying(false)} onEnded={() => setIsAvatarAudioPlaying(false)} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1"><Music className="w-3 h-3 text-primary shrink-0" /><span className="text-[10px] font-medium text-foreground truncate">{avatarAudio.name}</span></div>
+                        {mediaDurationSeconds !== null && <span className="text-[9px] text-muted-foreground">{Math.ceil(mediaDurationSeconds)}ث</span>}
+                      </div>
+                      <button onClick={() => { stopAvatarAudioPreview(); if (avatarAudio.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl); setAvatarAudio(null); setMediaDurationSeconds(null); }}
+                        className="w-5 h-5 rounded-full bg-destructive flex items-center justify-center shrink-0"><X className="w-3 h-3 text-destructive-foreground" /></button>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center gap-1 py-2">
-                      <Upload className="w-4 h-4 text-muted-foreground/60" />
-                      <span className="text-[9px] font-semibold text-muted-foreground/70">صورة 2</span>
-                    </div>
-                  )}
-                </button>
-              )}
-
-              {/* + button for more images if model supports > 2 */}
-              {remixMaxImages > 2 && refImages.length >= 2 && refImages.length < remixMaxImages && (
-                <button
-                  onClick={() => { setRemixUploadSlot(refImages.length); remixSlotInputRef.current?.click(); }}
-                  className="w-14 shrink-0 rounded-xl border-2 border-dashed border-border/40 bg-secondary/30 hover:border-primary/30 transition-all flex flex-col items-center justify-center gap-1"
-                  style={{ minHeight: "56px" }}
-                >
-                  <Plus className="w-4 h-4 text-muted-foreground/60" />
-                  <span className="text-[8px] text-muted-foreground/60">{refImages.length}/{remixMaxImages}</span>
-                </button>
-              )}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="flex-1 min-h-[80px] rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex flex-col items-center justify-center gap-1 transition-all">
+                          <Music className="w-5 h-5 text-muted-foreground/50" /><span className="text-[9px] font-semibold text-muted-foreground/60">إضافة صوت</span>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent align="start" sideOffset={8} className="w-[160px] p-1 bg-card/95 backdrop-blur-xl border-primary/30 z-[300]" dir="rtl">
+                        <button onClick={() => avatarAudioInputRef.current?.click()} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50"><Upload className="w-3.5 h-3.5 text-muted-foreground" /> رفع من الجهاز</button>
+                        <button onClick={() => setAudioPickerOpen(true)} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50"><FolderOpen className="w-3.5 h-3.5 text-muted-foreground" /> من المكتبة</button>
+                      </PopoverContent>
+                    </Popover>
+                  )
+                )}
+                {isAvatarAnimateModel && (
+                  <button onClick={() => avatarVideoInputRef.current?.click()}
+                    className={`flex-1 min-h-[80px] relative rounded-xl border-2 border-dashed transition-all overflow-hidden flex flex-col items-center justify-center gap-1 ${avatarVideo ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/20 hover:border-primary/30"}`}>
+                    {avatarVideo ? (
+                      <>
+                        <Video className="w-4 h-4 text-primary" />
+                        <span className="text-[8px] font-bold text-foreground truncate max-w-[80%] px-1">{avatarVideo.name}</span>
+                        <button onClick={(e) => { e.stopPropagation(); setAvatarVideo(null); setMediaDurationSeconds(null); }}
+                          className="absolute top-1 left-1 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"><X className="w-3 h-3 text-destructive-foreground" /></button>
+                      </>
+                    ) : (
+                      <><Video className="w-5 h-5 text-muted-foreground/50" /><span className="text-[9px] font-semibold text-muted-foreground/60">فيديو مرجعي</span></>
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
-          {/* ── Avatar upload strip ── */}
-          {isAvatarTool && selectedTool && (
-            <div className="flex gap-2 items-stretch">
-              {/* Image slot - single icon with dropdown */}
-              {avatarImage ? (
-                <div
-                  className="relative rounded-xl border-2 border-primary/40 bg-primary/5 overflow-hidden flex-shrink-0"
-                  style={{ width: "56px", height: "56px" }}
-                >
-                  <img src={avatarImage.preview} alt="Avatar" className="w-full h-full object-cover rounded-lg" />
-                  <button
-                    onClick={() => {
-                      if (avatarImage.preview.startsWith("blob:")) URL.revokeObjectURL(avatarImage.preview);
-                      setAvatarImage(null);
-                    }}
-                    className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
-                  >
-                    <X className="w-2.5 h-2.5 text-destructive-foreground" />
-                  </button>
+          {/* ── Image-only upload (remove-bg, upscale) ── */}
+          {isImageOnlyTool && (
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-muted-foreground/70">الصورة</label>
+              {refImages[0] ? (
+                <div className="relative w-24 h-24 rounded-xl border-2 border-primary/40 overflow-hidden">
+                  <img src={refImages[0].preview} alt="" className="w-full h-full object-cover" />
+                  <button onClick={() => removeImage(0)} className="absolute top-1 left-1 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"><X className="w-3 h-3 text-destructive-foreground" /></button>
                 </div>
               ) : (
-                <div className="relative flex-shrink-0">
-                  <button
-                    onClick={() => setOpenMenu(openMenu === "avatar-img" ? null : "avatar-img")}
-                    className="rounded-xl border-2 border-dashed border-border/40 bg-secondary/30 hover:border-primary/30 transition-all flex flex-col items-center justify-center gap-0.5"
-                    style={{ width: "56px", height: "56px" }}
-                  >
-                    <ImageIcon className="w-4 h-4 text-muted-foreground/60" />
-                    <span className="text-[7px] font-semibold text-muted-foreground/70">صورة</span>
-                  </button>
-                  {openMenu === "avatar-img" && (
-                    <div className="absolute bottom-full mb-1.5 right-0 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] min-w-[130px]">
-                      <div className="p-1">
-                        <button
-                          onClick={() => { setOpenMenu(null); avatarImageInputRef.current?.click(); }}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50 transition-colors"
-                        >
-                          <Upload className="w-3.5 h-3.5 text-muted-foreground" />
-                          رفع من الجهاز
-                        </button>
-                        <button
-                          onClick={() => { setOpenMenu(null); setImagePickerOpen(true); }}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50 transition-colors"
-                        >
-                          <FolderOpen className="w-3.5 h-3.5 text-muted-foreground" />
-                          من المكتبة
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Audio slot - single icon with dropdown */}
-              {isAvatarAudioModel && (
-                <div
-                  className={`flex-1 relative rounded-xl border-2 border-dashed transition-all ${
-                    avatarAudio ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
-                  }`}
-                  style={{ minHeight: "56px" }}
-                >
-                  {avatarAudio ? (
-                    <div className="relative w-full h-14 flex items-center gap-3 px-3">
-                      {(() => {
-                        const audioSrc = avatarAudio.previewUrl || avatarAudio.sourceUrl || "";
-                        return (
-                          <>
-                            <button
-                              onClick={toggleAvatarAudioPreview}
-                              className="w-8 h-8 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center flex-shrink-0 transition-colors"
-                            >
-                              {isAvatarAudioPlaying ? (
-                                <Pause className="w-3.5 h-3.5 text-primary" />
-                              ) : (
-                                <Play className="w-3.5 h-3.5 text-primary ml-0.5" />
-                              )}
-                            </button>
-                            <audio
-                              ref={avatarAudioPreviewRef}
-                              key={audioSrc}
-                              src={audioSrc}
-                              preload="metadata"
-                              className="hidden"
-                              onPlay={() => setIsAvatarAudioPlaying(true)}
-                              onPause={() => setIsAvatarAudioPlaying(false)}
-                              onEnded={() => setIsAvatarAudioPlaying(false)}
-                            />
-                          </>
-                        );
-                      })()}
-                      <div className="flex-1 min-w-0">
-                        <Music className="w-3.5 h-3.5 text-primary inline-block mr-1" />
-                        <span className="text-[10px] font-medium text-foreground truncate">{avatarAudio.name}</span>
-                        {mediaDurationSeconds !== null && (
-                          <span className="text-[9px] text-muted-foreground mr-1">({Math.ceil(mediaDurationSeconds)}ث)</span>
-                        )}
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          stopAvatarAudioPreview();
-                          if (avatarAudio.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl);
-                          setAvatarAudio(null);
-                          setMediaDurationSeconds(null);
-                        }}
-                        className="w-4 h-4 rounded-full bg-destructive flex items-center justify-center flex-shrink-0"
-                      >
-                        <X className="w-2.5 h-2.5 text-destructive-foreground" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="relative flex items-center justify-center w-full h-full">
-                      <button
-                        onClick={() => setOpenMenu(openMenu === "avatar-audio" ? null : "avatar-audio")}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-secondary/60 transition-colors"
-                      >
-                        <Music className="w-4 h-4 text-muted-foreground/60" />
-                        <span className="text-[10px] font-semibold text-muted-foreground/70">إضافة صوت</span>
-                        <ChevronDown className="w-3 h-3 text-muted-foreground/50" />
-                      </button>
-                      {openMenu === "avatar-audio" && (
-                        <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-2xl overflow-hidden z-[220] min-w-[150px]">
-                          <div className="p-1">
-                            <button
-                              onClick={() => { setOpenMenu(null); avatarAudioInputRef.current?.click(); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50 transition-colors"
-                            >
-                              <Upload className="w-3.5 h-3.5 text-muted-foreground" />
-                              رفع من الجهاز
-                            </button>
-                            <button
-                              onClick={() => { setOpenMenu(null); setAudioPickerOpen(true); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50 transition-colors"
-                            >
-                              <FolderOpen className="w-3.5 h-3.5 text-muted-foreground" />
-                              من المكتبة
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Video slot (for animate models like Wan Animate) */}
-              {isAvatarAnimateModel && (
-                <button
-                  onClick={() => avatarVideoInputRef.current?.click()}
-                  className={`flex-1 relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
-                    avatarVideo ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/30 hover:border-primary/30"
-                  }`}
-                  style={{ minHeight: "56px" }}
-                >
-                  {avatarVideo ? (
-                    <div className="relative w-full h-14 flex flex-col items-center justify-center gap-1">
-                      <Video className="w-4 h-4 text-primary" />
-                      <span className="text-[8px] font-bold text-foreground truncate max-w-[80%] px-1">{avatarVideo.name}</span>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setAvatarVideo(null); setMediaDurationSeconds(null); }}
-                        className="absolute top-1 left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
-                      >
-                        <X className="w-2.5 h-2.5 text-destructive-foreground" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center gap-1 py-2">
-                      <Video className="w-4 h-4 text-muted-foreground/60" />
-                      <span className="text-[9px] font-semibold text-muted-foreground/70">فيديو مرجعي</span>
-                    </div>
-                  )}
+                <button onClick={() => fileInputRef.current?.click()} className="w-24 h-24 rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex flex-col items-center justify-center gap-1.5 transition-all">
+                  <Upload className="w-6 h-6 text-muted-foreground/50" /><span className="text-[10px] font-semibold text-muted-foreground/60">رفع صورة</span>
                 </button>
               )}
             </div>
           )}
 
-          {/* ── Avatar Pricing Breakdown ── */}
-          {isAvatarTool && selectedTool && mediaDurationSeconds !== null && price && price.priceUnit === "per_second" && effectiveDurationSeconds && (
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-secondary/50 border border-border/30">
-              <div className="flex items-center gap-3 text-[10px] text-muted-foreground flex-1">
-                <span className="font-bold text-foreground">{resolution?.toUpperCase()}</span>
-                <span>•</span>
-                <span>{effectiveDurationSeconds}ث</span>
-                <span>•</span>
-                <span>{Math.round((price.credits / effectiveDurationSeconds) * 10) / 10} كريدت/ث</span>
-                <span>•</span>
+          {/* ── Shoots image ── */}
+          {isShootsTool && (
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-muted-foreground/70">الصورة</label>
+              <button onClick={() => fileInputRef.current?.click()}
+                className={`w-full h-16 rounded-xl border-2 border-dashed flex items-center justify-center gap-2 transition-all ${refImages.length > 0 ? "bg-primary/5 border-primary/40" : "bg-secondary/20 border-border/40 hover:border-primary/30"}`}>
+                <Upload className="w-4 h-4 text-muted-foreground" /><span className="text-xs font-semibold text-foreground">{refImages.length > 0 ? "تغيير الصورة" : "رفع صورة"}</span>
+              </button>
+            </div>
+          )}
+
+          {/* ── Setting chips ── */}
+          {showDuration && (
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-muted-foreground/70">المدة</label>
+              {renderChips(caps!.durations!.map(d => ({ value: d, label: `${d}ث` })), videoDuration, setVideoDuration)}
+            </div>
+          )}
+          {showQuality && (
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-muted-foreground/70">الجودة</label>
+              {renderChips(caps!.qualities!.map(q => { const a = checkAccess(null, q, null); return { value: q, label: q.toUpperCase(), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), quality, setQuality)}
+            </div>
+          )}
+          {showRes && (
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-muted-foreground/70">الدقة</label>
+              {renderChips(caps!.resolutions!.map(r => { const a = checkAccess(r, null, null); return { value: r, label: r.toUpperCase(), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), resolution, setResolution)}
+            </div>
+          )}
+          {showAspect && (
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-muted-foreground/70">القياس</label>
+              {renderChips(caps!.aspectRatios!.map(r => ({ value: r, label: r })), aspectRatio, (v) => setAspectRatio(v as AspectRatio))}
+            </div>
+          )}
+          {showUpscale && (
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-muted-foreground/70">التكبير</label>
+              {renderChips(caps!.upscaleFactors!.map(f => ({ value: f, label: `${f}x` })), upscaleFactor, setUpscaleFactor)}
+            </div>
+          )}
+
+          {/* Avatar pricing */}
+          {isAvatarTool && mediaDurationSeconds !== null && price && price.priceUnit === "per_second" && effectiveDurationSeconds && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/50 border border-border/30">
+              <div className="flex items-center gap-3 text-[10px] text-muted-foreground flex-1 flex-wrap">
+                <span className="font-bold text-foreground">{resolution?.toUpperCase()}</span><span>•</span>
+                <span>{effectiveDurationSeconds}ث</span><span>•</span>
+                <span>{Math.round((price.credits / effectiveDurationSeconds) * 10) / 10} كريدت/ث</span><span>•</span>
                 <span className="font-bold text-primary">{price.credits} كريدت</span>
               </div>
             </div>
           )}
-
-          {/* Duration exceeded warning */}
           {mediaDurationExceedsLimit && (
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-destructive/10 border border-destructive/30">
-              <span className="text-[10px] text-destructive font-medium">
-                ⚠️ المدة {Math.ceil(mediaDurationSeconds!)}ث تتجاوز الحد الأقصى (15ث). سيتم احتساب 15ث فقط.
-              </span>
+            <div className="px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/30">
+              <span className="text-[10px] text-destructive font-medium">⚠️ المدة {Math.ceil(mediaDurationSeconds!)}ث تتجاوز الحد الأقصى (15ث). سيتم احتساب 15ث فقط.</span>
             </div>
           )}
+        </>
+      )}
+    </div>
+  );
 
-          {/* Regular image uploads strip (non-remix, non-frame, non-avatar) */}
-          {!hasFrameMode && !isRemixTool && !isAvatarTool && refImages.length > 0 && (
-            <div className="flex gap-2">
-              {refImages.map((img, i) => (
-                <div key={i} className="relative w-11 h-11 rounded-lg overflow-hidden border border-border/50">
-                  <img src={img.preview} alt="" className="w-full h-full object-cover" />
-                  <button onClick={() => removeImage(i)}
-                    className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-destructive flex items-center justify-center">
-                    <X className="w-2.5 h-2.5 text-destructive-foreground" />
-                  </button>
-                </div>
-              ))}
+  const isGenerateDisabled = loading || !selectedTool || insufficientCredits
+    || (isImageOnlyTool && refImages.length === 0)
+    || (isShootsTool && refImages.length === 0 && !prompt.trim())
+    || (isAvatarAudioModel && (!avatarImage || !avatarAudio || mediaDurationSeconds === null))
+    || (isAvatarAnimateModel && (!avatarImage || !avatarVideo || mediaDurationSeconds === null));
+
+  const generateBtnLabel = isImageOnlyTool ? (category === "remove-bg" ? "حذف الخلفية" : "رفع الجودة") : "بدء التوليد";
+
+  // ── Preview card (shared between desktop & mobile) ──
+  const previewCard = (maxH: string) => (
+    <>
+      <motion.div
+        layout
+        transition={{ duration: 0.28, ease: "easeOut" }}
+        className={`relative rounded-2xl overflow-hidden flex items-center justify-center border ${
+          resultUrls.length > 0 && !loading ? "border-transparent" : loading ? "border-primary/30" : "border-transparent"
+        }`}
+        style={shootsPlaceholderStyle || (() => {
+          const hasResult = resultUrls.length > 0 && !loading;
+          const useNatural = hasResult && resultNaturalRatio;
+          return {
+            width: "100%",
+            maxWidth: useNatural ? "min(96vw, 820px)" : currentRatio.placeholderMaxW,
+            aspectRatio: useNatural ? resultNaturalRatio! : currentRatio.cssAspect,
+            maxHeight: maxH,
+            background: hasResult ? "transparent" : undefined,
+          };
+        })()}
+      >
+        {resultUrls.length === 0 && !loading && <div className="absolute inset-0 shimmer-effect opacity-[0.06] pointer-events-none" />}
+        {loading && (
+          <>
+            <div className="absolute inset-0 shimmer-effect opacity-[0.15] pointer-events-none" />
+            <div className="absolute inset-0 bg-background/65 pointer-events-none" />
+          </>
+        )}
+        {(resultUrls.length === 0 || loading) && <div className="absolute inset-0 bg-secondary/20 pointer-events-none" />}
+        <div className="relative z-10 w-full h-full flex items-center justify-center p-2">
+          <AnimatePresence mode="wait" initial={false}>
+            {renderCardContent()}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+      {resultUrls.length > 0 && !loading && (
+        <div className="mt-3 flex gap-2">
+          {resultUrls.map((url, i) => (
+            <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+              className="text-xs text-primary hover:underline bg-primary/10 px-3 py-1 rounded-full">
+              تحميل {resultUrls.length > 1 ? `${i + 1}` : ""}
+            </a>
+          ))}
+        </div>
+      )}
+    </>
+  );
+
+  // ── Hidden file inputs ──
+  const hiddenInputs = (
+    <>
+      <input ref={fileInputRef} type="file" accept="image/*" multiple={!isImageOnlyTool} className="hidden" onChange={handleImageUpload} />
+      <input ref={remixSlotInputRef} type="file" accept="image/*" className="hidden" onChange={handleRemixSlotUpload} />
+      <input ref={firstFrameInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFrameUpload("first", e)} />
+      <input ref={lastFrameInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFrameUpload("last", e)} />
+      <input ref={avatarImageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const objectUrl = URL.createObjectURL(file);
+        if (avatarImage?.preview?.startsWith("blob:")) URL.revokeObjectURL(avatarImage.preview);
+        setAvatarImage({ file, preview: objectUrl, sourceUrl: objectUrl });
+        if (avatarImageInputRef.current) avatarImageInputRef.current.value = "";
+      }} />
+      <input ref={avatarAudioInputRef} type="file" accept="audio/*" className="hidden" onChange={async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const objectUrl = URL.createObjectURL(file);
+        if (avatarAudio?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl);
+        stopAvatarAudioPreview();
+        setAvatarAudio({ file, name: file.name, previewUrl: objectUrl, sourceUrl: objectUrl });
+        const duration = await detectAudioDuration(objectUrl);
+        if (duration !== null) setMediaDurationSeconds(duration);
+        else { setMediaDurationSeconds(null); toast.error("تعذر قراءة مدة الملف الصوتي"); }
+        if (avatarAudioInputRef.current) avatarAudioInputRef.current.value = "";
+      }} />
+      <input ref={avatarVideoInputRef} type="file" accept="video/*" className="hidden" onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setAvatarVideo({ file, name: file.name });
+        const videoEl = document.createElement("video");
+        videoEl.preload = "metadata";
+        videoEl.src = URL.createObjectURL(file);
+        videoEl.addEventListener("loadedmetadata", () => {
+          if (videoEl.duration && isFinite(videoEl.duration)) setMediaDurationSeconds(videoEl.duration);
+          URL.revokeObjectURL(videoEl.src);
+        });
+        videoEl.addEventListener("error", () => URL.revokeObjectURL(videoEl.src));
+        if (avatarVideoInputRef.current) avatarVideoInputRef.current.value = "";
+      }} />
+    </>
+  );
+
+  return (
+    <div className="h-[100dvh] bg-background flex overflow-hidden" dir="rtl">
+      {hiddenInputs}
+
+      {!isMobile ? (
+        /* ═══════════ DESKTOP LAYOUT ═══════════ */
+        <>
+          {/* ── Left Control Panel ── */}
+          <aside className="w-[340px] shrink-0 h-full bg-card/50 backdrop-blur-xl border-l border-border/20 flex flex-col">
+            <div className="shrink-0 flex items-center justify-between px-5 pt-5 pb-3">
+              <h1 className="text-sm font-bold text-foreground">{categoryTitleMap[category!] || ""}</h1>
+              <button onClick={() => navigate("/")} className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-lg hover:bg-secondary/50 transition-all">
+                <ArrowLeft className="w-4 h-4" />
+              </button>
             </div>
-          )}
-
-          {/* Input row */}
-          <div className="flex items-center gap-2">
-            {/* Upload button (only for models that support image input via maxImages in capabilities) */}
-            {!hasFrameMode && !isRemixTool && !isAvatarTool && !isImageOnlyTool && !isShootsTool && (caps?.maxImages ?? 0) > 0 && refImages.length < (caps?.maxImages ?? 0) && (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="shrink-0 w-9 h-9 rounded-lg bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors"
-              >
-                <ImageIcon className="w-4 h-4 text-muted-foreground" />
-              </button>
-            )}
-
-            {/* Shoots: always show image upload button */}
-            {isShootsTool && (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className={`shrink-0 h-9 px-3 rounded-lg border flex items-center justify-center gap-1.5 transition-colors ${
-                  refImages.length > 0 ? "bg-primary/10 border-primary/40" : "bg-secondary border-border/50 hover:bg-secondary/80"
-                }`}
-              >
-                <Upload className="w-4 h-4 text-muted-foreground" />
-                <span className="text-[10px] font-semibold text-foreground">{refImages.length > 0 ? "تغيير" : "صورة"}</span>
-              </button>
-            )}
-
-            {isImageOnlyTool ? (
-              <>
-                {/* Small upload icon button — same style as other studios */}
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`shrink-0 w-9 h-9 rounded-lg border flex items-center justify-center transition-colors ${
-                    refImages.length > 0 ? "bg-primary/10 border-primary/40" : "bg-secondary border-border/50 hover:bg-secondary/80"
-                  }`}
-                >
-                  <ImageIcon className="w-4 h-4 text-muted-foreground" />
-                </button>
-
-                {/* Wide action button */}
-                <Button
-                  onClick={handleGenerate}
-                  disabled={loading || !selectedTool || insufficientCredits || refImages.length === 0}
-                  className="flex-1 rounded-xl gap-2 h-10 text-xs font-bold shadow-md"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>{category === "remove-bg" ? "حذف الخلفية" : "رفع الجودة"}</span>
-                  {estimatedCost > 0 && (
-                    <span className="text-[10px] opacity-80">{estimatedCost} كريدت</span>
-                  )}
-                </Button>
-              </>
-            ) : (
-              <>
-                <input
+            <div className="flex-1 overflow-y-auto px-5 pb-4 scrollbar-hide">
+              {renderSettingsContent()}
+            </div>
+            <div className="shrink-0 px-5 pb-5 pt-3 border-t border-border/15 space-y-3">
+              {!isImageOnlyTool && (
+                <Textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : "اكتب وصفاً لما تريد توليده..."}
-                  className="flex-1 h-9 rounded-lg bg-secondary/40 border border-border/30 px-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/40"
+                  className="min-h-[80px] max-h-[140px] resize-none rounded-xl bg-secondary/30 border-border/30 text-sm placeholder:text-muted-foreground/50"
+                  dir="rtl"
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading) { e.preventDefault(); handleGenerate(); } }}
+                />
+              )}
+              <Button onClick={handleGenerate} disabled={isGenerateDisabled} className="w-full rounded-xl gap-2 h-11 text-sm font-bold shadow-lg">
+                <Sparkles className="w-4 h-4" />
+                <span>{generateBtnLabel}</span>
+                {estimatedCost > 0 && <span className="text-[11px] font-bold opacity-80">{estimatedCost} كريدت</span>}
+              </Button>
+            </div>
+          </aside>
+
+          {/* ── Center Preview ── */}
+          <main className="flex-1 flex flex-col items-center justify-center min-h-0 px-8">
+            {previewCard("calc(100dvh - 80px)")}
+          </main>
+        </>
+      ) : (
+        /* ═══════════ MOBILE LAYOUT ═══════════ */
+        <div className="flex-1 flex flex-col">
+          {/* ── Top Bar ── */}
+          <header ref={headerRef} className="shrink-0 flex items-center justify-between px-4 py-3 bg-card/80 backdrop-blur-xl border-b border-border/20 z-50">
+            <button onClick={() => setSettingsSheetOpen(true)}
+              className="w-9 h-9 flex items-center justify-center rounded-xl bg-secondary/50 hover:bg-secondary/80 transition-all">
+              <SlidersHorizontal className="w-4 h-4 text-foreground" />
+            </button>
+            <span className="text-sm font-bold text-foreground">{categoryTitleMap[category!] || ""}</span>
+            <button onClick={() => navigate("/")}
+              className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-secondary/50 transition-all text-muted-foreground">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          </header>
+
+          {/* ── Center Preview ── */}
+          <div className="flex-1 flex flex-col items-center justify-center px-4 min-h-0">
+            {previewCard("calc(100dvh - 200px)")}
+          </div>
+
+          {/* ── Bottom Bar ── */}
+          <div ref={bottomBarRef} className="shrink-0 bg-card/80 backdrop-blur-xl border-t border-border/20 px-4 py-3 z-50">
+            {isImageOnlyTool ? (
+              <div className="flex items-center gap-2">
+                <button onClick={() => fileInputRef.current?.click()}
+                  className={`shrink-0 w-10 h-10 rounded-xl border flex items-center justify-center transition-colors ${
+                    refImages.length > 0 ? "bg-primary/10 border-primary/40" : "bg-secondary border-border/50 hover:bg-secondary/80"
+                  }`}>
+                  <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                </button>
+                <Button onClick={handleGenerate} disabled={isGenerateDisabled} className="flex-1 rounded-xl gap-2 h-10 text-xs font-bold shadow-md">
+                  <Sparkles className="w-4 h-4" /><span>{generateBtnLabel}</span>
+                  {estimatedCost > 0 && <span className="text-[10px] opacity-80">{estimatedCost}</span>}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                {!hasFrameMode && !isRemixTool && !isAvatarTool && !isShootsTool && (caps?.maxImages ?? 0) > 0 && refImages.length < (caps?.maxImages ?? 0) && (
+                  <button onClick={() => fileInputRef.current?.click()}
+                    className="shrink-0 w-10 h-10 rounded-xl bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors">
+                    <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                )}
+                {isShootsTool && (
+                  <button onClick={() => fileInputRef.current?.click()}
+                    className={`shrink-0 h-10 px-3 rounded-xl border flex items-center justify-center gap-1.5 transition-colors ${
+                      refImages.length > 0 ? "bg-primary/10 border-primary/40" : "bg-secondary border-border/50"
+                    }`}>
+                    <Upload className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-[10px] font-semibold text-foreground">{refImages.length > 0 ? "تغيير" : "صورة"}</span>
+                  </button>
+                )}
+                <input
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder={isShootsTool ? "صف الزوايا..." : isAvatarTool ? "وصف اختياري..." : isRemixTool ? "صف التعديل..." : "اكتب وصفاً لما تريد توليده..."}
+                  className="flex-1 h-10 rounded-xl bg-secondary/40 border border-border/30 px-3 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/40"
                   dir="rtl"
                   onKeyDown={(e) => e.key === "Enter" && !loading && handleGenerate()}
                 />
-
-                <Button
-                  onClick={handleGenerate}
-                  disabled={loading || !selectedTool || insufficientCredits || (isShootsTool && refImages.length === 0 && !prompt.trim()) || (isAvatarAudioModel && (!avatarImage || !avatarAudio || mediaDurationSeconds === null)) || (isAvatarAnimateModel && (!avatarImage || !avatarVideo || mediaDurationSeconds === null))}
-                  className="shrink-0 rounded-xl gap-2 px-4 h-10 text-xs font-bold shadow-md"
-                >
+                <Button onClick={handleGenerate} disabled={isGenerateDisabled} className="shrink-0 rounded-xl gap-2 px-4 h-10 text-xs font-bold shadow-md">
                   <Sparkles className="w-4 h-4" />
-                  {isAvatarTool && mediaDurationSeconds !== null && estimatedCost > 0 ? (
-                    <span className="text-[11px] font-bold">{estimatedCost}</span>
-                  ) : isAvatarTool && mediaDurationSeconds === null ? (
-                    <span className="text-[11px] font-bold opacity-50">—</span>
-                  ) : estimatedCost > 0 ? (
-                    <span className="text-[11px] font-bold">{estimatedCost}</span>
-                  ) : null}
+                  {estimatedCost > 0 && <span className="text-[11px] font-bold">{estimatedCost}</span>}
                 </Button>
-              </>
+              </div>
             )}
           </div>
+
+          {/* ── Settings Drawer ── */}
+          <Drawer open={settingsSheetOpen} onOpenChange={setSettingsSheetOpen}>
+            <DrawerContent>
+              <div className="px-5 py-4 pb-8 max-h-[80vh] overflow-y-auto space-y-1" dir="rtl">
+                <h2 className="text-sm font-bold text-foreground mb-3">الإعدادات</h2>
+                {renderSettingsContent()}
+              </div>
+            </DrawerContent>
+          </Drawer>
         </div>
-      </div>
+      )}
 
+      {/* ── Viewers & Dialogs ── */}
       <ImageViewer src={viewerUrl} open={viewerOpen} onClose={() => setViewerOpen(false)} type={(isVideoTool || isAvatarTool) ? "video" : "image"} />
-
-      {/* Frame preview dialog */}
-      {framePreviewUrl && (
-        <ImageViewer src={framePreviewUrl} open={!!framePreviewUrl} onClose={() => setFramePreviewUrl(null)} type="image" />
-      )}
-
-      {/* Crop dialog for frame images */}
+      {framePreviewUrl && <ImageViewer src={framePreviewUrl} open={!!framePreviewUrl} onClose={() => setFramePreviewUrl(null)} type="image" />}
       {cropState && (
-        <CropDialog
-          open={!!cropState}
-          imageSrc={cropState.imageSrc}
-          aspectRatio={cropAspectNumeric}
-          onConfirm={handleCropConfirm}
-          onCancel={handleCropCancel}
-        />
+        <CropDialog open={!!cropState} imageSrc={cropState.imageSrc} aspectRatio={cropAspectNumeric}
+          onConfirm={handleCropConfirm} onCancel={handleCropCancel} />
       )}
-
-      {/* Media picker dialogs */}
-      <MediaPickerDialog
-        open={imagePickerOpen}
-        onClose={() => setImagePickerOpen(false)}
-        mediaType="image"
-        onSelect={(url) => {
-          if (avatarImage?.preview?.startsWith("blob:")) URL.revokeObjectURL(avatarImage.preview);
-          setAvatarImage({ preview: url, sourceUrl: url });
-        }}
-      />
-      <MediaPickerDialog
-        open={audioPickerOpen}
-        onClose={() => setAudioPickerOpen(false)}
-        mediaType="audio"
-        onSelect={async (url, fileName) => {
-          await applyAvatarAudioFromSource(url, fileName || "library_audio.mp3");
-        }}
-      />
+      <MediaPickerDialog open={imagePickerOpen} onClose={() => setImagePickerOpen(false)} mediaType="image"
+        onSelect={(url) => { if (avatarImage?.preview?.startsWith("blob:")) URL.revokeObjectURL(avatarImage.preview); setAvatarImage({ preview: url, sourceUrl: url }); }} />
+      <MediaPickerDialog open={audioPickerOpen} onClose={() => setAudioPickerOpen(false)} mediaType="audio"
+        onSelect={async (url, fileName) => { await applyAvatarAudioFromSource(url, fileName || "library_audio.mp3"); }} />
     </div>
   );
 };
