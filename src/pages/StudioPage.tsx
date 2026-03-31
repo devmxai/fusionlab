@@ -1227,8 +1227,57 @@ const StudioPage = () => {
   const isGrokVideo = !!selectedTool && selectedTool.model.startsWith("grok-imagine/");
   const showQuality = !isShootsTool && !isGrokVideo && !!(selectedTool && caps?.qualities?.length);
   const showUpscale = !isShootsTool && !!(selectedTool && caps?.upscaleFactors?.length);
+  const isGrokVideoRef = isVideoTool && !hasFrameMode && (caps?.maxImages ?? 0) > 0;
 
-  // ── Setting chips helper ──
+  // ── Label helpers ──
+  const durationLabel = (d: string) => `${d} ثواني`;
+  const qualityLabel = (q: string) => {
+    const map: Record<string, string> = { std: "قياسي (STD)", pro: "احترافي (PRO)", normal: "عادي", fun: "مرح", basic: "أساسي", high: "عالي" };
+    return map[q] || q.toUpperCase();
+  };
+  const aspectLabelFn = (a: string) => {
+    const map: Record<string, string> = { "1:1": "1:1 — مربع", "9:16": "9:16 — عمودي", "16:9": "16:9 — أفقي", "3:4": "3:4 — بورتريه", "4:3": "4:3 — أفقي عريض", "21:9": "21:9 — سينمائي", "2:3": "2:3", "3:2": "3:2" };
+    return map[a] || a;
+  };
+
+  // ── Dropdown select helper ──
+  const renderSelect = (
+    menuId: string,
+    items: { value: string; label: string; locked?: boolean; lockLabel?: string }[],
+    selected: string,
+    onSelect: (v: string) => void
+  ) => {
+    const isOpen = openMenu === menuId;
+    const selectedItem = items.find(i => i.value === selected);
+    return (
+      <Popover open={isOpen} onOpenChange={(v) => setOpenMenu(v ? menuId : null)}>
+        <PopoverTrigger asChild>
+          <button className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-border/40 bg-secondary/30 hover:bg-secondary/50 transition-all">
+            <span className="text-sm font-semibold text-foreground truncate">{selectedItem?.label || selected}</span>
+            <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" sideOffset={8} className="w-[260px] p-1.5 bg-card/95 backdrop-blur-xl border-primary/30 z-[300]" dir="rtl">
+          <div className="space-y-0.5 max-h-[300px] overflow-y-auto">
+            {items.map(item => (
+              <button key={item.value}
+                disabled={item.locked}
+                onClick={() => { if (!item.locked) { onSelect(item.value); setOpenMenu(null); } }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-right text-sm font-medium transition-colors ${
+                  item.locked ? "opacity-40 cursor-not-allowed text-muted-foreground" :
+                  selected === item.value ? "bg-primary/10 text-primary font-bold" : "hover:bg-secondary/50 text-foreground"
+                }`}>
+                <span>{item.label}</span>
+                {item.locked && <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
+              </button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
+  // ── Setting chips helper (kept for upscale factors) ──
   const renderChips = (
     items: { value: string; label: string; locked?: boolean; lockLabel?: string }[],
     selected: string,
