@@ -449,7 +449,7 @@ const StudioPage = () => {
     );
   }
 
-  if (!categoryName || categoryTools.length === 0 || !tool) {
+  if (!categoryName || categoryTools.length === 0) {
     return (
       <div className="h-screen bg-background flex flex-col items-center justify-center gap-3" dir="rtl">
         <Sparkles className="w-10 h-10 text-primary opacity-40" />
