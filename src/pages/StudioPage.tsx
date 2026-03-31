@@ -521,24 +521,9 @@ const StudioPage = () => {
     if (!file) return;
     const preview = URL.createObjectURL(file);
 
-    const matches = await new Promise<boolean>((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const [rw, rh] = aspectRatio.split(":").map(Number);
-        const targetRatio = rw / rh;
-        const imageRatio = img.naturalWidth / img.naturalHeight;
-        resolve(Math.abs(imageRatio - targetRatio) / targetRatio < 0.08);
-      };
-      img.onerror = () => resolve(true);
-      img.src = preview;
-    });
+    // Always open crop dialog for reference images too
+    setCropState({ imageSrc: preview, file, type: "ref", refIndex: 0 });
 
-    if (!matches) {
-      setCropState({ imageSrc: preview, file, type: "ref", refIndex: 0 });
-    } else {
-      if (refImages[0]) URL.revokeObjectURL(refImages[0].preview);
-      setRefImages([{ file, preview }]);
-    }
     if (grokRefInputRef.current) grokRefInputRef.current.value = "";
   };
 
