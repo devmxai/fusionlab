@@ -1815,6 +1815,22 @@ const StudioPage = () => {
 
       <ImageViewer src={viewerUrl} open={viewerOpen} onClose={() => setViewerOpen(false)} type={(isVideoTool || isAvatarTool) ? "video" : "image"} />
 
+      {/* Frame preview dialog */}
+      {framePreviewUrl && (
+        <ImageViewer src={framePreviewUrl} open={!!framePreviewUrl} onClose={() => setFramePreviewUrl(null)} type="image" />
+      )}
+
+      {/* Crop dialog for frame images */}
+      {cropState && (
+        <CropDialog
+          open={!!cropState}
+          imageSrc={cropState.imageSrc}
+          aspectRatio={cropAspectNumeric}
+          onConfirm={handleCropConfirm}
+          onCancel={handleCropCancel}
+        />
+      )}
+
       {/* Media picker dialogs */}
       <MediaPickerDialog
         open={imagePickerOpen}
