@@ -1605,12 +1605,7 @@ const StudioPage = () => {
             <div>
               {renderSelect("resolution", caps!.resolutions!.map(r => { const a = checkAccess(r, null, null); return { value: r, label: r.toUpperCase(), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), resolution, setResolution)}
             </div>
-          )}
-          {showAspect && (
-            <div>
-              {renderSelect("aspect", caps!.aspectRatios!.map(r => ({ value: r, label: aspectLabelFn(r) })), aspectRatio, (v) => setAspectRatio(v as AspectRatio))}
-            </div>
-          )}
+          }
           {showUpscale && (
             <div>
               {renderChips(caps!.upscaleFactors!.map(f => ({ value: f, label: `${f}x` })), upscaleFactor, setUpscaleFactor)}
