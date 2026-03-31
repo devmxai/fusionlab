@@ -57,12 +57,15 @@ export default function CropDialog({ open, imageSrc, aspectRatio, onConfirm, onC
   }, []);
 
   const handleConfirm = async () => {
-    if (!croppedAreaPixels) return;
+    if (!croppedAreaPixels || isConfirming) return;
+    setIsConfirming(true);
     try {
       const blob = await getCroppedImg(imageSrc, croppedAreaPixels);
       onConfirm(blob);
     } catch (e) {
       console.error("Crop failed:", e);
+    } finally {
+      setIsConfirming(false);
     }
   };
 
