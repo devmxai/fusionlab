@@ -539,6 +539,32 @@ const StudioPage = () => {
     if (type === "last" && lastFrameInputRef.current) lastFrameInputRef.current.value = "";
   };
 
+  const handleGrokRefUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const preview = URL.createObjectURL(file);
+
+    const matches = await new Promise<boolean>((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const [rw, rh] = aspectRatio.split(":").map(Number);
+        const targetRatio = rw / rh;
+        const imageRatio = img.naturalWidth / img.naturalHeight;
+        resolve(Math.abs(imageRatio - targetRatio) / targetRatio < 0.08);
+      };
+      img.onerror = () => resolve(true);
+      img.src = preview;
+    });
+
+    if (!matches) {
+      setCropState({ imageSrc: preview, file, type: "ref", refIndex: 0 });
+    } else {
+      if (refImages[0]) URL.revokeObjectURL(refImages[0].preview);
+      setRefImages([{ file, preview }]);
+    }
+    if (grokRefInputRef.current) grokRefInputRef.current.value = "";
+  };
+
   const handleCropConfirm = useCallback((blob: Blob) => {
     if (!cropState) return;
     const file = new File([blob], cropState.file.name, { type: "image/png" });
@@ -546,9 +572,21 @@ const StudioPage = () => {
     if (cropState.type === "first") {
       if (firstFrame) URL.revokeObjectURL(firstFrame.preview);
       setFirstFrame({ file, preview });
-    } else {
+    } else if (cropState.type === "last") {
       if (lastFrame) URL.revokeObjectURL(lastFrame.preview);
       setLastFrame({ file, preview });
+    } else if (cropState.type === "ref") {
+      setRefImages(prev => {
+        const updated = [...prev];
+        const idx = cropState.refIndex ?? 0;
+        if (idx < updated.length) {
+          URL.revokeObjectURL(updated[idx].preview);
+          updated[idx] = { file, preview };
+        } else {
+          updated.push({ file, preview });
+        }
+        return updated;
+      });
     }
     URL.revokeObjectURL(cropState.imageSrc);
     setCropState(null);
