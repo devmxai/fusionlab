@@ -119,6 +119,10 @@ const StudioPage = () => {
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const [audioPickerOpen, setAudioPickerOpen] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
+  const [cropState, setCropState] = useState<{ imageSrc: string; file: File; type: "first" | "last" } | null>(null);
+  const [framePreviewUrl, setFramePreviewUrl] = useState<string | null>(null);
 
   const bottomBarRef = useRef<HTMLDivElement>(null);
 
