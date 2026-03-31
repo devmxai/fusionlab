@@ -1104,7 +1104,7 @@ const StudioPage = () => {
 
           {/* Settings dropdowns - only show after model is selected */}
           {selectedTool && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
                 {/* Upscale Factor */}
                 {showUpscale && (
                   <div className="relative shrink-0">
