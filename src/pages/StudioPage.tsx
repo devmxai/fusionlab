@@ -71,6 +71,7 @@ const StudioPage = () => {
   const avatarImageInputRef = useRef<HTMLInputElement>(null);
   const avatarAudioInputRef = useRef<HTMLInputElement>(null);
   const avatarVideoInputRef = useRef<HTMLInputElement>(null);
+  const grokRefInputRef = useRef<HTMLInputElement>(null);
   const [remixUploadSlot, setRemixUploadSlot] = useState<number>(-1);
 
   const { user, credits, refreshCredits } = useAuth();
