@@ -42,18 +42,30 @@ export default function CropDialog({ open, imageSrc, aspectRatio, onConfirm, onC
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  // Reset state when dialog opens with new image
+  useState(() => {
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+    setIsConfirming(false);
+  });
 
   const onCropComplete = useCallback((_croppedArea: Area, croppedPixels: Area) => {
     setCroppedAreaPixels(croppedPixels);
   }, []);
 
   const handleConfirm = async () => {
-    if (!croppedAreaPixels) return;
+    if (!croppedAreaPixels || isConfirming) return;
+    setIsConfirming(true);
     try {
       const blob = await getCroppedImg(imageSrc, croppedAreaPixels);
       onConfirm(blob);
     } catch (e) {
       console.error("Crop failed:", e);
+    } finally {
+      setIsConfirming(false);
     }
   };
 
@@ -89,7 +101,9 @@ export default function CropDialog({ open, imageSrc, aspectRatio, onConfirm, onC
           </div>
         </div>
         <div className="flex gap-2 p-4 pt-2 justify-start">
-          <Button onClick={handleConfirm} size="sm">تأكيد القص</Button>
+          <Button onClick={handleConfirm} size="sm" disabled={!croppedAreaPixels || isConfirming}>
+            {isConfirming ? "جاري القص..." : "تأكيد القص"}
+          </Button>
           <Button variant="outline" size="sm" onClick={onCancel}>إلغاء</Button>
         </div>
       </DialogContent>

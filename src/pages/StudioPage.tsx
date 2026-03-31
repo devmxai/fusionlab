@@ -22,7 +22,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import CropDialog from "@/components/studio/CropDialog";
 import { Textarea } from "@/components/ui/textarea";
 
-type AspectRatio = "1:1" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
+type AspectRatio = "auto" | "1:1" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
 type Resolution = string;
 type UpscaleFactor = string;
 type Quality = string;
@@ -52,6 +52,7 @@ const categoryTitleMap: Record<string, string> = {
 };
 
 const ratioConfig: Record<string, { label: string; cssAspect: string; placeholderMaxW: string }> = {
+  "auto": { label: "تلقائي",  cssAspect: "1/1",  placeholderMaxW: "min(92vw, 560px)" },
   "1:1":  { label: "1:1",   cssAspect: "1/1",  placeholderMaxW: "min(92vw, 560px)" },
   "3:4":  { label: "3:4",   cssAspect: "3/4",  placeholderMaxW: "min(88vw, 480px)" },
   "4:3":  { label: "4:3",   cssAspect: "4/3",  placeholderMaxW: "min(94vw, 680px)" },
@@ -500,17 +501,43 @@ const StudioPage = () => {
   };
 
   const cropAspectNumeric = (() => {
+    if (aspectRatio === "auto") return 1; // fallback, won't be used since auto skips crop
     const [w, h] = aspectRatio.split(":").map(Number);
     return w / h;
   })();
+
+  // Track previous aspect ratio for re-crop suggestion
+  const prevAspectRatioRef = useRef(aspectRatio);
+  useEffect(() => {
+    const prev = prevAspectRatioRef.current;
+    prevAspectRatioRef.current = aspectRatio;
+    if (prev === aspectRatio) return;
+    if (aspectRatio === "auto") return;
+    const hasFrames = !!(firstFrame || lastFrame);
+    const hasRefs = refImages.length > 0;
+    if (hasFrames || hasRefs) {
+      toast.info("تم تغيير القياس — اضغط على الصورة لإعادة القص بالقياس الجديد", { duration: 5000 });
+    }
+  }, [aspectRatio, firstFrame, lastFrame, refImages.length]);
 
   const handleFrameUpload = async (type: "first" | "last", e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const preview = URL.createObjectURL(file);
 
-    // Always open crop dialog to let user adjust framing
-    setCropState({ imageSrc: preview, file, type });
+    if (aspectRatio === "auto") {
+      // Auto mode: use image as-is without cropping
+      if (type === "first") {
+        if (firstFrame) URL.revokeObjectURL(firstFrame.preview);
+        setFirstFrame({ file, preview });
+      } else {
+        if (lastFrame) URL.revokeObjectURL(lastFrame.preview);
+        setLastFrame({ file, preview });
+      }
+    } else {
+      // Open crop dialog to let user adjust framing
+      setCropState({ imageSrc: preview, file, type });
+    }
 
     if (type === "first" && firstFrameInputRef.current) firstFrameInputRef.current.value = "";
     if (type === "last" && lastFrameInputRef.current) lastFrameInputRef.current.value = "";
@@ -521,8 +548,21 @@ const StudioPage = () => {
     if (!file) return;
     const preview = URL.createObjectURL(file);
 
-    // Always open crop dialog for reference images too
-    setCropState({ imageSrc: preview, file, type: "ref", refIndex: 0 });
+    if (aspectRatio === "auto") {
+      // Auto mode: use image as-is
+      setRefImages(prev => {
+        const updated = [...prev];
+        if (updated.length > 0) {
+          URL.revokeObjectURL(updated[0].preview);
+          updated[0] = { file, preview };
+        } else {
+          updated.push({ file, preview });
+        }
+        return updated;
+      });
+    } else {
+      setCropState({ imageSrc: preview, file, type: "ref", refIndex: 0 });
+    }
 
     if (grokRefInputRef.current) grokRefInputRef.current.value = "";
   };
@@ -740,7 +780,8 @@ const StudioPage = () => {
         ...(avatarVideoUrl && { video_url: avatarVideoUrl }),
         ...(imageUrls?.[0] && isAvatarTool && { image_url: imageUrls[0] }),
       };
-      const input = buildModelInput(apiModel, prompt, aspectRatio, resolution, imageUrls, extraParams);
+      const apiAspectRatio = aspectRatio === "auto" ? "1:1" : aspectRatio;
+      const input = buildModelInput(apiModel, prompt, apiAspectRatio, resolution, imageUrls, extraParams);
       const apiType = isFluxKontext ? "flux-kontext" : (tool.isVeoApi ? "veo" : "standard");
 
       // ── Step 3: Start generation (server: auth → entitlement → price → reserve → create task + job record) ──
@@ -1198,7 +1239,7 @@ const StudioPage = () => {
     return map[q] || q.toUpperCase();
   };
   const aspectLabelFn = (a: string) => {
-    const map: Record<string, string> = { "1:1": "1:1 — مربع", "9:16": "9:16 — عمودي", "16:9": "16:9 — أفقي", "3:4": "3:4 — بورتريه", "4:3": "4:3 — أفقي عريض", "21:9": "21:9 — سينمائي", "2:3": "2:3 — بورتريه عمودي", "3:2": "3:2 — أفقي عريض" };
+    const map: Record<string, string> = { "auto": "تلقائي — حسب الصورة", "1:1": "1:1 — مربع", "9:16": "9:16 — عمودي", "16:9": "16:9 — أفقي", "3:4": "3:4 — بورتريه", "4:3": "4:3 — أفقي عريض", "21:9": "21:9 — سينمائي", "2:3": "2:3 — بورتريه عمودي", "3:2": "3:2 — أفقي عريض" };
     return map[a] || a;
   };
 
@@ -1295,11 +1336,21 @@ const StudioPage = () => {
         </div>
       ) : (
         <>
+          {/* ── Aspect Ratio (first choice after model) ── */}
+          {showAspect && (
+            <div>
+              {renderSelect("aspect", [
+                { value: "auto", label: aspectLabelFn("auto") },
+                ...caps!.aspectRatios!.map(r => ({ value: r, label: aspectLabelFn(r) }))
+              ], aspectRatio, (v) => setAspectRatio(v as AspectRatio))}
+            </div>
+          )}
+
           {/* ── Frame uploads ── */}
           {hasFrameMode && (
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-muted-foreground/70">
-                {frameMode === "first-last" ? "الإطارات" : "الكادر الأول"}
+                {frameMode === "first-last" ? "الإطارات" : "الإطار الأول"}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <div
@@ -1309,15 +1360,21 @@ const StudioPage = () => {
                 >
                   {firstFrame ? (
                     <div className="relative w-full h-full">
-                      <img src={firstFrame.preview} alt="الكادر الأول" className="w-full h-full object-cover rounded-lg cursor-pointer" onClick={() => setFramePreviewUrl(firstFrame.preview)} />
+                      <img src={firstFrame.preview} alt="الإطار الأول" className="w-full h-full object-cover rounded-lg cursor-pointer" onClick={() => {
+                        if (aspectRatio !== "auto") {
+                          setCropState({ imageSrc: firstFrame.preview, file: firstFrame.file, type: "first" });
+                        } else {
+                          setFramePreviewUrl(firstFrame.preview);
+                        }
+                      }} />
                       <button onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center z-10"><X className="w-3 h-3 text-destructive-foreground" /></button>
                       <button onClick={(e) => { e.stopPropagation(); firstFrameInputRef.current?.click(); }} className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-background/80 border border-border/30 flex items-center justify-center z-10"><Upload className="w-2.5 h-2.5 text-foreground" /></button>
-                      <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">الكادر الأول</span>
+                      <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">الإطار الأول</span>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center gap-1.5 h-full">
                       <Upload className="w-5 h-5 text-muted-foreground/50" />
-                      <span className="text-[10px] font-semibold text-muted-foreground/60">الكادر الأول</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground/60">الإطار الأول</span>
                     </div>
                   )}
                 </div>
@@ -1329,15 +1386,21 @@ const StudioPage = () => {
                   >
                     {lastFrame ? (
                       <div className="relative w-full h-full">
-                        <img src={lastFrame.preview} alt="الكادر الأخير" className="w-full h-full object-cover rounded-lg cursor-pointer" onClick={() => setFramePreviewUrl(lastFrame.preview)} />
+                        <img src={lastFrame.preview} alt="الإطار الأخير" className="w-full h-full object-cover rounded-lg cursor-pointer" onClick={() => {
+                          if (aspectRatio !== "auto") {
+                            setCropState({ imageSrc: lastFrame.preview, file: lastFrame.file, type: "last" });
+                          } else {
+                            setFramePreviewUrl(lastFrame.preview);
+                          }
+                        }} />
                         <button onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center z-10"><X className="w-3 h-3 text-destructive-foreground" /></button>
                         <button onClick={(e) => { e.stopPropagation(); lastFrameInputRef.current?.click(); }} className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-background/80 border border-border/30 flex items-center justify-center z-10"><Upload className="w-2.5 h-2.5 text-foreground" /></button>
-                        <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">الكادر الأخير</span>
+                        <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">الإطار الأخير</span>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center gap-1.5 h-full">
                         <Upload className="w-5 h-5 text-muted-foreground/50" />
-                        <span className="text-[10px] font-semibold text-muted-foreground/60">الكادر الأخير</span>
+                        <span className="text-[10px] font-semibold text-muted-foreground/60">الإطار الأخير</span>
                       </div>
                     )}
                   </div>
@@ -1554,11 +1617,6 @@ const StudioPage = () => {
           {showRes && (
             <div>
               {renderSelect("resolution", caps!.resolutions!.map(r => { const a = checkAccess(r, null, null); return { value: r, label: r.toUpperCase(), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), resolution, setResolution)}
-            </div>
-          )}
-          {showAspect && (
-            <div>
-              {renderSelect("aspect", caps!.aspectRatios!.map(r => ({ value: r, label: aspectLabelFn(r) })), aspectRatio, (v) => setAspectRatio(v as AspectRatio))}
             </div>
           )}
           {showUpscale && (
