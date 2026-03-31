@@ -122,7 +122,7 @@ const StudioPage = () => {
   const headerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
-  const [cropState, setCropState] = useState<{ imageSrc: string; file: File; type: "first" | "last" } | null>(null);
+  const [cropState, setCropState] = useState<{ imageSrc: string; file: File; type: "first" | "last" | "ref"; refIndex?: number } | null>(null);
   const [framePreviewUrl, setFramePreviewUrl] = useState<string | null>(null);
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
 
