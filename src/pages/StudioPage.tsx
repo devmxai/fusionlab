@@ -347,7 +347,11 @@ const StudioPage = () => {
     if (c.durations?.length) setVideoDuration(c.durations[0]);
     if (c.resolutions?.length) setResolution(c.resolutions[0]);
     if (c.upscaleFactors?.length) setUpscaleFactor(c.upscaleFactors[0]);
-    if (c.qualities?.length) setQuality(c.qualities[0]);
+    if (t.model.startsWith("grok-imagine/")) {
+      setQuality("normal");
+    } else if (c.qualities?.length) {
+      setQuality(c.qualities[0]);
+    }
   };
 
   // Pre-select model from query param (e.g. ?model=kling-3)
