@@ -362,8 +362,7 @@ const StudioPage = () => {
     }
   };
 
-  // Pre-select model from query param (e.g. ?model=kling-3)
-  // and ensure each category always has a valid selected model.
+  // Pre-select model from query param only (no auto-select fallback)
   useEffect(() => {
     if (categoryTools.length === 0) return;
 
@@ -381,14 +380,14 @@ const StudioPage = () => {
       }
     }
 
-    const selectedIsValidInCategory = !!selectedTool && categoryTools.some((t) => t.id === selectedTool.id);
-    if (!selectedIsValidInCategory) {
-      handleSelectModel(categoryTools[0]);
+    // If selected tool is not in current category, clear selection
+    if (selectedTool && !categoryTools.some((t) => t.id === selectedTool.id)) {
+      setSelectedTool(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryTools, selectedTool, searchParams, setSearchParams]);
 
-  const tool = selectedTool || categoryTools[0] || null;
+  const tool = selectedTool;
   const isVideoTool = category === "video";
   const isImageOnlyTool = category === "remove-bg" || category === "upscale";
   const isUpscaleTool = category === "upscale";
