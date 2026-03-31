@@ -347,7 +347,11 @@ const StudioPage = () => {
     if (c.durations?.length) setVideoDuration(c.durations[0]);
     if (c.resolutions?.length) setResolution(c.resolutions[0]);
     if (c.upscaleFactors?.length) setUpscaleFactor(c.upscaleFactors[0]);
-    if (c.qualities?.length) setQuality(c.qualities[0]);
+    if (t.model.startsWith("grok-imagine/")) {
+      setQuality("normal");
+    } else if (c.qualities?.length) {
+      setQuality(c.qualities[0]);
+    }
   };
 
   // Pre-select model from query param (e.g. ?model=kling-3)
@@ -1084,7 +1088,8 @@ const StudioPage = () => {
   const showAspect = !isShootsTool && !!(selectedTool && caps?.aspectRatios?.length);
   const showDuration = !isShootsTool && !!(selectedTool && caps?.durations && caps.durations.length > 0);
   const showRes = !isShootsTool && !!(selectedTool && caps?.resolutions?.length);
-  const showQuality = !isShootsTool && !!(selectedTool && caps?.qualities?.length);
+  const isGrokVideo = !!selectedTool && selectedTool.model.startsWith("grok-imagine/");
+  const showQuality = !isShootsTool && !isGrokVideo && !!(selectedTool && caps?.qualities?.length);
   const showUpscale = !isShootsTool && !!(selectedTool && caps?.upscaleFactors?.length);
 
   return (
@@ -1104,7 +1109,7 @@ const StudioPage = () => {
 
           {/* Settings dropdowns - only show after model is selected */}
           {selectedTool && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
                 {/* Upscale Factor */}
                 {showUpscale && (
                   <div className="relative shrink-0">
