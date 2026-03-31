@@ -1551,29 +1551,57 @@ const StudioPage = () => {
             </div>
           )}
 
-          {/* ── Setting chips ── */}
+          {/* ── Grok video reference image ── */}
+          {isGrokVideoRef && (
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-muted-foreground/70">صورة مرجعية <span className="text-muted-foreground/50 font-normal">(اختياري)</span></label>
+              <div
+                onClick={() => !refImages[0] && grokRefInputRef.current?.click()}
+                className={`relative rounded-xl border-2 border-dashed transition-all overflow-hidden cursor-pointer ${refImages[0] ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/20 hover:border-primary/30"}`}
+                style={{ aspectRatio: "16/9", maxHeight: "120px" }}
+              >
+                {refImages[0] ? (
+                  <div className="relative w-full h-full">
+                    <img src={refImages[0].preview} alt="ref" className="w-full h-full object-cover cursor-pointer"
+                      onClick={(e) => { e.stopPropagation(); setFramePreviewUrl(refImages[0].preview); }} />
+                    <button onClick={(e) => { e.stopPropagation(); removeImage(0); }}
+                      className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center z-10">
+                      <X className="w-3 h-3 text-destructive-foreground" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full gap-1">
+                    <Upload className="w-5 h-5 text-muted-foreground/50" />
+                    <span className="text-[9px] font-semibold text-muted-foreground/60">رفع صورة</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Setting dropdowns ── */}
           {showDuration && (
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-muted-foreground/70">المدة</label>
-              {renderChips(caps!.durations!.map(d => ({ value: d, label: `${d}ث` })), videoDuration, setVideoDuration)}
+              {renderSelect("duration", caps!.durations!.map(d => ({ value: d, label: durationLabel(d) })), videoDuration, setVideoDuration)}
             </div>
           )}
           {showQuality && (
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-muted-foreground/70">الجودة</label>
-              {renderChips(caps!.qualities!.map(q => { const a = checkAccess(null, q, null); return { value: q, label: q.toUpperCase(), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), quality, setQuality)}
+              {renderSelect("quality", caps!.qualities!.map(q => { const a = checkAccess(null, q, null); return { value: q, label: qualityLabel(q), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), quality, setQuality)}
             </div>
           )}
           {showRes && (
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-muted-foreground/70">الدقة</label>
-              {renderChips(caps!.resolutions!.map(r => { const a = checkAccess(r, null, null); return { value: r, label: r.toUpperCase(), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), resolution, setResolution)}
+              {renderSelect("resolution", caps!.resolutions!.map(r => { const a = checkAccess(r, null, null); return { value: r, label: r.toUpperCase(), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), resolution, setResolution)}
             </div>
           )}
           {showAspect && (
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-muted-foreground/70">القياس</label>
-              {renderChips(caps!.aspectRatios!.map(r => ({ value: r, label: r })), aspectRatio, (v) => setAspectRatio(v as AspectRatio))}
+              {renderSelect("aspect", caps!.aspectRatios!.map(r => ({ value: r, label: aspectLabelFn(r) })), aspectRatio, (v) => setAspectRatio(v as AspectRatio))}
             </div>
           )}
           {showUpscale && (
