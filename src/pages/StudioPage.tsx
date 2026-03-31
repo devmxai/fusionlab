@@ -509,31 +509,8 @@ const StudioPage = () => {
     if (!file) return;
     const preview = URL.createObjectURL(file);
 
-    // Check if image matches selected aspect ratio
-    const matches = await new Promise<boolean>((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const [rw, rh] = aspectRatio.split(":").map(Number);
-        const targetRatio = rw / rh;
-        const imageRatio = img.naturalWidth / img.naturalHeight;
-        resolve(Math.abs(imageRatio - targetRatio) / targetRatio < 0.08);
-      };
-      img.onerror = () => resolve(true);
-      img.src = preview;
-    });
-
-    if (!matches) {
-      // Open crop dialog locked to selected aspect ratio
-      setCropState({ imageSrc: preview, file, type });
-    } else {
-      if (type === "first") {
-        if (firstFrame) URL.revokeObjectURL(firstFrame.preview);
-        setFirstFrame({ file, preview });
-      } else {
-        if (lastFrame) URL.revokeObjectURL(lastFrame.preview);
-        setLastFrame({ file, preview });
-      }
-    }
+    // Always open crop dialog to let user adjust framing
+    setCropState({ imageSrc: preview, file, type });
 
     if (type === "first" && firstFrameInputRef.current) firstFrameInputRef.current.value = "";
     if (type === "last" && lastFrameInputRef.current) lastFrameInputRef.current.value = "";
@@ -544,24 +521,9 @@ const StudioPage = () => {
     if (!file) return;
     const preview = URL.createObjectURL(file);
 
-    const matches = await new Promise<boolean>((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const [rw, rh] = aspectRatio.split(":").map(Number);
-        const targetRatio = rw / rh;
-        const imageRatio = img.naturalWidth / img.naturalHeight;
-        resolve(Math.abs(imageRatio - targetRatio) / targetRatio < 0.08);
-      };
-      img.onerror = () => resolve(true);
-      img.src = preview;
-    });
+    // Always open crop dialog for reference images too
+    setCropState({ imageSrc: preview, file, type: "ref", refIndex: 0 });
 
-    if (!matches) {
-      setCropState({ imageSrc: preview, file, type: "ref", refIndex: 0 });
-    } else {
-      if (refImages[0]) URL.revokeObjectURL(refImages[0].preview);
-      setRefImages([{ file, preview }]);
-    }
     if (grokRefInputRef.current) grokRefInputRef.current.value = "";
   };
 
