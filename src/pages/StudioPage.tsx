@@ -512,13 +512,13 @@ const StudioPage = () => {
     const prev = prevAspectRatioRef.current;
     prevAspectRatioRef.current = aspectRatio;
     if (prev === aspectRatio) return;
-    if (aspectRatio === "auto") return; // auto doesn't need crop
+    if (aspectRatio === "auto") return;
     const hasFrames = !!(firstFrame || lastFrame);
-    const hasGrokRef = isGrokVideoRef && refImages.length > 0;
-    if (hasFrames || hasGrokRef) {
+    const hasRefs = refImages.length > 0;
+    if (hasFrames || hasRefs) {
       toast.info("تم تغيير القياس — اضغط على الصورة لإعادة القص بالقياس الجديد", { duration: 5000 });
     }
-  }, [aspectRatio, firstFrame, lastFrame, isGrokVideoRef, refImages.length]);
+  }, [aspectRatio, firstFrame, lastFrame, refImages.length]);
 
   const handleFrameUpload = async (type: "first" | "last", e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
