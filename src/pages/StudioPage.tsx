@@ -1335,6 +1335,16 @@ const StudioPage = () => {
         </div>
       ) : (
         <>
+          {/* ── Aspect Ratio (first choice after model) ── */}
+          {showAspect && (
+            <div>
+              {renderSelect("aspect", [
+                { value: "auto", label: aspectLabelFn("auto") },
+                ...caps!.aspectRatios!.map(r => ({ value: r, label: aspectLabelFn(r) }))
+              ], aspectRatio, (v) => setAspectRatio(v as AspectRatio))}
+            </div>
+          )}
+
           {/* ── Frame uploads ── */}
           {hasFrameMode && (
             <div className="space-y-2">
