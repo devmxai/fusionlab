@@ -1347,8 +1347,8 @@ const StudioPage = () => {
             </div>
           )}
 
-          {/* ── Reference images (Grok Video & others with maxImages) ── */}
-          {!hasFrameMode && !isRemixTool && !isAvatarTool && !isImageOnlyTool && !isShootsTool && (caps?.maxImages ?? 0) > 0 && (
+          {/* ── Reference images (non-video models with maxImages, e.g. image models) ── */}
+          {!hasFrameMode && !isRemixTool && !isAvatarTool && !isImageOnlyTool && !isShootsTool && !isGrokVideoRef && (caps?.maxImages ?? 0) > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-bold text-muted-foreground/70">صور مرجعية</label>
