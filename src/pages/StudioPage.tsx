@@ -1084,7 +1084,8 @@ const StudioPage = () => {
   const showAspect = !isShootsTool && !!(selectedTool && caps?.aspectRatios?.length);
   const showDuration = !isShootsTool && !!(selectedTool && caps?.durations && caps.durations.length > 0);
   const showRes = !isShootsTool && !!(selectedTool && caps?.resolutions?.length);
-  const showQuality = !isShootsTool && !!(selectedTool && caps?.qualities?.length);
+  const isGrokVideo = !!selectedTool && selectedTool.model.startsWith("grok-imagine/");
+  const showQuality = !isShootsTool && !isGrokVideo && !!(selectedTool && caps?.qualities?.length);
   const showUpscale = !isShootsTool && !!(selectedTool && caps?.upscaleFactors?.length);
 
   return (
