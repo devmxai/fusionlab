@@ -1271,8 +1271,7 @@ const StudioPage = () => {
     <div className="space-y-5">
       {/* Model Selector */}
       {!isShootsTool && (
-        <div className="space-y-2">
-          <label className="text-[11px] font-bold text-muted-foreground/70">النموذج</label>
+        <div>
           <Popover open={modelSelectorOpen} onOpenChange={(v) => { setModelSelectorOpen(v); if (!v) setModelSubPage(null); }}>
             <PopoverTrigger asChild>
               <button className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-border/40 bg-secondary/30 hover:bg-secondary/50 transition-all">
@@ -1543,32 +1542,27 @@ const StudioPage = () => {
 
           {/* ── Setting dropdowns ── */}
           {showDuration && (
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-muted-foreground/70">المدة</label>
+            <div>
               {renderSelect("duration", caps!.durations!.map(d => ({ value: d, label: durationLabel(d) })), videoDuration, setVideoDuration)}
             </div>
           )}
           {showQuality && (
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-muted-foreground/70">الجودة</label>
+            <div>
               {renderSelect("quality", caps!.qualities!.map(q => { const a = checkAccess(null, q, null); return { value: q, label: qualityLabel(q), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), quality, setQuality)}
             </div>
           )}
           {showRes && (
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-muted-foreground/70">الدقة</label>
+            <div>
               {renderSelect("resolution", caps!.resolutions!.map(r => { const a = checkAccess(r, null, null); return { value: r, label: r.toUpperCase(), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), resolution, setResolution)}
             </div>
           )}
           {showAspect && (
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-muted-foreground/70">القياس</label>
+            <div>
               {renderSelect("aspect", caps!.aspectRatios!.map(r => ({ value: r, label: aspectLabelFn(r) })), aspectRatio, (v) => setAspectRatio(v as AspectRatio))}
             </div>
           )}
           {showUpscale && (
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-muted-foreground/70">التكبير</label>
+            <div>
               {renderChips(caps!.upscaleFactors!.map(f => ({ value: f, label: `${f}x` })), upscaleFactor, setUpscaleFactor)}
             </div>
           )}
@@ -1817,9 +1811,8 @@ const StudioPage = () => {
 
           {/* ── Settings Sidebar ── */}
           <Sheet open={settingsSheetOpen} onOpenChange={setSettingsSheetOpen}>
-            <SheetContent side="right" className="w-[85vw] max-w-[360px] p-0 border-r border-border/20">
-              <div className="px-5 py-5 pb-8 h-full overflow-y-auto space-y-1 scrollbar-hide" dir="rtl">
-                <h2 className="text-base font-bold text-foreground mb-4">الإعدادات</h2>
+            <SheetContent side="right" className="w-[85vw] max-w-[360px] p-0 border-r border-border/20 [&>button]:left-4 [&>button]:right-auto">
+              <div className="px-5 pt-12 pb-8 h-full overflow-y-auto space-y-1 scrollbar-hide" dir="rtl">
                 {renderSettingsContent()}
               </div>
             </SheetContent>
