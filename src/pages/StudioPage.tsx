@@ -525,8 +525,19 @@ const StudioPage = () => {
     if (!file) return;
     const preview = URL.createObjectURL(file);
 
-    // Always open crop dialog to let user adjust framing
-    setCropState({ imageSrc: preview, file, type });
+    if (aspectRatio === "auto") {
+      // Auto mode: use image as-is without cropping
+      if (type === "first") {
+        if (firstFrame) URL.revokeObjectURL(firstFrame.preview);
+        setFirstFrame({ file, preview });
+      } else {
+        if (lastFrame) URL.revokeObjectURL(lastFrame.preview);
+        setLastFrame({ file, preview });
+      }
+    } else {
+      // Open crop dialog to let user adjust framing
+      setCropState({ imageSrc: preview, file, type });
+    }
 
     if (type === "first" && firstFrameInputRef.current) firstFrameInputRef.current.value = "";
     if (type === "last" && lastFrameInputRef.current) lastFrameInputRef.current.value = "";
