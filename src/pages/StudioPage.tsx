@@ -780,7 +780,8 @@ const StudioPage = () => {
         ...(avatarVideoUrl && { video_url: avatarVideoUrl }),
         ...(imageUrls?.[0] && isAvatarTool && { image_url: imageUrls[0] }),
       };
-      const input = buildModelInput(apiModel, prompt, aspectRatio, resolution, imageUrls, extraParams);
+      const apiAspectRatio = aspectRatio === "auto" ? "1:1" : aspectRatio;
+      const input = buildModelInput(apiModel, prompt, apiAspectRatio, resolution, imageUrls, extraParams);
       const apiType = isFluxKontext ? "flux-kontext" : (tool.isVeoApi ? "veo" : "standard");
 
       // ── Step 3: Start generation (server: auth → entitlement → price → reserve → create task + job record) ──
