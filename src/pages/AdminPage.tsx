@@ -170,7 +170,7 @@ const AdminPage = () => {
       supabase.from("credit_transactions").select("*, profiles(email, full_name)").order("created_at", { ascending: false }).limit(200),
       supabase.from("audit_logs").select("*, profiles:actor_id(email, full_name)").order("created_at", { ascending: false }).limit(100),
       supabase.from("generations").select("*, profiles:user_id(email)").order("created_at", { ascending: false }).limit(100),
-      supabase.from("subscription_requests" as any).select("*, profiles:user_id(email, full_name, phone_number), subscription_plans:plan_id(name, name_ar, type, credits_per_month, price)").order("created_at", { ascending: false }),
+      supabase.from("subscription_requests").select("*, profiles:user_id(email, full_name, phone_number), subscription_plans:plan_id(name, name_ar, type, credits_per_month, price)").order("created_at", { ascending: false }),
     ]);
 
     setUsers(profilesRes.data || []);
@@ -611,7 +611,7 @@ const AdminPage = () => {
                         if (!res?.success) { toast.error(res?.error || "فشلت العملية"); return; }
 
                         // Update request status
-                        await supabase.from("subscription_requests" as any).update({ status: "approved", reviewed_by: user!.id, reviewed_at: new Date().toISOString() } as any).eq("id", r.id);
+                        await supabase.from("subscription_requests").update({ status: "approved", reviewed_by: user!.id, reviewed_at: new Date().toISOString() }).eq("id", r.id);
 
                         // Send WhatsApp confirmation
                         const phoneNum = r.phone_number || profile?.phone_number;
