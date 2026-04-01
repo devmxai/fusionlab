@@ -554,6 +554,11 @@ export function useGenerationQueue() {
                 return newJob;
               })
             );
+
+            // Refresh credits when a job transitions to terminal state
+            if (isTerminalStatus(incomingEffective)) {
+              refreshCredits();
+            }
           } else if (payload.eventType === "DELETE") {
             setJobs((prev) => prev.filter((j) => j.id !== (payload.old as any).id));
           }
