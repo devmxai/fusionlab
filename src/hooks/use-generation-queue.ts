@@ -137,7 +137,7 @@ function isTerminalStatus(s: string): boolean {
 }
 
 export function useGenerationQueue() {
-  const { user } = useAuth();
+  const { user, refreshCredits } = useAuth();
   const [jobs, setJobs] = useState<GenerationJob[]>([]);
   const pollingRefs = useRef<Map<string, boolean>>(new Map());
   const pollListenersRef = useRef<Map<string, JobPollListeners>>(new Map());
@@ -431,6 +431,9 @@ export function useGenerationQueue() {
           }
         }
 
+        // Refresh credit balance in UI after successful generation
+        refreshCredits();
+
         emitPollSuccess(job.id, urls, job);
       } else {
         throw new Error("No result returned");
@@ -480,6 +483,9 @@ export function useGenerationQueue() {
             });
           }
         }
+
+        // Refresh credit balance (may have been refunded)
+        refreshCredits();
 
         emitPollFail(job.id, msg, job);
       }
@@ -548,6 +554,11 @@ export function useGenerationQueue() {
                 return newJob;
               })
             );
+
+            // Refresh credits when a job transitions to terminal state
+            if (isTerminalStatus(incomingEffective)) {
+              refreshCredits();
+            }
           } else if (payload.eventType === "DELETE") {
             setJobs((prev) => prev.filter((j) => j.id !== (payload.old as any).id));
           }
