@@ -1833,7 +1833,7 @@ const StudioPage = () => {
             ) : (
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  {!hasFrameMode && !isRemixTool && !isAvatarTool && !isShootsTool && (caps?.maxImages ?? 0) > 0 && refImages.length < (caps?.maxImages ?? 0) && (
+                  {!hasFrameMode && !isRemixTool && !isAvatarTool && !isShootsTool && !isVideoTool && (caps?.maxImages ?? 0) > 0 && refImages.length < (caps?.maxImages ?? 0) && (
                     <button onClick={() => fileInputRef.current?.click()}
                       className="shrink-0 w-10 h-10 rounded-xl bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-colors">
                       <ImageIcon className="w-4 h-4 text-muted-foreground" />
