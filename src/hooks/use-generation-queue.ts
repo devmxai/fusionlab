@@ -484,6 +484,9 @@ export function useGenerationQueue() {
           }
         }
 
+        // Refresh credit balance (may have been refunded)
+        refreshCredits();
+
         emitPollFail(job.id, msg, job);
       }
     } finally {
