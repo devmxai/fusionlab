@@ -431,6 +431,9 @@ export function useGenerationQueue() {
           }
         }
 
+        // Refresh credit balance in UI after successful generation
+        refreshCredits();
+
         emitPollSuccess(job.id, urls, job);
       } else {
         throw new Error("No result returned");
