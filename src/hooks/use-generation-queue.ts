@@ -137,7 +137,7 @@ function isTerminalStatus(s: string): boolean {
 }
 
 export function useGenerationQueue() {
-  const { user } = useAuth();
+  const { user, refreshCredits } = useAuth();
   const [jobs, setJobs] = useState<GenerationJob[]>([]);
   const pollingRefs = useRef<Map<string, boolean>>(new Map());
   const pollListenersRef = useRef<Map<string, JobPollListeners>>(new Map());
