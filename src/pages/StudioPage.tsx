@@ -1434,44 +1434,48 @@ const StudioPage = () => {
           {isRemixTool && !hasFrameMode && (
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-muted-foreground/70">الصور</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => { setRemixUploadSlot(0); remixSlotInputRef.current?.click(); }}
-                  className={`relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${refImages[0] ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/20 hover:border-primary/30"}`}
-                  style={{ aspectRatio: "4/3" }}>
-                  {refImages[0] ? (
-                    <div className="relative w-full h-full">
-                      <img src={refImages[0].preview} alt="صورة 1" className="w-full h-full object-cover rounded-lg" />
-                      <button onClick={(e) => { e.stopPropagation(); removeImage(0); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"><X className="w-3 h-3 text-destructive-foreground" /></button>
-                      <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">صورة 1</span>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center gap-1.5 h-full"><Upload className="w-5 h-5 text-muted-foreground/50" /><span className="text-[10px] font-semibold text-muted-foreground/60">صورة 1</span></div>
-                  )}
-                </button>
-                {remixMaxImages >= 2 && (
-                  <button onClick={() => { setRemixUploadSlot(1); remixSlotInputRef.current?.click(); }}
-                    className={`relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${refImages[1] ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/20 hover:border-primary/30"}`}
-                    style={{ aspectRatio: "4/3" }}>
-                    {refImages[1] ? (
-                      <div className="relative w-full h-full">
-                        <img src={refImages[1].preview} alt="صورة 2" className="w-full h-full object-cover rounded-lg" />
-                        <button onClick={(e) => { e.stopPropagation(); removeImage(1); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"><X className="w-3 h-3 text-destructive-foreground" /></button>
-                        <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">صورة 2</span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center gap-1.5 h-full"><Upload className="w-5 h-5 text-muted-foreground/50" /><span className="text-[10px] font-semibold text-muted-foreground/60">صورة 2</span></div>
-                    )}
-                  </button>
+              {/* Base image — always slot 0 */}
+              <button onClick={() => { setRemixUploadSlot(0); remixSlotInputRef.current?.click(); }}
+                className={`relative w-full rounded-xl border-2 border-dashed transition-all overflow-hidden ${refImages[0] ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/20 hover:border-primary/30"}`}
+                style={{ aspectRatio: "4/3" }}>
+                {refImages[0] ? (
+                  <div className="relative w-full h-full">
+                    <img src={refImages[0].preview} alt="الصورة الأساسية" className="w-full h-full object-cover rounded-lg" />
+                    <button onClick={(e) => { e.stopPropagation(); removeImage(0); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"><X className="w-3 h-3 text-destructive-foreground" /></button>
+                    <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-primary/90 text-primary-foreground px-2 py-0.5 rounded">الصورة الأساسية</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-1.5 h-full"><Upload className="w-6 h-6 text-muted-foreground/50" /><span className="text-[10px] font-semibold text-muted-foreground/60">الصورة الأساسية (Base)</span></div>
                 )}
-                {remixMaxImages > 2 && refImages.length >= 2 && refImages.length < remixMaxImages && (
-                  <button onClick={() => { setRemixUploadSlot(refImages.length); remixSlotInputRef.current?.click(); }}
-                    className="rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex flex-col items-center justify-center gap-1 transition-all"
-                    style={{ aspectRatio: "4/3" }}>
-                    <Plus className="w-5 h-5 text-muted-foreground/50" />
-                    <span className="text-[9px] text-muted-foreground/60">{refImages.length}/{remixMaxImages}</span>
-                  </button>
-                )}
-              </div>
+              </button>
+              {/* Reference images — slots 1+ */}
+              {remixMaxImages >= 2 && (
+                <div className="grid grid-cols-2 gap-2">
+                  {Array.from({ length: Math.max(remixMaxImages - 1, refImages.length > 1 ? refImages.length - 1 : 1) }).map((_, idx) => {
+                    const slotIdx = idx + 1;
+                    const img = refImages[slotIdx];
+                    // Show slot if: it has an image, OR it's the next empty slot after the last filled one, OR it's slot 1 (always show at least one ref slot)
+                    const isNextEmpty = slotIdx === refImages.length;
+                    const shouldShow = !!img || slotIdx === 1 || isNextEmpty;
+                    if (!shouldShow || slotIdx >= remixMaxImages) return null;
+                    return (
+                      <button key={slotIdx} onClick={() => { setRemixUploadSlot(slotIdx); remixSlotInputRef.current?.click(); }}
+                        className={`relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${img ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/20 hover:border-primary/30"}`}
+                        style={{ aspectRatio: "4/3" }}>
+                        {img ? (
+                          <div className="relative w-full h-full">
+                            <img src={img.preview} alt={`صورة مرجعية ${idx + 1}`} className="w-full h-full object-cover rounded-lg" />
+                            <button onClick={(e) => { e.stopPropagation(); removeImage(slotIdx); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"><X className="w-3 h-3 text-destructive-foreground" /></button>
+                            <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">مرجعية {idx + 1}</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center gap-1.5 h-full"><Plus className="w-5 h-5 text-muted-foreground/50" /><span className="text-[10px] font-semibold text-muted-foreground/60">صورة مرجعية</span></div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
