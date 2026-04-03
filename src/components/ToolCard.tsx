@@ -61,6 +61,7 @@ export const imageMap: Record<string, string> = {
   angles,
   "image-merge": imageMerge,
   inpaint,
+  "seedance2-card": seedance2Card,
 };
 
 // Card images keyed by "section/toolId"
