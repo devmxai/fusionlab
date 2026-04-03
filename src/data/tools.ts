@@ -214,6 +214,29 @@ export const tools: AITool[] = [
   },
 
   // ─── Video Models ───
+  // Bytedance Seedance models — listed first
+  {
+    id: "seedance-2",
+    title: "Seedance 2",
+    provider: "Bytedance",
+    description: "أحدث نموذج فيديو سينمائي بجودة استثنائية",
+    image: "seedance2-card",
+    isPro: false,
+    category: "فيديو",
+    model: "bytedance/seedance-2",
+    frameMode: "first-last",
+  },
+  {
+    id: "seedance",
+    title: "Seedance 1.5 Pro",
+    provider: "Bytedance",
+    description: "رقص وحركة طبيعية بالفيديو",
+    image: "inpaint",
+    isPro: true,
+    category: "فيديو",
+    model: "bytedance/seedance-1.5-pro",
+    frameMode: "first-last",
+  },
   {
     id: "grok-video",
     title: "Grok Video",
