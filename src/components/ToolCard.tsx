@@ -68,6 +68,7 @@ export const imageMap: Record<string, string> = {
 // Card images keyed by "section/toolId"
 export const cardImageMap: Record<string, string> = {
   "latest/kling-3": latest1,
+  "latest/seedance-2": seedance2Card,
   "latest/seedance": latest2,
   "latest/veo31-quality": latest3,
   "latest/grok-video": latest4,
