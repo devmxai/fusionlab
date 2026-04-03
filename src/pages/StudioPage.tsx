@@ -395,7 +395,7 @@ const StudioPage = () => {
   }, [categoryTools, selectedTool, searchParams, setSearchParams]);
 
   const tool = selectedTool;
-  const isVideoTool = category === "video";
+  const isVideoTool = category === "video" || category === "seedance";
   const isImageOnlyTool = category === "remove-bg" || category === "upscale";
   const isUpscaleTool = category === "upscale";
   const isRemixTool = category === "remix";
