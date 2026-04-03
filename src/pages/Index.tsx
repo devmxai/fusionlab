@@ -168,7 +168,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <HomeHeader />
-
+      <AnnouncementPopup />
       <div className="w-full">
         <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
         <BannerCarousel />
