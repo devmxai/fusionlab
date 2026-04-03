@@ -19,6 +19,7 @@ export interface AITool {
 
 export const categories = [
   "الكل",
+  "سيدانس",
   "فيديو",
   "صور",
   "شوتس",
@@ -286,19 +287,20 @@ export const tools: AITool[] = [
     description: "رقص وحركة طبيعية بالفيديو",
     image: "inpaint",
     isPro: true,
-    category: "فيديو",
+    category: "سيدانس",
     model: "bytedance/seedance-1.5-pro",
     frameMode: "first-last",
   },
   {
-    id: "seedance-v1-pro",
-    title: "Seedance V1 Pro",
+    id: "seedance-2",
+    title: "Seedance 2",
     provider: "Bytedance",
-    description: "فيديوهات سينمائية بكاميرا متحركة",
-    image: "inpaint",
+    description: "أحدث نموذج فيديو سينمائي بجودة استثنائية",
+    image: "seedance2-card",
     isPro: false,
-    category: "فيديو",
-    model: "bytedance/v1-pro-text-to-video",
+    category: "سيدانس",
+    model: "bytedance/seedance-2",
+    frameMode: "first-last",
   },
   {
     id: "sora-2",
@@ -557,6 +559,20 @@ export function buildModelInput(
       duration: (extraParams?.duration as string) || "8",
     };
     if (imageUrls?.length) input.input_urls = imageUrls.slice(0, 2);
+    return input;
+  }
+
+  if (model === "bytedance/seedance-2") {
+    const input: Record<string, unknown> = {
+      prompt,
+      aspect_ratio: aspectRatio || "16:9",
+      resolution: (extraParams?.resolution as string) || "720p",
+      duration: parseInt((extraParams?.duration as string) || "5"),
+    };
+    if (extraParams?.quality === "fast") {
+      // Fast mode - no specific param, just lower resolution default
+    }
+    if (imageUrls?.length) input.reference_image_urls = imageUrls.slice(0, 2);
     return input;
   }
 

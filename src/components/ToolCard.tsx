@@ -13,6 +13,7 @@ import aiInfluencer from "@/assets/tools/ai-influencer.jpg";
 import angles from "@/assets/tools/angles.jpg";
 import imageMerge from "@/assets/tools/image-merge.jpg";
 import inpaint from "@/assets/tools/inpaint.jpg";
+import seedance2Card from "@/assets/seedance2-card.jpg";
 
 // Section-specific card images
 import latest1 from "@/assets/cards/latest-1.jpg";
@@ -61,11 +62,13 @@ export const imageMap: Record<string, string> = {
   angles,
   "image-merge": imageMerge,
   inpaint,
+  "seedance2-card": seedance2Card,
 };
 
 // Card images keyed by "section/toolId"
 export const cardImageMap: Record<string, string> = {
   "latest/kling-3": latest1,
+  "latest/seedance-2": seedance2Card,
   "latest/seedance": latest2,
   "latest/veo31-quality": latest3,
   "latest/grok-video": latest4,
@@ -120,6 +123,7 @@ interface ToolCardProps {
 const categoryStudioMap: Record<string, string> = {
   "صور": "/studio/images",
   "فيديو": "/studio/video",
+  "سيدانس": "/studio/seedance",
   "ريمكس": "/studio/remix",
   "صوت": "/studio/audio",
   "افتار": "/studio/avatar",

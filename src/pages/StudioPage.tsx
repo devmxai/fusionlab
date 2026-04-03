@@ -30,6 +30,7 @@ type Quality = string;
 const categorySlugMap: Record<string, string> = {
   images: "صور",
   video: "فيديو",
+  seedance: "سيدانس",
   remix: "ريمكس",
   audio: "صوت",
   avatar: "افتار",
@@ -42,6 +43,7 @@ const categorySlugMap: Record<string, string> = {
 const categoryTitleMap: Record<string, string> = {
   images: "استديو الصور",
   video: "استديو الفيديو",
+  seedance: "استديو سيدانس",
   remix: "استديو الريمكس",
   audio: "استديو الصوت",
   avatar: "استديو الأفتار",
@@ -393,7 +395,7 @@ const StudioPage = () => {
   }, [categoryTools, selectedTool, searchParams, setSearchParams]);
 
   const tool = selectedTool;
-  const isVideoTool = category === "video";
+  const isVideoTool = category === "video" || category === "seedance";
   const isImageOnlyTool = category === "remove-bg" || category === "upscale";
   const isUpscaleTool = category === "upscale";
   const isRemixTool = category === "remix";
@@ -415,6 +417,7 @@ const StudioPage = () => {
     transfer: ["نقل الحركة من فيديو إلى صورة", "استبدال الشخصية في الفيديو", "تحريك صورة ثابتة بحركة واقعية", "دمج ملامح جديدة بسلاسة"],
     images: ["توليد صور بالذكاء الاصطناعي", "تصميم شخصيات واقعية", "إنشاء مشاهد خيالية", "أسلوب فني فريد بكل مرة"],
     video: ["توليد فيديو من النص", "تحويل الأفكار لمقاطع متحركة", "مؤثرات بصرية سينمائية", "حركة طبيعية وسلسة"],
+    seedance: ["فيديو سينمائي بتقنية Seedance", "حركة واقعية بجودة استثنائية", "رقص وحركة طبيعية بالذكاء الاصطناعي", "أحدث نموذج من ByteDance"],
     remix: ["تعديل الصور بالذكاء الاصطناعي", "دمج صورتين في واحدة", "تغيير الأسلوب الفني", "تحرير احترافي بنقرة"],
     avatar: ["تحريك صورة بالصوت", "إنشاء أفتار متحدث", "دمج الصوت مع الوجه", "شخصية رقمية نابضة بالحياة"],
   };
