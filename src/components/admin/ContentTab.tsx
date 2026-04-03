@@ -2,13 +2,15 @@ import { useState } from "react";
 import BannersManager from "./BannersManager";
 import TrendingManager from "./TrendingManager";
 import ModelCardsManager from "./ModelCardsManager";
-import { ImageIcon, Video, Layers, PanelTop } from "lucide-react";
+import AnnouncementsManager from "./AnnouncementsManager";
+import { ImageIcon, Video, Layers, PanelTop, Megaphone } from "lucide-react";
 
-type ContentSection = "banners" | "model-cards" | "trending-images" | "trending-videos";
+type ContentSection = "banners" | "model-cards" | "trending-images" | "trending-videos" | "announcements";
 
 const sections: { id: ContentSection; label: string; icon: any }[] = [
   { id: "banners", label: "البانرات", icon: PanelTop },
   { id: "model-cards", label: "كاردات النماذج", icon: Layers },
+  { id: "announcements", label: "الإعلانات المنبثقة", icon: Megaphone },
   { id: "trending-images", label: "صور الترند", icon: ImageIcon },
   { id: "trending-videos", label: "فيديوهات الترند", icon: Video },
 ];
@@ -39,6 +41,7 @@ const ContentTab = () => {
       {/* Content */}
       {section === "banners" && <BannersManager />}
       {section === "model-cards" && <ModelCardsManager />}
+      {section === "announcements" && <AnnouncementsManager />}
       {section === "trending-images" && <TrendingManager type="images" />}
       {section === "trending-videos" && <TrendingManager type="videos" />}
     </div>
