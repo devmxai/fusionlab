@@ -562,6 +562,20 @@ export function buildModelInput(
     return input;
   }
 
+  if (model === "bytedance/seedance-2") {
+    const input: Record<string, unknown> = {
+      prompt,
+      aspect_ratio: aspectRatio || "16:9",
+      resolution: (extraParams?.resolution as string) || "720p",
+      duration: parseInt((extraParams?.duration as string) || "5"),
+    };
+    if (extraParams?.quality === "fast") {
+      // Fast mode - no specific param, just lower resolution default
+    }
+    if (imageUrls?.length) input.reference_image_urls = imageUrls.slice(0, 2);
+    return input;
+  }
+
   if (model === "bytedance/v1-pro-text-to-video") {
     return {
       prompt,
