@@ -30,7 +30,6 @@ type Quality = string;
 const categorySlugMap: Record<string, string> = {
   images: "صور",
   video: "فيديو",
-  seedance: "سيدانس",
   remix: "ريمكس",
   audio: "صوت",
   avatar: "افتار",
@@ -43,7 +42,6 @@ const categorySlugMap: Record<string, string> = {
 const categoryTitleMap: Record<string, string> = {
   images: "استديو الصور",
   video: "استديو الفيديو",
-  seedance: "استديو سيدانس",
   remix: "استديو الريمكس",
   audio: "استديو الصوت",
   avatar: "استديو الأفتار",
@@ -395,7 +393,7 @@ const StudioPage = () => {
   }, [categoryTools, selectedTool, searchParams, setSearchParams]);
 
   const tool = selectedTool;
-  const isVideoTool = category === "video" || category === "seedance";
+  const isVideoTool = category === "video";
   const isImageOnlyTool = category === "remove-bg" || category === "upscale";
   const isUpscaleTool = category === "upscale";
   const isRemixTool = category === "remix";

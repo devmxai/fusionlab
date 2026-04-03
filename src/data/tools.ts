@@ -19,7 +19,6 @@ export interface AITool {
 
 export const categories = [
   "الكل",
-  "سيدانس",
   "فيديو",
   "صور",
   "شوتس",
@@ -215,6 +214,29 @@ export const tools: AITool[] = [
   },
 
   // ─── Video Models ───
+  // Bytedance Seedance models — listed first
+  {
+    id: "seedance-2",
+    title: "Seedance 2",
+    provider: "Bytedance",
+    description: "أحدث نموذج فيديو سينمائي بجودة استثنائية",
+    image: "seedance2-card",
+    isPro: false,
+    category: "فيديو",
+    model: "bytedance/seedance-2",
+    frameMode: "first-last",
+  },
+  {
+    id: "seedance",
+    title: "Seedance 1.5 Pro",
+    provider: "Bytedance",
+    description: "رقص وحركة طبيعية بالفيديو",
+    image: "inpaint",
+    isPro: true,
+    category: "فيديو",
+    model: "bytedance/seedance-1.5-pro",
+    frameMode: "first-last",
+  },
   {
     id: "grok-video",
     title: "Grok Video",
@@ -280,28 +302,7 @@ export const tools: AITool[] = [
     category: "فيديو",
     model: "kling/v2-1-master-text-to-video",
   },
-  {
-    id: "seedance",
-    title: "Seedance 1.5 Pro",
-    provider: "Bytedance",
-    description: "رقص وحركة طبيعية بالفيديو",
-    image: "inpaint",
-    isPro: true,
-    category: "سيدانس",
-    model: "bytedance/seedance-1.5-pro",
-    frameMode: "first-last",
-  },
-  {
-    id: "seedance-2",
-    title: "Seedance 2",
-    provider: "Bytedance",
-    description: "أحدث نموذج فيديو سينمائي بجودة استثنائية",
-    image: "seedance2-card",
-    isPro: false,
-    category: "سيدانس",
-    model: "bytedance/seedance-2",
-    frameMode: "first-last",
-  },
+  // (Seedance models moved to top of video section)
   {
     id: "sora-2",
     title: "Sora 2",
