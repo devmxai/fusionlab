@@ -157,6 +157,15 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
     frameMode: "first-last",
   },
 
+  // Docs: aspect_ratio 16:9,4:3,1:1,3:4,9:16,21:9 | duration number | resolution 480p,720p | quality normal,fast
+  "bytedance/seedance-2": {
+    aspectRatios: ["1:1", "4:3", "3:4", "16:9", "9:16", "21:9"],
+    durations: ["4", "5", "6", "8", "10"],
+    resolutions: ["480p", "720p"],
+    qualities: ["normal", "fast"],
+    frameMode: "first-last",
+  },
+
   // Docs: aspect_ratio 21:9,16:9,4:3,1:1,3:4,9:16 | duration 5,10 | resolution 480p,720p,1080p
   "bytedance/v1-pro-text-to-video": {
     aspectRatios: ["1:1", "4:3", "3:4", "16:9", "9:16", "21:9"],
