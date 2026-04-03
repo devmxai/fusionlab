@@ -13,6 +13,7 @@ import aiInfluencer from "@/assets/tools/ai-influencer.jpg";
 import angles from "@/assets/tools/angles.jpg";
 import imageMerge from "@/assets/tools/image-merge.jpg";
 import inpaint from "@/assets/tools/inpaint.jpg";
+import seedance2Card from "@/assets/seedance2-card.jpg";
 
 // Section-specific card images
 import latest1 from "@/assets/cards/latest-1.jpg";
