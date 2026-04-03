@@ -67,15 +67,16 @@ const AnnouncementPopup = () => {
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleDismiss(); }}>
       <DialogContent
-        className="max-w-[min(92vw,420px)] p-0 rounded-2xl border-primary/20 bg-card overflow-hidden gap-0"
+        className="max-w-[min(92vw,420px)] p-0 rounded-2xl border-primary/20 bg-card overflow-hidden gap-0 [&>button]:hidden"
         dir="rtl"
+        style={{ backdropFilter: "blur(12px)" }}
       >
-        {/* Close button */}
+        {/* Close button — right side only */}
         <button
           onClick={handleDismiss}
-          className="absolute top-3 left-3 z-10 w-8 h-8 rounded-full bg-background/80 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-background/60 backdrop-blur flex items-center justify-center text-muted-foreground/60 hover:text-foreground transition-colors"
         >
-          <X className="w-4 h-4" />
+          <X className="w-3.5 h-3.5" />
         </button>
 
         {/* Image */}
