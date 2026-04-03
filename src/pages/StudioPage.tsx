@@ -30,6 +30,7 @@ type Quality = string;
 const categorySlugMap: Record<string, string> = {
   images: "صور",
   video: "فيديو",
+  seedance: "سيدانس",
   remix: "ريمكس",
   audio: "صوت",
   avatar: "افتار",
@@ -42,6 +43,7 @@ const categorySlugMap: Record<string, string> = {
 const categoryTitleMap: Record<string, string> = {
   images: "استديو الصور",
   video: "استديو الفيديو",
+  seedance: "استديو سيدانس",
   remix: "استديو الريمكس",
   audio: "استديو الصوت",
   avatar: "استديو الأفتار",
