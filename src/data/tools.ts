@@ -19,6 +19,7 @@ export interface AITool {
 
 export const categories = [
   "الكل",
+  "سيدانس",
   "فيديو",
   "صور",
   "شوتس",
