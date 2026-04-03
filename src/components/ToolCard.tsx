@@ -121,6 +121,7 @@ interface ToolCardProps {
 const categoryStudioMap: Record<string, string> = {
   "صور": "/studio/images",
   "فيديو": "/studio/video",
+  "سيدانس": "/studio/seedance",
   "ريمكس": "/studio/remix",
   "صوت": "/studio/audio",
   "افتار": "/studio/avatar",
