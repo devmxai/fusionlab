@@ -337,6 +337,10 @@ const AudioStudioPage = () => {
           toast.error("ليس لديك صلاحية لاستخدام هذه الأداة");
           return;
         }
+        if (err === "provider_error") {
+          toast.error("خطأ مؤقت في مزود الخدمة. يرجى المحاولة لاحقاً. لم يتم خصم أي رصيد.");
+          return;
+        }
         throw new Error(startResult?.message || err || "فشل بدء التوليد");
       }
 
