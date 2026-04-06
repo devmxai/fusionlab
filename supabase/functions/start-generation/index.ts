@@ -41,12 +41,24 @@ serve(async (req) => {
     const body = await req.json();
     const {
       toolId, toolName, model, apiType, input, resolution, quality,
-      durationSeconds, hasAudio, characterCount, idempotencyKey,
+      durationSeconds, rawDurationSeconds, hasAudio, characterCount, idempotencyKey,
       prompt, fileType, jobMetadata, ttsParams,
     } = body;
 
     if (!toolId || !model) {
       return jsonRes({ success: false, error: "missing_fields", message: "Missing required fields: toolId, model" });
+    }
+
+    if (
+      (model === "kling/ai-avatar-standard" || model === "kling/ai-avatar-pro") &&
+      typeof rawDurationSeconds === "number" &&
+      rawDurationSeconds > 15
+    ) {
+      return jsonRes({
+        success: false,
+        error: "validation_failed",
+        message: `مدة الصوت ${rawDurationSeconds.toFixed(1)}ث وتتجاوز الحد الأقصى لنموذج Kling Avatar (15ث).`,
+      }, 400);
     }
 
     const generationType = apiType === "tts" ? "audio" : "default";
