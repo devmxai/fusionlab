@@ -12,6 +12,8 @@ export interface ModelCapabilities {
   aspectRatios?: string[];
   /** Supported video durations in seconds */
   durations?: string[];
+  /** Max accepted media duration in seconds */
+  maxDurationSeconds?: number;
   /** Supported resolutions */
   resolutions?: string[];
   /** Supported quality/mode options (model specific) */
@@ -190,11 +192,15 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
   // Kling Avatar: 720p = standard (8 cr/s), 1080p = pro (16 cr/s)
   "kling/ai-avatar-standard": {
     resolutions: ["720p", "1080p"],
+    maxDurationSeconds: 15,
   },
-  "kling/ai-avatar-pro": {},
+  "kling/ai-avatar-pro": {
+    maxDurationSeconds: 15,
+  },
   // Docs: image_url + audio_url + prompt + resolution (480p/720p)
   "infinitalk/from-audio": {
     resolutions: ["480p", "720p"],
+    maxDurationSeconds: 15,
   },
   // Docs: video_url + image_url + resolution (480p/580p/720p)
   "wan/2-2-animate-move": {

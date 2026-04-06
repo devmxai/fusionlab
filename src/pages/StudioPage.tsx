@@ -262,27 +262,33 @@ const StudioPage = () => {
     return getModelCapabilities(selectedTool.model);
   }, [selectedTool]);
 
+  const avatarMaxDurationSeconds = useMemo(() => {
+    if (!selectedTool || (selectedTool.inputType !== "avatar" && selectedTool.inputType !== "animate")) return null;
+    if (selectedTool.model === "kling/ai-avatar-standard" && resolution === "1080p") {
+      return getModelCapabilities("kling/ai-avatar-pro").maxDurationSeconds ?? null;
+    }
+    return caps?.maxDurationSeconds ?? null;
+  }, [selectedTool, resolution, caps]);
+
   // For avatar models, use actual media duration (audio/video); for video models, use dropdown
   const effectiveDurationSeconds = useMemo(() => {
     const isAvatar = !!selectedTool && (selectedTool.inputType === "avatar" || selectedTool.inputType === "animate");
     if (isAvatar && mediaDurationSeconds !== null) {
       const rounded = Math.round(mediaDurationSeconds);
-      // Infinitalk max 15s per KIE.AI docs
-      if (selectedTool?.model === "infinitalk/from-audio" && rounded > 15) return 15;
-      // Kling avatar: no audio duration limit (provider supports longer durations)
+      if (avatarMaxDurationSeconds && mediaDurationSeconds > avatarMaxDurationSeconds) return avatarMaxDurationSeconds;
       return rounded;
     }
     // For avatar models without detected duration, return null (prevent fallback to videoDuration)
     if (isAvatar) return null;
     return videoDuration ? parseInt(videoDuration) : null;
-  }, [selectedTool, mediaDurationSeconds, videoDuration]);
+  }, [selectedTool, mediaDurationSeconds, videoDuration, avatarMaxDurationSeconds]);
 
   // Whether media duration exceeds the limit
   const mediaDurationExceedsLimit = useMemo(() => {
-    if (!selectedTool || selectedTool.model !== "infinitalk/from-audio") return false;
+    if (!selectedTool || !avatarMaxDurationSeconds) return false;
     if (mediaDurationSeconds === null) return false;
-    return Math.round(mediaDurationSeconds) > 15;
-  }, [selectedTool, mediaDurationSeconds]);
+    return mediaDurationSeconds > avatarMaxDurationSeconds;
+  }, [selectedTool, mediaDurationSeconds, avatarMaxDurationSeconds]);
 
   // Determine hasAudio correctly for avatar models
   const hasAudioForPricing = useMemo(() => {
@@ -671,6 +677,10 @@ const StudioPage = () => {
       toast.error("لم يتم استخراج مدة الملف الصوتي — يرجى إعادة رفعه");
       return;
     }
+    if (isAvatarAudioModel && avatarMaxDurationSeconds && mediaDurationSeconds > avatarMaxDurationSeconds) {
+      toast.error(`مدة الصوت ${mediaDurationSeconds.toFixed(1)}ث وتتجاوز الحد الأقصى لهذا النموذج (${avatarMaxDurationSeconds}ث)`);
+      return;
+    }
     if (isAvatarAnimateModel && (!avatarImage || !avatarVideo)) {
       toast.error("يجب رفع صورة وفيديو مرجعي");
       return;
@@ -808,6 +818,7 @@ const StudioPage = () => {
           resolution: serverResolution,
           quality: quality || null,
           durationSeconds: effectiveDurationSeconds,
+          rawDurationSeconds: mediaDurationSeconds,
           hasAudio: hasAudioForPricing,
           idempotencyKey,
           prompt: prompt || tool.title,
@@ -845,7 +856,7 @@ const StudioPage = () => {
           return;
         }
         if (err === "provider_error") {
-          toast.error("خطأ مؤقت في مزود الخدمة. يرجى المحاولة لاحقاً. لم يتم خصم أي رصيد.");
+          toast.error(startResult?.message || "خطأ مؤقت في مزود الخدمة. يرجى المحاولة لاحقاً. لم يتم خصم أي رصيد.");
           return;
         }
         throw new Error(startResult?.message || err || "فشل بدء التوليد");
@@ -1650,7 +1661,7 @@ const StudioPage = () => {
           )}
           {mediaDurationExceedsLimit && (
             <div className="px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/30">
-              <span className="text-[10px] text-destructive font-medium">⚠️ المدة {Math.ceil(mediaDurationSeconds!)}ث تتجاوز الحد الأقصى (15ث). سيتم احتساب 15ث فقط.</span>
+              <span className="text-[10px] text-destructive font-medium">⚠️ المدة {mediaDurationSeconds!.toFixed(1)}ث تتجاوز الحد الأقصى ({avatarMaxDurationSeconds}ث) لهذا النموذج، ولن يبدأ التوليد حتى تختار صوتًا أقصر.</span>
             </div>
           )}
         </>
