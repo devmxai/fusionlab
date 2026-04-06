@@ -628,13 +628,19 @@ const StudioPage = () => {
     return urlData.publicUrl;
   };
 
-  // Smart upload: use Storage for large files (>3MB), base64 for smaller ones
+  // Smart upload: use Storage more aggressively for media that may exceed edge payload limits after base64 expansion.
   const smartUploadFile = async (file: File, prefix: string): Promise<string> => {
-    const THREE_MB = 3 * 1024 * 1024;
-    if (file.size > THREE_MB) {
+    const inlineLimitBytes = file.type.startsWith("audio/")
+      ? 2 * 1024 * 1024
+      : file.type.startsWith("video/")
+        ? 0
+        : 2.5 * 1024 * 1024;
+
+    if (inlineLimitBytes === 0 || file.size > inlineLimitBytes) {
       console.log(`Using Storage upload for ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`);
       return uploadViaStorage(file, prefix);
     }
+
     const b64 = await fileToBase64(file);
     const ext = file.name.split(".").pop() || "bin";
     return uploadFileBase64(b64, `${prefix}_${Date.now()}.${ext}`);
@@ -733,8 +739,7 @@ const StudioPage = () => {
         setProgress(3);
 
         if (avatarImage.file) {
-          const imgB64 = await fileToBase64(avatarImage.file);
-          const imgUrl = await uploadFileBase64(imgB64, `avatar_img_${Date.now()}.png`);
+          const imgUrl = await smartUploadFile(avatarImage.file, "avatar_img");
           imageUrls = [imgUrl];
         } else if (avatarImage.sourceUrl) {
           imageUrls = [avatarImage.sourceUrl];
@@ -749,9 +754,7 @@ const StudioPage = () => {
       let avatarVideoUrl = "";
       if (isAvatarAudioModel && avatarAudio) {
         if (avatarAudio.file) {
-          const audioB64 = await fileToBase64(avatarAudio.file);
-          const ext = avatarAudio.file.name.split(".").pop() || "mp3";
-          avatarAudioUrl = await uploadFileBase64(audioB64, `avatar_audio_${Date.now()}.${ext}`);
+          avatarAudioUrl = await smartUploadFile(avatarAudio.file, "avatar_audio");
         } else if (avatarAudio.sourceUrl) {
           avatarAudioUrl = avatarAudio.sourceUrl;
         } else {
