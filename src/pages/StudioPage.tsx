@@ -21,6 +21,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import CropDialog from "@/components/studio/CropDialog";
 import { Textarea } from "@/components/ui/textarea";
+import ImageMentionPopover from "@/components/studio/ImageMentionPopover";
 
 type AspectRatio = "auto" | "1:1" | "2:3" | "3:2" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
 type Resolution = string;
@@ -130,6 +131,8 @@ const StudioPage = () => {
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
 
   const bottomBarRef = useRef<HTMLDivElement>(null);
+  const desktopPromptRef = useRef<HTMLTextAreaElement>(null);
+  const mobilePromptRef = useRef<HTMLTextAreaElement>(null);
 
   const stopAvatarAudioPreview = () => {
     if (avatarAudioPreviewRef.current) {
