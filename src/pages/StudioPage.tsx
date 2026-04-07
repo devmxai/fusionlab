@@ -325,7 +325,11 @@ const StudioPage = () => {
   const pricingParams = useMemo(() => {
     if (!selectedTool) return null;
     const isAvatar = selectedTool.inputType === "avatar" || selectedTool.inputType === "animate";
-    const modelForPricing = isAvatar ? (effectiveAvatarModel || selectedTool.model) : selectedTool.model;
+    // For Grok video: switch pricing model to image-to-video when images are present
+    let modelForPricing = isAvatar ? (effectiveAvatarModel || selectedTool.model) : selectedTool.model;
+    if (selectedTool.model === "grok-imagine/text-to-video" && refImages.length > 0) {
+      modelForPricing = "grok-imagine/image-to-video";
+    }
 
     return {
       model: modelForPricing,
@@ -334,7 +338,7 @@ const StudioPage = () => {
       durationSeconds: effectiveDurationSeconds,
       hasAudio: hasAudioForPricing,
     };
-  }, [selectedTool, resolution, quality, effectiveDurationSeconds, hasAudioForPricing, avatarPricingResolution, effectiveAvatarModel]);
+  }, [selectedTool, resolution, quality, effectiveDurationSeconds, hasAudioForPricing, avatarPricingResolution, effectiveAvatarModel, refImages.length]);
 
   const { price } = usePricing(pricingParams);
   const { checkAccess } = usePlanGating(selectedTool?.model || null);
@@ -516,7 +520,14 @@ const StudioPage = () => {
     return w / h;
   })();
 
-  // Track previous aspect ratio for re-crop suggestion
+  // Auto-switch quality away from "spicy" when Grok ref images are added
+  useEffect(() => {
+    if (selectedTool?.model?.startsWith("grok-imagine/") && refImages.length > 0 && quality === "spicy") {
+      setQuality("normal");
+      toast.info("تم التبديل من Spicy إلى Normal — وضع Spicy غير متاح مع الصور المرجعية");
+    }
+  }, [refImages.length, selectedTool, quality]);
+
   const prevAspectRatioRef = useRef(aspectRatio);
   useEffect(() => {
     const prev = prevAspectRatioRef.current;
@@ -554,24 +565,24 @@ const StudioPage = () => {
   };
 
   const handleGrokRefUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const preview = URL.createObjectURL(file);
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const grokMax = caps?.maxImages ?? 7;
 
-    if (aspectRatio === "auto") {
-      // Auto mode: use image as-is
-      setRefImages(prev => {
-        const updated = [...prev];
-        if (updated.length > 0) {
-          URL.revokeObjectURL(updated[0].preview);
-          updated[0] = { file, preview };
-        } else {
-          updated.push({ file, preview });
-        }
-        return updated;
-      });
-    } else {
-      setCropState({ imageSrc: preview, file, type: "ref", refIndex: 0 });
+    for (const file of files) {
+      const currentLen = refImages.length;
+      if (currentLen >= grokMax) {
+        toast.error(`الحد الأقصى ${grokMax} صور مرجعية`);
+        break;
+      }
+      const preview = URL.createObjectURL(file);
+
+      if (aspectRatio === "auto") {
+        setRefImages(prev => [...prev, { file, preview }]);
+      } else {
+        setCropState({ imageSrc: preview, file, type: "ref", refIndex: currentLen });
+        break; // crop one at a time
+      }
     }
 
     if (grokRefInputRef.current) grokRefInputRef.current.value = "";
@@ -1602,31 +1613,41 @@ const StudioPage = () => {
             </div>
           )}
 
-          {/* ── Grok video reference image ── */}
+          {/* ── Grok video reference images (up to 7) ── */}
           {isGrokVideoRef && (
             <div className="space-y-2">
-              <label className="text-[11px] font-bold text-muted-foreground/70">صورة مرجعية <span className="text-muted-foreground/50 font-normal">(اختياري)</span></label>
-              <div
-                onClick={() => !refImages[0] && grokRefInputRef.current?.click()}
-                className={`relative rounded-xl border-2 border-dashed transition-all overflow-hidden cursor-pointer ${refImages[0] ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/20 hover:border-primary/30"}`}
-                style={{ aspectRatio: "16/9", maxHeight: "120px" }}
-              >
-                {refImages[0] ? (
-                  <div className="relative w-full h-full">
-                    <img src={refImages[0].preview} alt="ref" className="w-full h-full object-cover cursor-pointer"
-                      onClick={(e) => { e.stopPropagation(); setFramePreviewUrl(refImages[0].preview); }} />
-                    <button onClick={(e) => { e.stopPropagation(); removeImage(0); }}
-                      className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center z-10">
-                      <X className="w-3 h-3 text-destructive-foreground" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full gap-1">
-                    <Upload className="w-5 h-5 text-muted-foreground/50" />
-                    <span className="text-[9px] font-semibold text-muted-foreground/60">رفع صورة</span>
-                  </div>
-                )}
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold text-muted-foreground/70">صور مرجعية <span className="text-muted-foreground/50 font-normal">(اختياري — حتى {caps?.maxImages ?? 7})</span></label>
+                {refImages.length > 0 && <span className="text-[10px] text-muted-foreground">{refImages.length}/{caps?.maxImages ?? 7}</span>}
               </div>
+              <p className="text-[9px] text-muted-foreground/60 leading-relaxed">أضف صوراً مرجعية وأشر إليها في الوصف بكتابة @image1 @image2 وهكذا</p>
+              {refImages.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {refImages.map((img, i) => (
+                    <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-border/50">
+                      <img src={img.preview} alt={`ref ${i + 1}`} className="w-full h-full object-cover cursor-pointer"
+                        onClick={() => setFramePreviewUrl(img.preview)} />
+                      <button onClick={() => removeImage(i)}
+                        className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-destructive flex items-center justify-center z-10">
+                        <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                      </button>
+                      <span className="absolute bottom-0.5 right-0.5 text-[7px] font-bold bg-background/80 text-foreground px-1 rounded">@{i + 1}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {refImages.length < (caps?.maxImages ?? 7) && (
+                <button onClick={() => grokRefInputRef.current?.click()}
+                  className="w-full rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex items-center justify-center gap-2 py-3 transition-all">
+                  <Plus className="w-4 h-4 text-muted-foreground/50" />
+                  <span className="text-[10px] font-semibold text-muted-foreground/60">إضافة صورة مرجعية</span>
+                </button>
+              )}
+              {refImages.length > 0 && quality === "spicy" && (
+                <div className="px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                  <span className="text-[10px] text-amber-400 font-medium">⚠️ وضع Spicy غير متاح مع الصور المرجعية — سيتم استخدام Normal تلقائياً</span>
+                </div>
+              )}
             </div>
           )}
 
@@ -1660,7 +1681,12 @@ const StudioPage = () => {
           )}
           {showQuality && (
             <div>
-              {renderSelect("quality", caps!.qualities!.map(q => { const a = checkAccess(null, q, null); return { value: q, label: qualityLabel(q), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), quality, setQuality)}
+              {renderSelect("quality", caps!.qualities!.map(q => {
+                const a = checkAccess(null, q, null);
+                // Spicy not available when Grok has external images
+                const isSpicyLocked = q === "spicy" && isGrokVideo && refImages.length > 0;
+                return { value: q, label: qualityLabel(q), locked: !a.available || isSpicyLocked, lockLabel: isSpicyLocked ? "غير متاح مع الصور" : a.requiredPlanLabel };
+              }), quality, (v) => { setQuality(v); })}
             </div>
           )}
           {showRes && (
@@ -1754,7 +1780,7 @@ const StudioPage = () => {
   // ── Hidden file inputs ──
   const hiddenInputs = (
     <>
-      <input ref={grokRefInputRef} type="file" accept="image/*" className="hidden" onChange={handleGrokRefUpload} />
+      <input ref={grokRefInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleGrokRefUpload} />
       <input ref={fileInputRef} type="file" accept="image/*" multiple={!isImageOnlyTool} className="hidden" onChange={handleImageUpload} />
       <input ref={remixSlotInputRef} type="file" accept="image/*" className="hidden" onChange={handleRemixSlotUpload} />
       <input ref={firstFrameInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFrameUpload("first", e)} />
