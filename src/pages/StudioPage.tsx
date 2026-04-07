@@ -1256,7 +1256,7 @@ const StudioPage = () => {
   // ── Label helpers ──
   const durationLabel = (d: string) => `${d} ثواني`;
   const qualityLabel = (q: string) => {
-    const map: Record<string, string> = { std: "قياسي (STD)", pro: "احترافي (PRO)", normal: "عادي", fun: "مرح", basic: "أساسي", high: "عالي" };
+    const map: Record<string, string> = { std: "قياسي (STD)", pro: "احترافي (PRO)", normal: "عادي", fun: "مرح", spicy: "حار 🌶️", fast: "سريع", basic: "أساسي", high: "عالي" };
     return map[q] || q.toUpperCase();
   };
   const aspectLabelFn = (a: string) => {
