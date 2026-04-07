@@ -22,7 +22,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import CropDialog from "@/components/studio/CropDialog";
 import { Textarea } from "@/components/ui/textarea";
 
-type AspectRatio = "auto" | "1:1" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
+type AspectRatio = "auto" | "1:1" | "2:3" | "3:2" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
 type Resolution = string;
 type UpscaleFactor = string;
 type Quality = string;
@@ -54,6 +54,8 @@ const categoryTitleMap: Record<string, string> = {
 const ratioConfig: Record<string, { label: string; cssAspect: string; placeholderMaxW: string }> = {
   "auto": { label: "تلقائي",  cssAspect: "1/1",  placeholderMaxW: "min(92vw, 560px)" },
   "1:1":  { label: "1:1",   cssAspect: "1/1",  placeholderMaxW: "min(92vw, 560px)" },
+  "2:3":  { label: "2:3",   cssAspect: "2/3",  placeholderMaxW: "min(80vw, 440px)" },
+  "3:2":  { label: "3:2",   cssAspect: "3/2",  placeholderMaxW: "min(94vw, 700px)" },
   "3:4":  { label: "3:4",   cssAspect: "3/4",  placeholderMaxW: "min(88vw, 480px)" },
   "4:3":  { label: "4:3",   cssAspect: "4/3",  placeholderMaxW: "min(94vw, 680px)" },
   "9:16": { label: "9:16",  cssAspect: "9/16", placeholderMaxW: "min(70vw, 400px)" },
@@ -364,6 +366,7 @@ const StudioPage = () => {
     const c = getModelCapabilities(t.model);
     if (c.aspectRatios?.length) setAspectRatio(c.aspectRatios[0] as AspectRatio);
     if (c.durations?.length) setVideoDuration(c.durations[0]);
+    if (c.durationRange) setVideoDuration(String(c.durationRange.min));
     if (c.resolutions?.length) setResolution(c.resolutions[0]);
     if (c.upscaleFactors?.length) setUpscaleFactor(c.upscaleFactors[0]);
     if (t.model.startsWith("grok-imagine/")) {
@@ -1245,16 +1248,17 @@ const StudioPage = () => {
   // Determine which settings to show based on model capabilities
   const showAspect = !isShootsTool && !!(selectedTool && caps?.aspectRatios?.length);
   const showDuration = !isShootsTool && !!(selectedTool && caps?.durations && caps.durations.length > 0);
+  const showDurationSlider = !isShootsTool && !!(selectedTool && caps?.durationRange);
   const showRes = !isShootsTool && !!(selectedTool && caps?.resolutions?.length);
   const isGrokVideo = !!selectedTool && selectedTool.model.startsWith("grok-imagine/");
-  const showQuality = !isShootsTool && !isGrokVideo && !!(selectedTool && caps?.qualities?.length);
+  const showQuality = !isShootsTool && !!(selectedTool && caps?.qualities?.length);
   const showUpscale = !isShootsTool && !!(selectedTool && caps?.upscaleFactors?.length);
   const isGrokVideoRef = isVideoTool && !hasFrameMode && (caps?.maxImages ?? 0) > 0;
 
   // ── Label helpers ──
   const durationLabel = (d: string) => `${d} ثواني`;
   const qualityLabel = (q: string) => {
-    const map: Record<string, string> = { std: "قياسي (STD)", pro: "احترافي (PRO)", normal: "عادي", fun: "مرح", basic: "أساسي", high: "عالي" };
+    const map: Record<string, string> = { std: "قياسي (STD)", pro: "احترافي (PRO)", normal: "عادي", fun: "مرح", spicy: "حار 🌶️", fast: "سريع", basic: "أساسي", high: "عالي" };
     return map[q] || q.toUpperCase();
   };
   const aspectLabelFn = (a: string) => {
@@ -1630,6 +1634,28 @@ const StudioPage = () => {
           {showDuration && (
             <div>
               {renderSelect("duration", caps!.durations!.map(d => ({ value: d, label: durationLabel(d) })), videoDuration, setVideoDuration)}
+            </div>
+          )}
+          {showDurationSlider && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold text-muted-foreground/70">المدة</label>
+                <span className="text-xs font-bold text-primary">{videoDuration} ثانية</span>
+              </div>
+              <input
+                type="range"
+                min={caps!.durationRange!.min}
+                max={caps!.durationRange!.max}
+                step={caps!.durationRange!.step}
+                value={parseInt(videoDuration) || caps!.durationRange!.min}
+                onChange={(e) => setVideoDuration(e.target.value)}
+                className="w-full h-2 rounded-full appearance-none cursor-pointer bg-secondary/60 accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md"
+                dir="ltr"
+              />
+              <div className="flex justify-between text-[9px] text-muted-foreground/50" dir="ltr">
+                <span>{caps!.durationRange!.min}s</span>
+                <span>{caps!.durationRange!.max}s</span>
+              </div>
             </div>
           )}
           {showQuality && (

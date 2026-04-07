@@ -214,18 +214,29 @@ export const tools: AITool[] = [
   },
 
   // ─── Video Models ───
-  // Bytedance Seedance models — listed first
+  // Grok Video — listed first
   {
-    id: "seedance-2",
-    title: "Seedance 2",
-    provider: "Bytedance",
-    description: "أحدث نموذج فيديو سينمائي بجودة استثنائية",
-    image: "seedance2-card",
+    id: "grok-video",
+    title: "Grok Video",
+    provider: "xAI",
+    description: "توليد فيديو بتقنية Grok بمدد مرنة حتى 30 ثانية",
+    image: "video-gen",
     isPro: false,
     category: "فيديو",
-    model: "bytedance/seedance-2",
-    frameMode: "first-last",
+    model: "grok-imagine/text-to-video",
   },
+  // Seedance 2 — hidden (under development)
+  // {
+  //   id: "seedance-2",
+  //   title: "Seedance 2",
+  //   provider: "Bytedance",
+  //   description: "أحدث نموذج فيديو سينمائي بجودة استثنائية",
+  //   image: "seedance2-card",
+  //   isPro: false,
+  //   category: "فيديو",
+  //   model: "bytedance/seedance-2",
+  //   frameMode: "first-last",
+  // },
   {
     id: "seedance",
     title: "Seedance 1.5 Pro",
@@ -236,16 +247,6 @@ export const tools: AITool[] = [
     category: "فيديو",
     model: "bytedance/seedance-1.5-pro",
     frameMode: "first-last",
-  },
-  {
-    id: "grok-video",
-    title: "Grok Video",
-    provider: "xAI",
-    description: "توليد فيديو بتقنية Grok",
-    image: "video-gen",
-    isPro: false,
-    category: "فيديو",
-    model: "grok-imagine/text-to-video",
   },
   {
     id: "veo31-fast",
