@@ -520,7 +520,14 @@ const StudioPage = () => {
     return w / h;
   })();
 
-  // Track previous aspect ratio for re-crop suggestion
+  // Auto-switch quality away from "spicy" when Grok ref images are added
+  useEffect(() => {
+    if (selectedTool?.model?.startsWith("grok-imagine/") && refImages.length > 0 && quality === "spicy") {
+      setQuality("normal");
+      toast.info("تم التبديل من Spicy إلى Normal — وضع Spicy غير متاح مع الصور المرجعية");
+    }
+  }, [refImages.length, selectedTool, quality]);
+
   const prevAspectRatioRef = useRef(aspectRatio);
   useEffect(() => {
     const prev = prevAspectRatioRef.current;
