@@ -364,6 +364,7 @@ const StudioPage = () => {
     const c = getModelCapabilities(t.model);
     if (c.aspectRatios?.length) setAspectRatio(c.aspectRatios[0] as AspectRatio);
     if (c.durations?.length) setVideoDuration(c.durations[0]);
+    if (c.durationRange) setVideoDuration(String(c.durationRange.min));
     if (c.resolutions?.length) setResolution(c.resolutions[0]);
     if (c.upscaleFactors?.length) setUpscaleFactor(c.upscaleFactors[0]);
     if (t.model.startsWith("grok-imagine/")) {
