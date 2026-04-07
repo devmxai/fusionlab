@@ -22,7 +22,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import CropDialog from "@/components/studio/CropDialog";
 import { Textarea } from "@/components/ui/textarea";
 
-type AspectRatio = "auto" | "1:1" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
+type AspectRatio = "auto" | "1:1" | "2:3" | "3:2" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
 type Resolution = string;
 type UpscaleFactor = string;
 type Quality = string;
