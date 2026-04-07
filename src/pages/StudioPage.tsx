@@ -1620,18 +1620,32 @@ const StudioPage = () => {
                 <label className="text-[11px] font-bold text-muted-foreground/70">صور مرجعية <span className="text-muted-foreground/50 font-normal">(اختياري — حتى {caps?.maxImages ?? 7})</span></label>
                 {refImages.length > 0 && <span className="text-[10px] text-muted-foreground">{refImages.length}/{caps?.maxImages ?? 7}</span>}
               </div>
-              <p className="text-[9px] text-muted-foreground/60 leading-relaxed">أضف صوراً مرجعية وأشر إليها في الوصف بكتابة @image1 @image2 وهكذا</p>
+              {refImages.length === 0 ? (
+                <p className="text-[9px] text-muted-foreground/60 leading-relaxed">أضف صوراً مرجعية لتحويلها إلى فيديو. أشر لكل صورة في الوصف بكتابة <span className="font-mono text-primary/70">@image1</span> ثم مسافة ثم وصف الحركة.</p>
+              ) : (
+                <div className="px-3 py-2 rounded-xl bg-primary/5 border border-primary/20 space-y-1.5">
+                  <p className="text-[10px] font-bold text-primary/80">💡 كيف تكتب الوصف:</p>
+                  <p className="text-[9px] text-muted-foreground/80 leading-[1.6]" dir="rtl">
+                    أشر لكل صورة بكتابة <span className="font-mono text-primary/80">@image1</span> ثم مسافة ثم وصف ما تريد أن يحدث.
+                    {refImages.length > 1 && (<> مثال:<br/><span className="font-mono text-[8px] text-foreground/60 leading-[1.8]" dir="ltr">@image1 the person walks forward, then @image2 the city lights up at night</span></>)}
+                    {refImages.length === 1 && (<> مثال:<br/><span className="font-mono text-[8px] text-foreground/60" dir="ltr">@image1 slowly zooms in while the person smiles</span></>)}
+                  </p>
+                  {refImages.length > 1 && (
+                    <p className="text-[8px] text-muted-foreground/50">💡 صورة واحدة: الأبعاد تتبع الصورة تلقائياً | أكثر من صورة: اختر القياس من الإعدادات</p>
+                  )}
+                </div>
+              )}
               {refImages.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {refImages.map((img, i) => (
-                    <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-border/50">
+                    <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-border/50 group">
                       <img src={img.preview} alt={`ref ${i + 1}`} className="w-full h-full object-cover cursor-pointer"
                         onClick={() => setFramePreviewUrl(img.preview)} />
                       <button onClick={() => removeImage(i)}
                         className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-destructive flex items-center justify-center z-10">
                         <X className="w-2.5 h-2.5 text-destructive-foreground" />
                       </button>
-                      <span className="absolute bottom-0.5 right-0.5 text-[7px] font-bold bg-background/80 text-foreground px-1 rounded">@{i + 1}</span>
+                      <span className="absolute bottom-0.5 right-0.5 text-[7px] font-bold bg-primary/90 text-primary-foreground px-1.5 py-0.5 rounded">@image{i + 1}</span>
                     </div>
                   ))}
                 </div>
@@ -1845,7 +1859,7 @@ const StudioPage = () => {
                 <Textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : "اكتب وصفاً لما تريد توليده..."}
+                  placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : (isGrokVideoRef && refImages.length > 0) ? `@image1 وصف حركة الصورة الأولى${refImages.length > 1 ? `، ثم @image2 وصف الثانية...` : "..."}` : "اكتب وصفاً لما تريد توليده..."}
                   className="min-h-[80px] max-h-[140px] resize-none rounded-xl bg-secondary/30 border-border/30 text-sm placeholder:text-muted-foreground/50"
                   dir="rtl"
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading) { e.preventDefault(); handleGenerate(); } }}
@@ -1926,7 +1940,7 @@ const StudioPage = () => {
                   <Textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    placeholder={isShootsTool ? "صف الزوايا..." : isAvatarTool ? "وصف اختياري..." : isRemixTool ? "صف التعديل..." : "اكتب وصفاً لما تريد توليده..."}
+                    placeholder={isShootsTool ? "صف الزوايا..." : isAvatarTool ? "وصف اختياري..." : isRemixTool ? "صف التعديل..." : (isGrokVideoRef && refImages.length > 0) ? `@image1 وصف الحركة${refImages.length > 1 ? `، @image2 ...` : "..."}` : "اكتب وصفاً لما تريد توليده..."}
                     className="flex-1 min-h-[40px] max-h-[80px] resize-none rounded-xl bg-secondary/40 border border-border/30 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50"
                     dir="rtl"
                     rows={2}
