@@ -134,6 +134,10 @@ const StudioPage = () => {
   const desktopPromptRef = useRef<HTMLTextAreaElement>(null);
   const mobilePromptRef = useRef<HTMLTextAreaElement>(null);
 
+  const handleMentionInsert = useCallback((newPrompt: string, cursorPos: number) => {
+    setPrompt(newPrompt);
+  }, []);
+
   const stopAvatarAudioPreview = () => {
     if (avatarAudioPreviewRef.current) {
       avatarAudioPreviewRef.current.pause();
