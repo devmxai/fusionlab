@@ -1674,7 +1674,12 @@ const StudioPage = () => {
           )}
           {showQuality && (
             <div>
-              {renderSelect("quality", caps!.qualities!.map(q => { const a = checkAccess(null, q, null); return { value: q, label: qualityLabel(q), locked: !a.available, lockLabel: a.requiredPlanLabel }; }), quality, setQuality)}
+              {renderSelect("quality", caps!.qualities!.map(q => {
+                const a = checkAccess(null, q, null);
+                // Spicy not available when Grok has external images
+                const isSpicyLocked = q === "spicy" && isGrokVideo && refImages.length > 0;
+                return { value: q, label: qualityLabel(q), locked: !a.available || isSpicyLocked, lockLabel: isSpicyLocked ? "غير متاح مع الصور" : a.requiredPlanLabel };
+              }), quality, (v) => { setQuality(v); })}
             </div>
           )}
           {showRes && (
