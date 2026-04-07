@@ -12,6 +12,8 @@ export interface ModelCapabilities {
   aspectRatios?: string[];
   /** Supported video durations in seconds */
   durations?: string[];
+  /** Duration range (min/max/step) for slider-based selection */
+  durationRange?: { min: number; max: number; step: number };
   /** Max accepted media duration in seconds */
   maxDurationSeconds?: number;
   /** Supported resolutions */
@@ -108,11 +110,11 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
 
   // ─── Video Models ───
 
-  // Docs: aspect_ratio 2:3,3:2,1:1,16:9,9:16 | duration 6,10 | resolution 480p,720p | mode fun,normal,spicy
+  // Docs: aspect_ratio 2:3,3:2,1:1,16:9,9:16 | duration 6-30 step 1 | resolution 480p,720p | mode fun,normal,spicy
   // Supports image-to-video with up to 7 reference images (switches to grok-imagine/image-to-video)
   "grok-imagine/text-to-video": {
     aspectRatios: ["1:1", "2:3", "3:2", "9:16", "16:9"],
-    durations: ["6", "10"],
+    durationRange: { min: 6, max: 30, step: 1 },
     resolutions: ["480p", "720p"],
     qualities: ["fun", "normal", "spicy"],
     maxImages: 7,
