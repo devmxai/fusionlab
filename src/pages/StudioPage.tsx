@@ -1245,9 +1245,10 @@ const StudioPage = () => {
   // Determine which settings to show based on model capabilities
   const showAspect = !isShootsTool && !!(selectedTool && caps?.aspectRatios?.length);
   const showDuration = !isShootsTool && !!(selectedTool && caps?.durations && caps.durations.length > 0);
+  const showDurationSlider = !isShootsTool && !!(selectedTool && caps?.durationRange);
   const showRes = !isShootsTool && !!(selectedTool && caps?.resolutions?.length);
   const isGrokVideo = !!selectedTool && selectedTool.model.startsWith("grok-imagine/");
-  const showQuality = !isShootsTool && !isGrokVideo && !!(selectedTool && caps?.qualities?.length);
+  const showQuality = !isShootsTool && !!(selectedTool && caps?.qualities?.length);
   const showUpscale = !isShootsTool && !!(selectedTool && caps?.upscaleFactors?.length);
   const isGrokVideoRef = isVideoTool && !hasFrameMode && (caps?.maxImages ?? 0) > 0;
 
@@ -1630,6 +1631,28 @@ const StudioPage = () => {
           {showDuration && (
             <div>
               {renderSelect("duration", caps!.durations!.map(d => ({ value: d, label: durationLabel(d) })), videoDuration, setVideoDuration)}
+            </div>
+          )}
+          {showDurationSlider && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold text-muted-foreground/70">المدة</label>
+                <span className="text-xs font-bold text-primary">{videoDuration} ثانية</span>
+              </div>
+              <input
+                type="range"
+                min={caps!.durationRange!.min}
+                max={caps!.durationRange!.max}
+                step={caps!.durationRange!.step}
+                value={parseInt(videoDuration) || caps!.durationRange!.min}
+                onChange={(e) => setVideoDuration(e.target.value)}
+                className="w-full h-2 rounded-full appearance-none cursor-pointer bg-secondary/60 accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md"
+                dir="ltr"
+              />
+              <div className="flex justify-between text-[9px] text-muted-foreground/50" dir="ltr">
+                <span>{caps!.durationRange!.min}s</span>
+                <span>{caps!.durationRange!.max}s</span>
+              </div>
             </div>
           )}
           {showQuality && (
