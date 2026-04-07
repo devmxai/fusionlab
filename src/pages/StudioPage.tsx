@@ -1859,7 +1859,7 @@ const StudioPage = () => {
                 <Textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : "اكتب وصفاً لما تريد توليده..."}
+                  placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : (isGrokVideoRef && refImages.length > 0) ? `@image1 وصف حركة الصورة الأولى${refImages.length > 1 ? `، ثم @image2 وصف الثانية...` : "..."}` : "اكتب وصفاً لما تريد توليده..."}
                   className="min-h-[80px] max-h-[140px] resize-none rounded-xl bg-secondary/30 border-border/30 text-sm placeholder:text-muted-foreground/50"
                   dir="rtl"
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading) { e.preventDefault(); handleGenerate(); } }}
@@ -1940,7 +1940,7 @@ const StudioPage = () => {
                   <Textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    placeholder={isShootsTool ? "صف الزوايا..." : isAvatarTool ? "وصف اختياري..." : isRemixTool ? "صف التعديل..." : "اكتب وصفاً لما تريد توليده..."}
+                    placeholder={isShootsTool ? "صف الزوايا..." : isAvatarTool ? "وصف اختياري..." : isRemixTool ? "صف التعديل..." : (isGrokVideoRef && refImages.length > 0) ? `@image1 وصف الحركة${refImages.length > 1 ? `، @image2 ...` : "..."}` : "اكتب وصفاً لما تريد توليده..."}
                     className="flex-1 min-h-[40px] max-h-[80px] resize-none rounded-xl bg-secondary/40 border border-border/30 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50"
                     dir="rtl"
                     rows={2}
