@@ -23,6 +23,7 @@ import CropDialog from "@/components/studio/CropDialog";
 import { Textarea } from "@/components/ui/textarea";
 import ImageMentionPopover from "@/components/studio/ImageMentionPopover";
 import StoryboardPromptEditor, { StoryboardPromptEditorRef } from "@/components/studio/StoryboardPromptEditor";
+import { compileStoryboardPrompt } from "@/lib/storyboard-compiler";
 
 type AspectRatio = "auto" | "1:1" | "2:3" | "3:2" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
 type Resolution = string;
@@ -870,7 +871,24 @@ const StudioPage = () => {
         ...(imageUrls?.[0] && isAvatarTool && { image_url: imageUrls[0] }),
       };
       const apiAspectRatio = aspectRatio === "auto" ? "1:1" : aspectRatio;
-      const input = buildModelInput(apiModel, prompt, apiAspectRatio, resolution, imageUrls, extraParams);
+
+      // ── Storyboard compiler: compile prompt before sending to provider ──
+      let finalPrompt = prompt;
+      const isGrokVideo = tool.model.startsWith("grok-imagine/") && isVideoTool;
+      if (isGrokVideo && grokMode === "storyboard" && refImages.length >= 2) {
+        const compiled = compileStoryboardPrompt(prompt, refImages.length);
+        if (!compiled.success) {
+          toast.error(compiled.error);
+          setLoading(false);
+          setStatus("");
+          setProgress(0);
+          return;
+        }
+        finalPrompt = compiled.compiledPrompt;
+        console.log("Storyboard compiled prompt:", finalPrompt);
+      }
+
+      const input = buildModelInput(apiModel, finalPrompt, apiAspectRatio, resolution, imageUrls, extraParams);
       const apiType = isFluxKontext ? "flux-kontext" : (tool.isVeoApi ? "veo" : "standard");
 
       // ── Step 3: Start generation (server: auth → entitlement → price → reserve → create task + job record) ──
