@@ -1799,7 +1799,7 @@ const StudioPage = () => {
               <input
                 type="range"
                 min={caps!.durationRange!.min}
-                max={isGrokStoryboard ? Math.min(caps!.durationRange!.max, 10) : caps!.durationRange!.max}
+                max={isGrokReference ? Math.min(caps!.durationRange!.max, 10) : caps!.durationRange!.max}
                 step={caps!.durationRange!.step}
                 value={parseInt(videoDuration) || caps!.durationRange!.min}
                 onChange={(e) => setVideoDuration(e.target.value)}
@@ -1808,7 +1808,7 @@ const StudioPage = () => {
               />
               <div className="flex justify-between text-[9px] text-muted-foreground/50" dir="ltr">
                 <span>{caps!.durationRange!.min}s</span>
-                <span>{isGrokStoryboard ? Math.min(caps!.durationRange!.max, 10) : caps!.durationRange!.max}s</span>
+                <span>{isGrokReference ? Math.min(caps!.durationRange!.max, 10) : caps!.durationRange!.max}s</span>
               </div>
             </div>
           )}
@@ -1978,7 +1978,7 @@ const StudioPage = () => {
             <div className="shrink-0 px-5 pb-5 pt-3 border-t border-border/15 space-y-3">
               {!isImageOnlyTool && (
                 <div className="relative">
-                  {isGrokStoryboard && refImages.length > 0 ? (
+                  {isGrokReference && refImages.length > 0 ? (
                     <StoryboardPromptEditor
                       ref={desktopStoryboardRef}
                       value={prompt}
@@ -1991,7 +1991,7 @@ const StudioPage = () => {
                     />
                   ) : (
                     <>
-                      {isGrokStoryboard && (
+                      {isGrokReference && (
                         <ImageMentionPopover
                           images={refImages}
                           prompt={prompt}
@@ -2085,7 +2085,7 @@ const StudioPage = () => {
                     </button>
                   )}
                    <div className="relative flex-1">
-                    {isGrokStoryboard && refImages.length > 0 ? (
+                    {isGrokReference && refImages.length > 0 ? (
                       <StoryboardPromptEditor
                         ref={mobileStoryboardRef}
                         value={prompt}
@@ -2098,7 +2098,7 @@ const StudioPage = () => {
                       />
                     ) : (
                       <>
-                        {isGrokStoryboard && (
+                        {isGrokReference && (
                           <ImageMentionPopover
                             images={refImages}
                             prompt={prompt}
