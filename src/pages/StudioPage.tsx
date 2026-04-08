@@ -878,13 +878,13 @@ const StudioPage = () => {
       if (isGrokVideo && grokMode === "storyboard" && refImages.length >= 2) {
         const compiled = compileStoryboardPrompt(prompt, refImages.length);
         if (!compiled.success) {
-          toast.error(compiled.error);
+          toast.error((compiled as { success: false; error: string }).error);
           setLoading(false);
           setStatus("");
           setProgress(0);
           return;
         }
-        finalPrompt = compiled.compiledPrompt;
+        finalPrompt = (compiled as { success: true; compiledPrompt: string }).compiledPrompt;
         console.log("Storyboard compiled prompt:", finalPrompt);
       }
 
