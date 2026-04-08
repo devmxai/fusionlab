@@ -403,6 +403,11 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
           onClick={() => checkMention()}
           onKeyUp={() => checkMention()}
           onKeyDown={handleKeyDown}
+          onPaste={(e) => {
+            e.preventDefault();
+            const text = e.clipboardData.getData("text/plain");
+            document.execCommand("insertText", false, text);
+          }}
           className={`w-full overflow-y-auto rounded-xl bg-secondary/30 border border-border/30 px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ring-offset-background whitespace-pre-wrap break-words empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/50 empty:before:pointer-events-none ${className || ""}`}
           style={{
             minHeight: minH,
