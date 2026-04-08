@@ -1660,7 +1660,7 @@ const StudioPage = () => {
                           className="absolute top-1 left-1 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"><X className="w-3 h-3 text-destructive-foreground" /></button>
                       </>
                     ) : (
-                      <><Video className="w-5 h-5 text-muted-foreground/50" /><span className="text-[9px] font-semibold text-muted-foreground/60">فيديو مرجعي</span></>
+                      <><Video className="w-5 h-5 text-muted-foreground/50" /><span className="text-[9px] font-semibold text-muted-foreground/60">Storyboard</span></>
                     )}
                   </button>
                 )}
