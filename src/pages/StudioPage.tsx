@@ -1347,7 +1347,7 @@ const StudioPage = () => {
   const showUpscale = !isShootsTool && !!(selectedTool && caps?.upscaleFactors?.length);
   const isGrokVideoMode = isGrokVideo && isVideoTool;
   const isGrokI2V = isGrokVideoMode && grokMode === "i2v";
-  const isGrokStoryboard = isGrokVideoMode && grokMode === "reference";
+  const isGrokReference = isGrokVideoMode && grokMode === "reference";
 
   // ── Label helpers ──
   const durationLabel = (d: string) => `${d} ثواني`;
@@ -1860,7 +1860,7 @@ const StudioPage = () => {
     || (isAvatarAudioModel && (!avatarImage || !avatarAudio || mediaDurationSeconds === null))
     || (isAvatarAnimateModel && (!avatarImage || !avatarVideo || mediaDurationSeconds === null))
     || (isGrokI2V && refImages.length !== 1)
-    || (isGrokStoryboard && (refImages.length < 2 || !prompt.trim()));
+    || (isGrokReference && (refImages.length < 1 || !prompt.trim()));
 
   const generateBtnLabel = isImageOnlyTool ? (category === "remove-bg" ? "حذف الخلفية" : "رفع الجودة") : "بدء التوليد";
 
