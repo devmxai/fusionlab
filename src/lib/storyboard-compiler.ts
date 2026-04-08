@@ -1,15 +1,14 @@
 /**
- * Storyboard Prompt Compiler
+ * Reference Video Prompt Compiler
  *
- * Compiles the raw user-edited storyboard prompt into a clean,
- * structured prompt that Grok can interpret reliably.
+ * Compiles the raw user-edited prompt into a clean plain-text prompt
+ * for Grok's reference-guided video generation.
  *
- * Rules:
- * - Each referenced scene starts with @imageN at the beginning of a line
- * - Line order must match image order (no skipped or out-of-order tags)
- * - Non-breaking spaces replaced with normal ASCII spaces
- * - Whitespace normalized
- * - A general direction footer is appended for scene coherence
+ * Key difference from previous storyboard compiler:
+ * - Tags are INLINE within sentences, not forced to line starts
+ * - The compiler preserves exact tag positions in the text
+ * - It only normalizes whitespace and validates tag references
+ * - No reordering of tags — they stay where the user placed them
  */
 
 export interface CompileResult {
@@ -27,100 +26,51 @@ export function compileStoryboardPrompt(
   imageCount: number
 ): CompileResult | CompileError {
   if (!rawPrompt.trim()) {
-    return { success: false, error: "يجب كتابة وصف للمشاهد في الستوري بورد" };
+    return { success: false, error: "يجب كتابة وصف للفيديو المرجعي" };
   }
-  if (imageCount < 2) {
-    return { success: false, error: "الستوري بورد يتطلب صورتين على الأقل" };
+  if (imageCount < 1) {
+    return { success: false, error: "يجب إضافة صورة مرجعية واحدة على الأقل" };
   }
   if (imageCount > 7) {
-    return { success: false, error: "الحد الأقصى 7 صور في الستوري بورد" };
+    return { success: false, error: "الحد الأقصى 7 صور مرجعية" };
   }
 
   // ── Step 1: Normalize whitespace ──
   let text = rawPrompt
-    // Replace all non-breaking spaces (U+00A0) with normal spaces
     .replace(/\u00A0/g, " ")
-    // Replace zero-width spaces, word joiners, etc.
     .replace(/[\u200B\u200C\u200D\u2060\uFEFF]/g, "")
-    // Normalize line endings
     .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n");
+    .replace(/\r/g, "\n")
+    // Collapse multiple spaces into one (but keep newlines)
+    .replace(/[^\S\n]+/g, " ")
+    .trim();
 
-  // ── Step 2: Parse lines and extract scene descriptions ──
-  const lines = text.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+  // ── Step 2: Validate tags ──
+  const tagMatches = [...text.matchAll(/@image(\d+)/g)];
 
-  // Extract all @imageN references and their descriptions
-  const scenes: { tag: number; description: string }[] = [];
-  let generalText = "";
-
-  for (const line of lines) {
-    const match = line.match(/^@image(\d+)\s*(.*)/);
-    if (match) {
-      const tagNum = parseInt(match[1]);
-      const desc = match[2].trim();
-      scenes.push({ tag: tagNum, description: desc });
-    } else {
-      // Line without @imageN tag — treat as general direction
-      generalText += (generalText ? " " : "") + line;
-    }
-  }
-
-  // ── Step 3: Validate tags ──
-  // Check for invalid tag numbers
-  for (const scene of scenes) {
-    if (scene.tag < 1 || scene.tag > imageCount) {
+  for (const match of tagMatches) {
+    const num = parseInt(match[1]);
+    if (num < 1 || num > imageCount) {
       return {
         success: false,
-        error: `الوصف يشير إلى @image${scene.tag} لكن لديك ${imageCount} صور فقط`,
+        error: `الوصف يشير إلى @image${num} لكن لديك ${imageCount} صور فقط`,
       };
     }
   }
 
-  // Check for duplicate tags
-  const tagSet = new Set<number>();
-  for (const scene of scenes) {
-    if (tagSet.has(scene.tag)) {
-      return {
-        success: false,
-        error: `يوجد تكرار في الإشارة إلى @image${scene.tag}`,
-      };
-    }
-    tagSet.add(scene.tag);
-  }
-
-  // Sort scenes by tag number to ensure correct order
-  scenes.sort((a, b) => a.tag - b.tag);
-
-  // ── Step 4: Build compiled prompt ──
-  const compiledLines: string[] = [];
-
-  for (const scene of scenes) {
-    const desc = scene.description || `scene ${scene.tag}`;
-    compiledLines.push(`@image${scene.tag} ${desc}`);
-  }
-
-  // Add general direction footer for scene coherence
-  const footer =
-    generalText ||
-    "General direction: smooth cinematic transition between scenes, preserve identity consistency, do not merge references unless explicitly requested, avoid blending unrelated references in the same frame.";
-
-  compiledLines.push(footer);
-
-  const compiledPrompt = compiledLines.join("\n");
-
-  return { success: true, compiledPrompt };
+  return { success: true, compiledPrompt: text };
 }
 
 /**
- * Validates that a storyboard prompt is structurally sound
- * without compiling it. Used for real-time UI validation.
+ * Validates that a reference video prompt is structurally sound.
+ * Used for real-time UI validation.
  */
 export function validateStoryboardPrompt(
   rawPrompt: string,
   imageCount: number
 ): { valid: boolean; error?: string } {
   if (!rawPrompt.trim()) {
-    return { valid: false, error: "يجب كتابة وصف للمشاهد" };
+    return { valid: false, error: "يجب كتابة وصف للفيديو" };
   }
 
   const text = rawPrompt.replace(/\u00A0/g, " ");
