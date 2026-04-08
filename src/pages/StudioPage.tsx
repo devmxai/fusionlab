@@ -759,7 +759,7 @@ const StudioPage = () => {
         toast.error("يجب رفع صورة واحدة في وضع صورة إلى فيديو");
         return;
       }
-      if (grokMode === "storyboard") {
+      if (grokMode === "reference") {
         if (refImages.length < 2) { toast.error("الستوري بورد يتطلب صورتين على الأقل"); return; }
         if (!prompt.trim()) { toast.error("يجب كتابة وصف للمشاهد في الستوري بورد"); return; }
         if (parseInt(videoDuration) > 10) { toast.error("الحد الأقصى للمدة في الستوري بورد هو 10 ثوانٍ"); return; }
@@ -877,7 +877,7 @@ const StudioPage = () => {
       // ── Storyboard compiler: compile prompt before sending to provider ──
       let finalPrompt = prompt;
       const isGrokVideo = tool.model.startsWith("grok-imagine/") && isVideoTool;
-      if (isGrokVideo && grokMode === "storyboard" && refImages.length >= 2) {
+      if (isGrokVideo && grokMode === "reference" && refImages.length >= 2) {
         const compiled = compileStoryboardPrompt(prompt, refImages.length);
         if (!compiled.success) {
           toast.error((compiled as { success: false; error: string }).error);
@@ -1347,7 +1347,7 @@ const StudioPage = () => {
   const showUpscale = !isShootsTool && !!(selectedTool && caps?.upscaleFactors?.length);
   const isGrokVideoMode = isGrokVideo && isVideoTool;
   const isGrokI2V = isGrokVideoMode && grokMode === "i2v";
-  const isGrokStoryboard = isGrokVideoMode && grokMode === "storyboard";
+  const isGrokStoryboard = isGrokVideoMode && grokMode === "reference";
 
   // ── Label helpers ──
   const durationLabel = (d: string) => `${d} ثواني`;
@@ -1702,7 +1702,7 @@ const StudioPage = () => {
               <div className="flex rounded-xl bg-secondary/30 border border-border/30 p-0.5">
                 <button
                   onClick={() => {
-                    if (grokMode === "storyboard" && refImages.length > 1) {
+                    if (grokMode === "reference" && refImages.length > 1) {
                       setRefImages(prev => { prev.slice(1).forEach(img => URL.revokeObjectURL(img.preview)); return prev.slice(0, 1); });
                     }
                     setGrokMode("i2v");
@@ -1712,8 +1712,8 @@ const StudioPage = () => {
                   صورة → فيديو
                 </button>
                 <button
-                  onClick={() => setGrokMode("storyboard")}
-                  className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${grokMode === "storyboard" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  onClick={() => setGrokMode("reference")}
+                  className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${grokMode === "reference" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   ستوري بورد
                 </button>
@@ -1915,7 +1915,7 @@ const StudioPage = () => {
   // ── Hidden file inputs ──
   const hiddenInputs = (
     <>
-      <input ref={grokRefInputRef} type="file" accept="image/*" multiple={grokMode === "storyboard"} className="hidden" onChange={handleGrokRefUpload} />
+      <input ref={grokRefInputRef} type="file" accept="image/*" multiple={grokMode === "reference"} className="hidden" onChange={handleGrokRefUpload} />
       <input ref={fileInputRef} type="file" accept="image/*" multiple={!isImageOnlyTool} className="hidden" onChange={handleImageUpload} />
       <input ref={remixSlotInputRef} type="file" accept="image/*" className="hidden" onChange={handleRemixSlotUpload} />
       <input ref={firstFrameInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFrameUpload("first", e)} />
