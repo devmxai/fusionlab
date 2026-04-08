@@ -100,6 +100,7 @@ const StudioPage = () => {
   const [upscaleFactor, setUpscaleFactor] = useState<UpscaleFactor>("2");
   const [quality, setQuality] = useState<Quality>("std");
   const [refImages, setRefImages] = useState<{ file: File; preview: string }[]>([]);
+  const [grokMode, setGrokMode] = useState<"i2v" | "storyboard">("i2v");
   const [firstFrame, setFirstFrame] = useState<{ file: File; preview: string } | null>(null);
   const [lastFrame, setLastFrame] = useState<{ file: File; preview: string } | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -385,6 +386,10 @@ const StudioPage = () => {
     } else if (c.qualities?.length) {
       setQuality(c.qualities[0]);
     }
+    // Reset Grok mode & clear ref images
+    setGrokMode("i2v");
+    refImages.forEach(img => URL.revokeObjectURL(img.preview));
+    setRefImages([]);
   };
 
   // Pre-select model from query param only (no auto-select fallback)
@@ -535,6 +540,14 @@ const StudioPage = () => {
     }
   }, [refImages.length, selectedTool, quality]);
 
+  // Cap duration at 10s for storyboard mode
+  useEffect(() => {
+    if (selectedTool?.model?.startsWith("grok-imagine/") && grokMode === "storyboard" && parseInt(videoDuration) > 10) {
+      setVideoDuration("10");
+      toast.info("الحد الأقصى للمدة في وضع الستوري بورد هو 10 ثوانٍ");
+    }
+  }, [grokMode, selectedTool, videoDuration]);
+
   const prevAspectRatioRef = useRef(aspectRatio);
   useEffect(() => {
     const prev = prevAspectRatioRef.current;
@@ -574,21 +587,31 @@ const StudioPage = () => {
   const handleGrokRefUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    const grokMax = caps?.maxImages ?? 7;
+    const maxForMode = grokMode === "i2v" ? 1 : 7;
 
     for (const file of files) {
       const currentLen = refImages.length;
-      if (currentLen >= grokMax) {
-        toast.error(`الحد الأقصى ${grokMax} صور مرجعية`);
+      if (currentLen >= maxForMode) {
+        toast.error(grokMode === "i2v" ? "صورة واحدة فقط في وضع صورة إلى فيديو" : `الحد الأقصى ${maxForMode} صور`);
         break;
       }
       const preview = URL.createObjectURL(file);
 
       if (aspectRatio === "auto") {
-        setRefImages(prev => [...prev, { file, preview }]);
+        if (grokMode === "i2v") {
+          setRefImages(prev => { prev.forEach(img => URL.revokeObjectURL(img.preview)); return [{ file, preview }]; });
+        } else {
+          setRefImages(prev => [...prev, { file, preview }]);
+        }
       } else {
-        setCropState({ imageSrc: preview, file, type: "ref", refIndex: currentLen });
-        break; // crop one at a time
+        if (grokMode === "i2v" && currentLen > 0) {
+          refImages.forEach(img => URL.revokeObjectURL(img.preview));
+          setRefImages([]);
+          setCropState({ imageSrc: preview, file, type: "ref", refIndex: 0 });
+        } else {
+          setCropState({ imageSrc: preview, file, type: "ref", refIndex: currentLen });
+        }
+        break;
       }
     }
 
@@ -632,6 +655,20 @@ const StudioPage = () => {
       URL.revokeObjectURL(prev[index].preview);
       return prev.filter((_, i) => i !== index);
     });
+    // Resync storyboard prompt tags after deletion
+    if (grokMode === "storyboard" && selectedTool?.model?.startsWith("grok-imagine/")) {
+      const deletedNum = index + 1;
+      setPrompt(prev => {
+        let updated = prev;
+        // Remove references to deleted image
+        updated = updated.replace(new RegExp(`@image${deletedNum}[^\\n]*\\n?`, 'g'), '');
+        // Renumber higher tags downward
+        for (let n = 7; n > deletedNum; n--) {
+          updated = updated.replace(new RegExp(`@image${n}\\b`, 'g'), `@image${n - 1}`);
+        }
+        return updated.trim();
+      });
+    }
   };
 
   const fileToBase64 = (file: File): Promise<string> =>
@@ -709,6 +746,20 @@ const StudioPage = () => {
     if (isAvatarAnimateModel && mediaDurationSeconds === null) {
       toast.error("لم يتم استخراج مدة الفيديو — يرجى إعادة رفعه");
       return;
+    }
+    // Grok mode validation
+    if (tool.model.startsWith("grok-imagine/") && isVideoTool) {
+      if (grokMode === "i2v" && refImages.length !== 1) {
+        toast.error("يجب رفع صورة واحدة في وضع صورة إلى فيديو");
+        return;
+      }
+      if (grokMode === "storyboard") {
+        if (refImages.length < 2) { toast.error("الستوري بورد يتطلب صورتين على الأقل"); return; }
+        if (!prompt.trim()) { toast.error("يجب كتابة وصف للمشاهد في الستوري بورد"); return; }
+        if (parseInt(videoDuration) > 10) { toast.error("الحد الأقصى للمدة في الستوري بورد هو 10 ثوانٍ"); return; }
+        const maxTag = (() => { let m = 0; for (const match of prompt.matchAll(/@image(\d+)/g)) { const n = parseInt(match[1]); if (n > m) m = n; } return m; })();
+        if (maxTag > refImages.length) { toast.error(`الوصف يشير إلى @image${maxTag} لكن لديك ${refImages.length} صور فقط`); return; }
+      }
     }
     if (!isImageOnlyTool && !isRemixTool && !isAvatarTool && !prompt.trim() && refImages.length === 0 && !firstFrame) {
       toast.error("اكتب وصفاً أو ارفع صورة");
@@ -1271,7 +1322,9 @@ const StudioPage = () => {
   const isGrokVideo = !!selectedTool && selectedTool.model.startsWith("grok-imagine/");
   const showQuality = !isShootsTool && !!(selectedTool && caps?.qualities?.length);
   const showUpscale = !isShootsTool && !!(selectedTool && caps?.upscaleFactors?.length);
-  const isGrokVideoRef = isVideoTool && !hasFrameMode && (caps?.maxImages ?? 0) > 0;
+  const isGrokVideoMode = isGrokVideo && isVideoTool;
+  const isGrokI2V = isGrokVideoMode && grokMode === "i2v";
+  const isGrokStoryboard = isGrokVideoMode && grokMode === "storyboard";
 
   // ── Label helpers ──
   const durationLabel = (d: string) => `${d} ثواني`;
@@ -1451,7 +1504,7 @@ const StudioPage = () => {
           )}
 
           {/* ── Reference images (non-video models with maxImages, e.g. image models) ── */}
-          {!hasFrameMode && !isRemixTool && !isAvatarTool && !isImageOnlyTool && !isShootsTool && !isGrokVideoRef && (caps?.maxImages ?? 0) > 0 && (
+          {!hasFrameMode && !isRemixTool && !isAvatarTool && !isImageOnlyTool && !isShootsTool && !isGrokVideoMode && (caps?.maxImages ?? 0) > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-bold text-muted-foreground/70">صور مرجعية</label>
@@ -1620,50 +1673,86 @@ const StudioPage = () => {
             </div>
           )}
 
-          {/* ── Grok video reference images (up to 7) ── */}
-          {isGrokVideoRef && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold text-muted-foreground/70">صور مرجعية <span className="text-muted-foreground/50 font-normal">(اختياري — حتى {caps?.maxImages ?? 7})</span></label>
-                {refImages.length > 0 && <span className="text-[10px] text-muted-foreground">{refImages.length}/{caps?.maxImages ?? 7}</span>}
+          {/* ── Grok Video: Image to Video / Storyboard ── */}
+          {isGrokVideoMode && (
+            <div className="space-y-3">
+              <div className="flex rounded-xl bg-secondary/30 border border-border/30 p-0.5">
+                <button
+                  onClick={() => {
+                    if (grokMode === "storyboard" && refImages.length > 1) {
+                      setRefImages(prev => { prev.slice(1).forEach(img => URL.revokeObjectURL(img.preview)); return prev.slice(0, 1); });
+                    }
+                    setGrokMode("i2v");
+                  }}
+                  className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${grokMode === "i2v" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  صورة → فيديو
+                </button>
+                <button
+                  onClick={() => setGrokMode("storyboard")}
+                  className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${grokMode === "storyboard" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  ستوري بورد
+                </button>
               </div>
-              {refImages.length === 0 ? (
-                <p className="text-[9px] text-muted-foreground/60 leading-relaxed">أضف صوراً مرجعية لتحويلها إلى فيديو. أشر لكل صورة في الوصف بكتابة <span className="font-mono text-primary/70">@image1</span> ثم مسافة ثم وصف الحركة.</p>
+
+              {grokMode === "i2v" ? (
+                <div className="space-y-2">
+                  {refImages.length > 0 ? (
+                    <div className="relative rounded-xl overflow-hidden border-2 border-primary/40 bg-primary/5" style={{ aspectRatio: "4/3" }}>
+                      <img src={refImages[0].preview} alt="صورة البداية" className="w-full h-full object-cover cursor-pointer" onClick={() => setFramePreviewUrl(refImages[0].preview)} />
+                      <button onClick={() => removeImage(0)} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center z-10"><X className="w-3 h-3 text-destructive-foreground" /></button>
+                      <button onClick={() => grokRefInputRef.current?.click()} className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-background/80 border border-border/30 flex items-center justify-center z-10"><Upload className="w-2.5 h-2.5 text-foreground" /></button>
+                    </div>
+                  ) : (
+                    <button onClick={() => grokRefInputRef.current?.click()}
+                      className="w-full rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex flex-col items-center justify-center gap-2 py-8 transition-all">
+                      <ImageIcon className="w-7 h-7 text-muted-foreground/50" />
+                      <span className="text-[10px] font-semibold text-muted-foreground/60">رفع صورة لتحويلها إلى فيديو</span>
+                    </button>
+                  )}
+                </div>
               ) : (
-                <div className="px-3 py-2 rounded-xl bg-primary/5 border border-primary/20 space-y-1.5">
-                  <p className="text-[10px] font-bold text-primary/80">💡 كيف تكتب الوصف:</p>
-                  <p className="text-[9px] text-muted-foreground/80 leading-[1.6]" dir="rtl">
-                    أشر لكل صورة بكتابة <span className="font-mono text-primary/80">@image1</span> ثم مسافة ثم وصف ما تريد أن يحدث.
-                    {refImages.length > 1 && (<> مثال:<br/><span className="font-mono text-[8px] text-foreground/60 leading-[1.8]" dir="ltr">@image1 the person walks forward, then @image2 the city lights up at night</span></>)}
-                    {refImages.length === 1 && (<> مثال:<br/><span className="font-mono text-[8px] text-foreground/60" dir="ltr">@image1 slowly zooms in while the person smiles</span></>)}
-                  </p>
-                  {refImages.length > 1 && (
-                    <p className="text-[8px] text-muted-foreground/50">💡 صورة واحدة: الأبعاد تتبع الصورة تلقائياً | أكثر من صورة: اختر القياس من الإعدادات</p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-muted-foreground/70">صور المشاهد <span className="text-muted-foreground/50 font-normal">(2-7)</span></label>
+                    <span className="text-[10px] text-muted-foreground">{refImages.length}/7</span>
+                  </div>
+                  {refImages.length === 0 && (
+                    <p className="text-[9px] text-muted-foreground/60 leading-relaxed">أضف صوراً لإنشاء ستوري بورد. أشر لكل صورة بـ <span className="font-mono text-primary/70">@image1</span> في الوصف.</p>
+                  )}
+                  {refImages.length > 0 && (
+                    <>
+                      <div className="px-3 py-2 rounded-xl bg-primary/5 border border-primary/20 space-y-1">
+                        <p className="text-[10px] font-bold text-primary/80">💡 نمط الكتابة:</p>
+                        <p className="text-[9px] text-muted-foreground/80 leading-[1.8] font-mono" dir="ltr">@image1 slow zoom on the subject<br/>@image2 camera pans to the scene</p>
+                      </div>
+                      <div className="space-y-1.5">
+                        {refImages.map((img, i) => (
+                          <div key={i} className="flex items-center gap-3 px-2 py-1.5 rounded-xl bg-secondary/20 border border-border/20">
+                            <div className="relative w-11 h-11 rounded-lg overflow-hidden border border-border/30 shrink-0">
+                              <img src={img.preview} alt="" className="w-full h-full object-cover cursor-pointer" onClick={() => setFramePreviewUrl(img.preview)} />
+                              <button onClick={(e) => { e.stopPropagation(); removeImage(i); }} className="absolute top-0 left-0 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"><X className="w-2.5 h-2.5 text-destructive-foreground" /></button>
+                            </div>
+                            <div className="flex-1 min-w-0 flex items-center gap-2">
+                              <span className="text-xs font-bold text-foreground">الصورة {i + 1}</span>
+                              <span className="text-[10px] font-mono text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded">@image{i + 1}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {refImages.length < 7 && (
+                    <button onClick={() => grokRefInputRef.current?.click()}
+                      className="w-full rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex items-center justify-center gap-2 py-3 transition-all">
+                      <Plus className="w-4 h-4 text-muted-foreground/50" />
+                      <span className="text-[10px] font-semibold text-muted-foreground/60">إضافة صورة</span>
+                    </button>
                   )}
                 </div>
               )}
-              {refImages.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {refImages.map((img, i) => (
-                    <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-border/50 group">
-                      <img src={img.preview} alt={`ref ${i + 1}`} className="w-full h-full object-cover cursor-pointer"
-                        onClick={() => setFramePreviewUrl(img.preview)} />
-                      <button onClick={() => removeImage(i)}
-                        className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-destructive flex items-center justify-center z-10">
-                        <X className="w-2.5 h-2.5 text-destructive-foreground" />
-                      </button>
-                      <span className="absolute bottom-0.5 right-0.5 text-[7px] font-bold bg-primary/90 text-primary-foreground px-1.5 py-0.5 rounded">@image{i + 1}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {refImages.length < (caps?.maxImages ?? 7) && (
-                <button onClick={() => grokRefInputRef.current?.click()}
-                  className="w-full rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex items-center justify-center gap-2 py-3 transition-all">
-                  <Plus className="w-4 h-4 text-muted-foreground/50" />
-                  <span className="text-[10px] font-semibold text-muted-foreground/60">إضافة صورة مرجعية</span>
-                </button>
-              )}
+
               {refImages.length > 0 && quality === "spicy" && (
                 <div className="px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30">
                   <span className="text-[10px] text-amber-400 font-medium">⚠️ وضع Spicy غير متاح مع الصور المرجعية — سيتم استخدام Normal تلقائياً</span>
@@ -1687,7 +1776,7 @@ const StudioPage = () => {
               <input
                 type="range"
                 min={caps!.durationRange!.min}
-                max={caps!.durationRange!.max}
+                max={isGrokStoryboard ? Math.min(caps!.durationRange!.max, 10) : caps!.durationRange!.max}
                 step={caps!.durationRange!.step}
                 value={parseInt(videoDuration) || caps!.durationRange!.min}
                 onChange={(e) => setVideoDuration(e.target.value)}
@@ -1696,7 +1785,7 @@ const StudioPage = () => {
               />
               <div className="flex justify-between text-[9px] text-muted-foreground/50" dir="ltr">
                 <span>{caps!.durationRange!.min}s</span>
-                <span>{caps!.durationRange!.max}s</span>
+                <span>{isGrokStoryboard ? Math.min(caps!.durationRange!.max, 10) : caps!.durationRange!.max}s</span>
               </div>
             </div>
           )}
@@ -1746,7 +1835,9 @@ const StudioPage = () => {
     || (isImageOnlyTool && refImages.length === 0)
     || (isShootsTool && refImages.length === 0 && !prompt.trim())
     || (isAvatarAudioModel && (!avatarImage || !avatarAudio || mediaDurationSeconds === null))
-    || (isAvatarAnimateModel && (!avatarImage || !avatarVideo || mediaDurationSeconds === null));
+    || (isAvatarAnimateModel && (!avatarImage || !avatarVideo || mediaDurationSeconds === null))
+    || (isGrokI2V && refImages.length !== 1)
+    || (isGrokStoryboard && (refImages.length < 2 || !prompt.trim()));
 
   const generateBtnLabel = isImageOnlyTool ? (category === "remove-bg" ? "حذف الخلفية" : "رفع الجودة") : "بدء التوليد";
 
@@ -1801,7 +1892,7 @@ const StudioPage = () => {
   // ── Hidden file inputs ──
   const hiddenInputs = (
     <>
-      <input ref={grokRefInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleGrokRefUpload} />
+      <input ref={grokRefInputRef} type="file" accept="image/*" multiple={grokMode === "storyboard"} className="hidden" onChange={handleGrokRefUpload} />
       <input ref={fileInputRef} type="file" accept="image/*" multiple={!isImageOnlyTool} className="hidden" onChange={handleImageUpload} />
       <input ref={remixSlotInputRef} type="file" accept="image/*" className="hidden" onChange={handleRemixSlotUpload} />
       <input ref={firstFrameInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFrameUpload("first", e)} />
@@ -1864,7 +1955,7 @@ const StudioPage = () => {
             <div className="shrink-0 px-5 pb-5 pt-3 border-t border-border/15 space-y-3">
               {!isImageOnlyTool && (
                 <div className="relative">
-                  {isGrokVideoRef && refImages.length > 0 && (
+                  {isGrokStoryboard && refImages.length > 0 && (
                     <ImageMentionPopover
                       images={refImages}
                       prompt={prompt}
@@ -1876,10 +1967,10 @@ const StudioPage = () => {
                     ref={desktopPromptRef}
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : (isGrokVideoRef && refImages.length > 0) ? `@image1 وصف حركة الصورة الأولى${refImages.length > 1 ? `، ثم @image2 وصف الثانية...` : "..."}` : "اكتب وصفاً لما تريد توليده..."}
+                    placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : isGrokStoryboard && refImages.length > 0 ? "@image1 وصف الحركة...\n@image2 وصف المشهد التالي..." : isGrokI2V ? "صف حركة الفيديو المطلوبة..." : "اكتب وصفاً لما تريد توليده..."}
                     className="min-h-[80px] max-h-[140px] resize-none rounded-xl bg-secondary/30 border-border/30 text-sm placeholder:text-muted-foreground/50"
                     dir="rtl"
-                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading) { e.preventDefault(); handleGenerate(); } }}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading && !isGrokStoryboard) { e.preventDefault(); handleGenerate(); } }}
                   />
                 </div>
               )}
@@ -1956,7 +2047,7 @@ const StudioPage = () => {
                     </button>
                   )}
                   <div className="relative flex-1">
-                    {isGrokVideoRef && refImages.length > 0 && (
+                    {isGrokStoryboard && refImages.length > 0 && (
                       <ImageMentionPopover
                         images={refImages}
                         prompt={prompt}
@@ -1968,11 +2059,11 @@ const StudioPage = () => {
                       ref={mobilePromptRef}
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
-                      placeholder={isShootsTool ? "صف الزوايا..." : isAvatarTool ? "وصف اختياري..." : isRemixTool ? "صف التعديل..." : (isGrokVideoRef && refImages.length > 0) ? `@image1 وصف الحركة${refImages.length > 1 ? `، @image2 ...` : "..."}` : "اكتب وصفاً لما تريد توليده..."}
+                      placeholder={isShootsTool ? "صف الزوايا..." : isAvatarTool ? "وصف اختياري..." : isRemixTool ? "صف التعديل..." : isGrokStoryboard && refImages.length > 0 ? "@image1 وصف...\n@image2 وصف..." : isGrokI2V ? "صف حركة الفيديو..." : "اكتب وصفاً لما تريد توليده..."}
                       className="w-full min-h-[40px] max-h-[80px] resize-none rounded-xl bg-secondary/40 border border-border/30 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50"
                       dir="rtl"
-                      rows={2}
-                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading) { e.preventDefault(); handleGenerate(); } }}
+                      rows={isGrokStoryboard ? 3 : 2}
+                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading && !isGrokStoryboard) { e.preventDefault(); handleGenerate(); } }}
                     />
                   </div>
                 </div>

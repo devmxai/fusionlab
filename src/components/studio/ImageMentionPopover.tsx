@@ -77,15 +77,18 @@ export default function ImageMentionPopover({ images, prompt, textareaRef, onIns
     if (!ta) return;
 
     const cursorPos = ta.selectionStart ?? 0;
-    // Replace from mentionStart to current cursor with the tag
     const before = prompt.slice(0, mentionStart);
     const after = prompt.slice(cursorPos);
-    const newPrompt = before + tag + after;
-    const newCursor = mentionStart + tag.length;
+
+    // If not at the start of a clean line, prepend newline
+    const needsNewline = before.length > 0 && !before.endsWith('\n');
+    const prefix = needsNewline ? '\n' : '';
+
+    const newPrompt = before + prefix + tag + after;
+    const newCursor = mentionStart + prefix.length + tag.length;
     onInsert(newPrompt, newCursor);
     setOpen(false);
 
-    // Refocus after React re-render
     requestAnimationFrame(() => {
       ta.focus();
       ta.setSelectionRange(newCursor, newCursor);
