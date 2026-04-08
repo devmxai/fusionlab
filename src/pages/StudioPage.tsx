@@ -2099,9 +2099,8 @@ const StudioPage = () => {
                         value={prompt}
                         onChange={setPrompt}
                         images={refImages}
-                        placeholder="@image1 وصف...\n@image2 وصف..."
+                        placeholder="move from @image1 toward @image2..."
                         className="w-full"
-                        dir="rtl"
                         rows={2}
                       />
                     ) : (
