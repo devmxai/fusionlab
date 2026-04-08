@@ -760,9 +760,9 @@ const StudioPage = () => {
         return;
       }
       if (grokMode === "reference") {
-        if (refImages.length < 2) { toast.error("الستوري بورد يتطلب صورتين على الأقل"); return; }
-        if (!prompt.trim()) { toast.error("يجب كتابة وصف للمشاهد في الستوري بورد"); return; }
-        if (parseInt(videoDuration) > 10) { toast.error("الحد الأقصى للمدة في الستوري بورد هو 10 ثوانٍ"); return; }
+        if (refImages.length < 1) { toast.error("يجب إضافة صورة مرجعية واحدة على الأقل"); return; }
+        if (!prompt.trim()) { toast.error("يجب كتابة وصف للفيديو المرجعي"); return; }
+        if (parseInt(videoDuration) > 10) { toast.error("الحد الأقصى للمدة في وضع الفيديو المرجعي هو 10 ثوانٍ"); return; }
         const maxTag = (() => { let m = 0; for (const match of prompt.matchAll(/@image(\d+)/g)) { const n = parseInt(match[1]); if (n > m) m = n; } return m; })();
         if (maxTag > refImages.length) { toast.error(`الوصف يشير إلى @image${maxTag} لكن لديك ${refImages.length} صور فقط`); return; }
       }
