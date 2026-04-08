@@ -102,7 +102,7 @@ const StudioPage = () => {
   const [upscaleFactor, setUpscaleFactor] = useState<UpscaleFactor>("2");
   const [quality, setQuality] = useState<Quality>("std");
   const [refImages, setRefImages] = useState<{ file: File; preview: string }[]>([]);
-  const [grokMode, setGrokMode] = useState<"i2v" | "storyboard">("i2v");
+  const [grokMode, setGrokMode] = useState<"i2v" | "reference">("i2v");
   const [firstFrame, setFirstFrame] = useState<{ file: File; preview: string } | null>(null);
   const [lastFrame, setLastFrame] = useState<{ file: File; preview: string } | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -546,9 +546,9 @@ const StudioPage = () => {
 
   // Cap duration at 10s for storyboard mode
   useEffect(() => {
-    if (selectedTool?.model?.startsWith("grok-imagine/") && grokMode === "storyboard" && parseInt(videoDuration) > 10) {
+    if (selectedTool?.model?.startsWith("grok-imagine/") && grokMode === "reference" && parseInt(videoDuration) > 10) {
       setVideoDuration("10");
-      toast.info("الحد الأقصى للمدة في وضع الستوري بورد هو 10 ثوانٍ");
+      toast.info("الحد الأقصى للمدة في وضع الفيديو المرجعي هو 10 ثوانٍ");
     }
   }, [grokMode, selectedTool, videoDuration]);
 
@@ -596,7 +596,7 @@ const StudioPage = () => {
     for (const file of files) {
       const currentLen = refImages.length;
       if (currentLen >= maxForMode) {
-        toast.error(grokMode === "i2v" ? "صورة واحدة فقط في وضع صورة إلى فيديو" : `الحد الأقصى ${maxForMode} صور`);
+        toast.error(grokMode === "i2v" ? "صورة واحدة فقط في وضع صورة إلى فيديو" : `الحد الأقصى ${maxForMode} صور مرجعية`);
         break;
       }
       const preview = URL.createObjectURL(file);
@@ -659,17 +659,19 @@ const StudioPage = () => {
       URL.revokeObjectURL(prev[index].preview);
       return prev.filter((_, i) => i !== index);
     });
-    // Resync storyboard prompt tags after deletion
-    if (grokMode === "storyboard" && selectedTool?.model?.startsWith("grok-imagine/")) {
+    // Resync reference prompt tags after deletion
+    if (grokMode === "reference" && selectedTool?.model?.startsWith("grok-imagine/")) {
       const deletedNum = index + 1;
       setPrompt(prev => {
         let updated = prev;
-        // Remove references to deleted image
-        updated = updated.replace(new RegExp(`@image${deletedNum}[^\\n]*\\n?`, 'g'), '');
+        // Remove references to deleted image (inline — just remove the tag itself)
+        updated = updated.replace(new RegExp(`@image${deletedNum}`, 'g'), '');
         // Renumber higher tags downward
         for (let n = 7; n > deletedNum; n--) {
           updated = updated.replace(new RegExp(`@image${n}\\b`, 'g'), `@image${n - 1}`);
         }
+        // Clean up double spaces left by removal
+        updated = updated.replace(/  +/g, ' ');
         return updated.trim();
       });
     }
