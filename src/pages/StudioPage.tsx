@@ -874,10 +874,10 @@ const StudioPage = () => {
       };
       const apiAspectRatio = aspectRatio === "auto" ? "1:1" : aspectRatio;
 
-      // ── Storyboard compiler: compile prompt before sending to provider ──
+      // ── Reference video compiler: compile prompt before sending to provider ──
       let finalPrompt = prompt;
       const isGrokVideo = tool.model.startsWith("grok-imagine/") && isVideoTool;
-      if (isGrokVideo && grokMode === "reference" && refImages.length >= 2) {
+      if (isGrokVideo && grokMode === "reference" && refImages.length >= 1) {
         const compiled = compileStoryboardPrompt(prompt, refImages.length);
         if (!compiled.success) {
           toast.error((compiled as { success: false; error: string }).error);
@@ -887,7 +887,7 @@ const StudioPage = () => {
           return;
         }
         finalPrompt = (compiled as { success: true; compiledPrompt: string }).compiledPrompt;
-        console.log("Storyboard compiled prompt:", finalPrompt);
+        console.log("Reference video compiled prompt:", finalPrompt);
       }
 
       const input = buildModelInput(apiModel, finalPrompt, apiAspectRatio, resolution, imageUrls, extraParams);
