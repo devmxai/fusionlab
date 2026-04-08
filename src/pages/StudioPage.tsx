@@ -22,6 +22,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import CropDialog from "@/components/studio/CropDialog";
 import { Textarea } from "@/components/ui/textarea";
 import ImageMentionPopover from "@/components/studio/ImageMentionPopover";
+import StoryboardPromptEditor, { StoryboardPromptEditorRef } from "@/components/studio/StoryboardPromptEditor";
 
 type AspectRatio = "auto" | "1:1" | "2:3" | "3:2" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
 type Resolution = string;
@@ -134,6 +135,8 @@ const StudioPage = () => {
   const bottomBarRef = useRef<HTMLDivElement>(null);
   const desktopPromptRef = useRef<HTMLTextAreaElement>(null);
   const mobilePromptRef = useRef<HTMLTextAreaElement>(null);
+  const desktopStoryboardRef = useRef<StoryboardPromptEditorRef>(null);
+  const mobileStoryboardRef = useRef<StoryboardPromptEditorRef>(null);
 
   const handleMentionInsert = useCallback((newPrompt: string, cursorPos: number) => {
     setPrompt(newPrompt);
@@ -1955,23 +1958,38 @@ const StudioPage = () => {
             <div className="shrink-0 px-5 pb-5 pt-3 border-t border-border/15 space-y-3">
               {!isImageOnlyTool && (
                 <div className="relative">
-                  {isGrokStoryboard && refImages.length > 0 && (
-                    <ImageMentionPopover
+                  {isGrokStoryboard && refImages.length > 0 ? (
+                    <StoryboardPromptEditor
+                      ref={desktopStoryboardRef}
+                      value={prompt}
+                      onChange={setPrompt}
                       images={refImages}
-                      prompt={prompt}
-                      textareaRef={desktopPromptRef}
-                      onInsert={handleMentionInsert}
+                      placeholder="@image1 وصف الحركة...\n@image2 وصف المشهد التالي..."
+                      className="min-h-[80px] max-h-[140px]"
+                      dir="rtl"
+                      rows={3}
                     />
+                  ) : (
+                    <>
+                      {isGrokStoryboard && (
+                        <ImageMentionPopover
+                          images={refImages}
+                          prompt={prompt}
+                          textareaRef={desktopPromptRef}
+                          onInsert={handleMentionInsert}
+                        />
+                      )}
+                      <Textarea
+                        ref={desktopPromptRef}
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : isGrokI2V ? "صف حركة الفيديو المطلوبة..." : "اكتب وصفاً لما تريد توليده..."}
+                        className="min-h-[80px] max-h-[140px] resize-none rounded-xl bg-secondary/30 border-border/30 text-sm placeholder:text-muted-foreground/50"
+                        dir="rtl"
+                        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading) { e.preventDefault(); handleGenerate(); } }}
+                      />
+                    </>
                   )}
-                  <Textarea
-                    ref={desktopPromptRef}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : isGrokStoryboard && refImages.length > 0 ? "@image1 وصف الحركة...\n@image2 وصف المشهد التالي..." : isGrokI2V ? "صف حركة الفيديو المطلوبة..." : "اكتب وصفاً لما تريد توليده..."}
-                    className="min-h-[80px] max-h-[140px] resize-none rounded-xl bg-secondary/30 border-border/30 text-sm placeholder:text-muted-foreground/50"
-                    dir="rtl"
-                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading && !isGrokStoryboard) { e.preventDefault(); handleGenerate(); } }}
-                  />
                 </div>
               )}
               <Button onClick={handleGenerate} disabled={isGenerateDisabled} className="w-full rounded-xl gap-2 h-11 text-sm font-bold shadow-lg">
@@ -2046,25 +2064,40 @@ const StudioPage = () => {
                       <span className="text-[10px] font-semibold text-foreground">{refImages.length > 0 ? "تغيير" : "صورة"}</span>
                     </button>
                   )}
-                  <div className="relative flex-1">
-                    {isGrokStoryboard && refImages.length > 0 && (
-                      <ImageMentionPopover
+                   <div className="relative flex-1">
+                    {isGrokStoryboard && refImages.length > 0 ? (
+                      <StoryboardPromptEditor
+                        ref={mobileStoryboardRef}
+                        value={prompt}
+                        onChange={setPrompt}
                         images={refImages}
-                        prompt={prompt}
-                        textareaRef={mobilePromptRef}
-                        onInsert={handleMentionInsert}
+                        placeholder="@image1 وصف...\n@image2 وصف..."
+                        className="w-full"
+                        dir="rtl"
+                        rows={2}
                       />
+                    ) : (
+                      <>
+                        {isGrokStoryboard && (
+                          <ImageMentionPopover
+                            images={refImages}
+                            prompt={prompt}
+                            textareaRef={mobilePromptRef}
+                            onInsert={handleMentionInsert}
+                          />
+                        )}
+                        <Textarea
+                          ref={mobilePromptRef}
+                          value={prompt}
+                          onChange={(e) => setPrompt(e.target.value)}
+                          placeholder={isShootsTool ? "صف الزوايا..." : isAvatarTool ? "وصف اختياري..." : isRemixTool ? "صف التعديل..." : isGrokI2V ? "صف حركة الفيديو..." : "اكتب وصفاً لما تريد توليده..."}
+                          className="w-full min-h-[40px] max-h-[80px] resize-none rounded-xl bg-secondary/40 border border-border/30 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50"
+                          dir="rtl"
+                          rows={2}
+                          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading) { e.preventDefault(); handleGenerate(); } }}
+                        />
+                      </>
                     )}
-                    <Textarea
-                      ref={mobilePromptRef}
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      placeholder={isShootsTool ? "صف الزوايا..." : isAvatarTool ? "وصف اختياري..." : isRemixTool ? "صف التعديل..." : isGrokStoryboard && refImages.length > 0 ? "@image1 وصف...\n@image2 وصف..." : isGrokI2V ? "صف حركة الفيديو..." : "اكتب وصفاً لما تريد توليده..."}
-                      className="w-full min-h-[40px] max-h-[80px] resize-none rounded-xl bg-secondary/40 border border-border/30 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50"
-                      dir="rtl"
-                      rows={isGrokStoryboard ? 3 : 2}
-                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading && !isGrokStoryboard) { e.preventDefault(); handleGenerate(); } }}
-                    />
                   </div>
                 </div>
                 <Button onClick={handleGenerate} disabled={isGenerateDisabled} className="w-full rounded-xl gap-2 h-11 text-sm font-bold shadow-lg">
