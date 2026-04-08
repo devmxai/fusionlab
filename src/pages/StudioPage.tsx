@@ -1993,9 +1993,8 @@ const StudioPage = () => {
                       value={prompt}
                       onChange={setPrompt}
                       images={refImages}
-                      placeholder="@image1 وصف الحركة...\n@image2 وصف المشهد التالي..."
+                      placeholder="move from @image1 toward @image2 with a slow camera transition..."
                       className="min-h-[80px] max-h-[140px]"
-                      dir="rtl"
                       rows={3}
                     />
                   ) : (
