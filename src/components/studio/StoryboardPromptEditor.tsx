@@ -20,12 +20,12 @@ export interface StoryboardPromptEditorRef {
 }
 
 /**
- * A rich prompt editor that renders @imageN tokens as styled purple chips
- * while keeping the underlying value as plain text. Handles RTL/LTR mixing
- * gracefully by isolating the chips from surrounding text.
+ * Inline prompt editor for reference-guided video generation.
+ * Renders @imageN tokens as styled purple chips while keeping
+ * the underlying value as plain text. Always LTR for provider compatibility.
  */
 const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardPromptEditorProps>(
-  ({ value, onChange, images, placeholder, className, dir = "rtl", rows = 3, disabled, onKeyDown }, ref) => {
+  ({ value, onChange, images, placeholder, className, rows = 3, disabled, onKeyDown }, ref) => {
     const editorRef = useRef<HTMLDivElement>(null);
     const isComposing = useRef(false);
     const ignoreNextInput = useRef(false);
@@ -50,7 +50,6 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
 
-      // Replace @imageN with styled chip spans
       const withChips = escaped.replace(/@image(\d+)/g, (_match, num) => {
         const idx = parseInt(num) - 1;
         const hasImage = idx >= 0 && idx < images.length;
@@ -62,7 +61,6 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
         return `<span contenteditable="false" data-image-tag="${num}" dir="ltr" style="display:inline-flex;align-items:center;gap:3px;${chipColor};border-radius:6px;padding:1px 6px 1px 3px;font-size:11px;font-weight:700;font-family:monospace;vertical-align:baseline;user-select:all;white-space:nowrap;margin:0 2px;line-height:1.6">${thumbUrl ? `<img src="${thumbUrl}" style="width:14px;height:14px;border-radius:3px;object-fit:cover" />` : ""}@image${num}</span>`;
       });
 
-      // Convert newlines to <br>
       return withChips.replace(/\n/g, "<br>");
     }, [images]);
 
@@ -77,18 +75,15 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
           result += node.textContent || "";
         } else if (node.nodeType === Node.ELEMENT_NODE) {
           const element = node as HTMLElement;
-          // Check for image tag chip
           const tag = element.getAttribute("data-image-tag");
           if (tag) {
             result += `@image${tag}`;
             return;
           }
-          // Handle <br> as newline
           if (element.tagName === "BR") {
             result += "\n";
             return;
           }
-          // Handle <div> as newline (contenteditable line breaks)
           if (element.tagName === "DIV" && element !== el) {
             if (result.length > 0 && !result.endsWith("\n")) {
               result += "\n";
@@ -99,7 +94,6 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
       };
       el.childNodes.forEach(walk);
 
-      // Remove trailing newline
       return result.replace(/\n$/, "");
     }, []);
 
@@ -111,7 +105,6 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
       const preRange = document.createRange();
       preRange.selectNodeContents(editorRef.current);
       preRange.setEnd(range.startContainer, range.startOffset);
-      // Count characters including tag representations
       const tempDiv = document.createElement("div");
       tempDiv.appendChild(preRange.cloneContents());
       let count = 0;
@@ -162,7 +155,6 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
           if (tag) {
             const tagLen = `@image${tag}`.length;
             if (remaining <= tagLen) {
-              // Place cursor after the chip
               targetNode = elem.parentNode;
               targetOffset = Array.from(elem.parentNode!.childNodes).indexOf(elem as ChildNode) + 1;
               found = true;
@@ -203,7 +195,6 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
           sel.removeAllRanges();
           sel.addRange(range);
         } catch {
-          // fallback: place at end
           const range = document.createRange();
           range.selectNodeContents(el);
           range.collapse(false);
@@ -217,7 +208,6 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
     useEffect(() => {
       const el = editorRef.current;
       if (!el) return;
-      // Don't update if editor is focused (user is typing)
       if (document.activeElement === el && !ignoreNextInput.current) return;
       ignoreNextInput.current = false;
       const html = textToHtml(value);
@@ -242,8 +232,6 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
       if (isComposing.current) return;
       const text = extractText();
       onChange(text);
-
-      // Check for @ mention trigger
       checkMention();
     }, [extractText, onChange]);
 
@@ -257,13 +245,11 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
       const range = sel.getRangeAt(0);
       if (!range.collapsed) { setMentionOpen(false); return; }
 
-      // Get text before cursor in current text node
       const node = range.startContainer;
       if (node.nodeType !== Node.TEXT_NODE) { setMentionOpen(false); return; }
 
       const textBefore = (node.textContent || "").slice(0, range.startOffset);
 
-      // Find last @ that's not part of a chip
       let atIdx = -1;
       for (let i = textBefore.length - 1; i >= 0; i--) {
         if (textBefore[i] === "@") { atIdx = i; break; }
@@ -275,7 +261,6 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
         if (fragment === "" || /^i(m(a(g(e\d*)?)?)?)?$/.test(fragment) || /^\d+$/.test(fragment) || /^image\d*$/.test(fragment)) {
           setMentionFilter(fragment);
 
-          // Save range for insertion
           const mentionRange = document.createRange();
           mentionRange.setStart(node, atIdx);
           mentionRange.setEnd(node, range.startOffset);
@@ -287,37 +272,22 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
       setMentionOpen(false);
     }, [images.length]);
 
-    // Handle mention selection
+    // Handle mention selection — insert chip INLINE at cursor
     const handleMentionSelect = useCallback((idx: number) => {
       const el = editorRef.current;
       if (!el || !mentionAnchorRange) return;
 
       const tag = `@image${idx + 1}`;
-
-      // Delete the @... text
       const sel = window.getSelection();
       if (!sel) return;
 
+      // Delete the @... text the user typed
       mentionAnchorRange.deleteContents();
 
-      // Check if we need a newline before
-      const container = mentionAnchorRange.startContainer;
-      const textBefore = container.nodeType === Node.TEXT_NODE
-        ? (container.textContent || "").slice(0, mentionAnchorRange.startOffset)
-        : "";
-      const needsNewline = textBefore.length > 0 && !textBefore.endsWith("\n");
-
-      if (needsNewline) {
-        const br = document.createElement("br");
-        mentionAnchorRange.insertNode(br);
-        mentionAnchorRange.setStartAfter(br);
-        mentionAnchorRange.collapse(true);
-      }
-
-      // Insert chip HTML then a space after
+      // Insert chip HTML then a normal ASCII space after
       const chipHtml = textToHtml(tag);
       const tempContainer = document.createElement("span");
-      tempContainer.innerHTML = chipHtml + " "; // normal ASCII space (not NBSP) for cursor placement
+      tempContainer.innerHTML = chipHtml + " ";
 
       const frag = document.createDocumentFragment();
       let lastInserted: Node | null = null;
@@ -338,10 +308,8 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
 
       setMentionOpen(false);
 
-      // Update the text value
       const newText = extractText();
       onChange(newText);
-
       el.focus();
     }, [mentionAnchorRange, textToHtml, extractText, onChange]);
 
@@ -389,11 +357,11 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
               transition={{ duration: 0.15 }}
-              className="absolute bottom-full mb-2 right-0 z-[100] w-56 rounded-xl border border-border/40 bg-card shadow-xl overflow-hidden"
-              dir="rtl"
+              className="absolute bottom-full mb-2 left-0 z-[100] w-56 rounded-xl border border-border/40 bg-card shadow-xl overflow-hidden"
+              dir="ltr"
             >
               <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground border-b border-border/20">
-                اختر صورة للإشارة إليها
+                Select a reference image
               </div>
               <div className="max-h-48 overflow-y-auto py-1">
                 {filteredImages.map(({ img, idx }) => (
@@ -401,17 +369,16 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
                     key={idx}
                     type="button"
                     onMouseDown={(e) => {
-                      e.preventDefault(); // prevent editor blur
+                      e.preventDefault();
                       handleMentionSelect(idx);
                     }}
-                    className="w-full flex items-center gap-3 px-3 py-2 hover:bg-primary/10 transition-colors text-right"
+                    className="w-full flex items-center gap-3 px-3 py-2 hover:bg-primary/10 transition-colors text-left"
                   >
                     <div className="w-8 h-8 rounded-lg overflow-hidden border border-border/30 shrink-0">
                       <img src={img.preview} alt="" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <span className="text-xs font-bold text-primary font-mono">@image{idx + 1}</span>
-                      <span className="text-[10px] text-muted-foreground mr-2">الصورة {idx + 1}</span>
                     </div>
                     <ImageIcon className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
                   </button>
@@ -421,12 +388,12 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
           )}
         </AnimatePresence>
 
-        {/* Editor */}
+        {/* Editor — always LTR for provider token compatibility */}
         <div
           ref={editorRef}
           contentEditable={!disabled}
           suppressContentEditableWarning
-          dir={dir}
+          dir="ltr"
           role="textbox"
           aria-multiline="true"
           data-placeholder={placeholder}
@@ -441,6 +408,7 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
             minHeight: minH,
             maxHeight: maxH,
             lineHeight: "1.7",
+            textAlign: "left",
           }}
         />
       </div>
