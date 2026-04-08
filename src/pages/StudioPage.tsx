@@ -1958,23 +1958,38 @@ const StudioPage = () => {
             <div className="shrink-0 px-5 pb-5 pt-3 border-t border-border/15 space-y-3">
               {!isImageOnlyTool && (
                 <div className="relative">
-                  {isGrokStoryboard && refImages.length > 0 && (
-                    <ImageMentionPopover
+                  {isGrokStoryboard && refImages.length > 0 ? (
+                    <StoryboardPromptEditor
+                      ref={desktopStoryboardRef}
+                      value={prompt}
+                      onChange={setPrompt}
                       images={refImages}
-                      prompt={prompt}
-                      textareaRef={desktopPromptRef}
-                      onInsert={handleMentionInsert}
+                      placeholder="@image1 وصف الحركة...\n@image2 وصف المشهد التالي..."
+                      className="min-h-[80px] max-h-[140px]"
+                      dir="rtl"
+                      rows={3}
                     />
+                  ) : (
+                    <>
+                      {isGrokStoryboard && (
+                        <ImageMentionPopover
+                          images={refImages}
+                          prompt={prompt}
+                          textareaRef={desktopPromptRef}
+                          onInsert={handleMentionInsert}
+                        />
+                      )}
+                      <Textarea
+                        ref={desktopPromptRef}
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : isGrokI2V ? "صف حركة الفيديو المطلوبة..." : "اكتب وصفاً لما تريد توليده..."}
+                        className="min-h-[80px] max-h-[140px] resize-none rounded-xl bg-secondary/30 border-border/30 text-sm placeholder:text-muted-foreground/50"
+                        dir="rtl"
+                        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading) { e.preventDefault(); handleGenerate(); } }}
+                      />
+                    </>
                   )}
-                  <Textarea
-                    ref={desktopPromptRef}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : isGrokStoryboard && refImages.length > 0 ? "@image1 وصف الحركة...\n@image2 وصف المشهد التالي..." : isGrokI2V ? "صف حركة الفيديو المطلوبة..." : "اكتب وصفاً لما تريد توليده..."}
-                    className="min-h-[80px] max-h-[140px] resize-none rounded-xl bg-secondary/30 border-border/30 text-sm placeholder:text-muted-foreground/50"
-                    dir="rtl"
-                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading && !isGrokStoryboard) { e.preventDefault(); handleGenerate(); } }}
-                  />
                 </div>
               )}
               <Button onClick={handleGenerate} disabled={isGenerateDisabled} className="w-full rounded-xl gap-2 h-11 text-sm font-bold shadow-lg">
