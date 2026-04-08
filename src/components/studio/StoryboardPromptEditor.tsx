@@ -317,7 +317,7 @@ const StoryboardPromptEditor = forwardRef<StoryboardPromptEditorRef, StoryboardP
       // Insert chip HTML then a space after
       const chipHtml = textToHtml(tag);
       const tempContainer = document.createElement("span");
-      tempContainer.innerHTML = chipHtml + "\u00A0"; // non-breaking space for cursor placement
+      tempContainer.innerHTML = chipHtml + " "; // normal ASCII space (not NBSP) for cursor placement
 
       const frag = document.createDocumentFragment();
       let lastInserted: Node | null = null;
