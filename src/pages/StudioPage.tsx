@@ -1660,7 +1660,7 @@ const StudioPage = () => {
                           className="absolute top-1 left-1 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"><X className="w-3 h-3 text-destructive-foreground" /></button>
                       </>
                     ) : (
-                      <><Video className="w-5 h-5 text-muted-foreground/50" /><span className="text-[9px] font-semibold text-muted-foreground/60">فيديو مرجعي</span></>
+                      <><Video className="w-5 h-5 text-muted-foreground/50" /><span className="text-[9px] font-semibold text-muted-foreground/60">Storyboard</span></>
                     )}
                   </button>
                 )}
@@ -1715,7 +1715,7 @@ const StudioPage = () => {
                   onClick={() => setGrokMode("reference")}
                   className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${grokMode === "reference" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                 >
-                  فيديو مرجعي
+                  Storyboard
                 </button>
               </div>
 
@@ -1994,7 +1994,7 @@ const StudioPage = () => {
                       onChange={setPrompt}
                       images={refImages}
                       placeholder="move from @image1 toward @image2 with a slow camera transition..."
-                      className="min-h-[80px] max-h-[140px]"
+                      className="min-h-[100px] max-h-[180px]"
                       rows={3}
                     />
                   ) : (
@@ -2012,7 +2012,7 @@ const StudioPage = () => {
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : isGrokI2V ? "صف حركة الفيديو المطلوبة..." : "اكتب وصفاً لما تريد توليده..."}
-                        className="min-h-[80px] max-h-[140px] resize-none rounded-xl bg-secondary/30 border-border/30 text-sm placeholder:text-muted-foreground/50"
+                        className="min-h-[100px] max-h-[180px] resize-none rounded-xl bg-secondary/30 border-border/30 text-sm placeholder:text-muted-foreground/50"
                         dir="rtl"
                         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading) { e.preventDefault(); handleGenerate(); } }}
                       />
