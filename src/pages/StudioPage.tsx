@@ -914,7 +914,7 @@ const StudioPage = () => {
           rawDurationSeconds: mediaDurationSeconds,
           hasAudio: hasAudioForPricing,
           idempotencyKey,
-          prompt: prompt || tool.title,
+          prompt: finalPrompt || prompt || tool.title,
           fileType,
           jobMetadata: {
             aspectRatio,
