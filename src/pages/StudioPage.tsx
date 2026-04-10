@@ -292,8 +292,8 @@ const StudioPage = () => {
       if (avatarMaxDurationSeconds && mediaDurationSeconds > avatarMaxDurationSeconds) return avatarMaxDurationSeconds;
       return rounded;
     }
-    // For avatar models without detected duration, return null (prevent fallback to videoDuration)
-    if (isAvatar) return null;
+    // For avatar models without detected duration, use a sensible default (5s) so pricing still works
+    if (isAvatar) return 5;
     return videoDuration ? parseInt(videoDuration) : null;
   }, [selectedTool, mediaDurationSeconds, videoDuration, avatarMaxDurationSeconds]);
 
