@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Users, Crown, Coins, Clock, Shield, Check, X,
   Search, BarChart3, FileText, CreditCard, Tag, History, Settings,
-  ChevronDown, AlertCircle, RefreshCw, Eye, Pencil, Save, PanelTop, UserCog, Bell, ClipboardList
+  ChevronDown, AlertCircle, RefreshCw, Eye, Pencil, Save, PanelTop, UserCog, Bell, ClipboardList, Trash2
 } from "lucide-react";
 import ContentTab from "@/components/admin/ContentTab";
 import PricingCatalog from "@/components/admin/PricingCatalog";
@@ -599,48 +599,60 @@ const AdminPage = () => {
                       </div>
                     </div>
                     {isPending && (
-                      <Button size="sm" className="w-full text-xs gap-1.5" onClick={async () => {
-                        const days = 30;
-                        const { data, error } = await supabase.rpc("admin_activate_subscription", {
-                          p_target_user_id: r.user_id,
-                          p_plan_id: r.plan_id,
-                          p_days: days,
-                        });
-                        if (error) { toast.error(error.message); return; }
-                        const res = data as any;
-                        if (!res?.success) { toast.error(res?.error || "فشلت العملية"); return; }
+                      <div className="flex gap-2">
+                        <Button size="sm" className="flex-1 text-xs gap-1.5" onClick={async () => {
+                          const days = 30;
+                          const { data, error } = await supabase.rpc("admin_activate_subscription", {
+                            p_target_user_id: r.user_id,
+                            p_plan_id: r.plan_id,
+                            p_days: days,
+                          });
+                          if (error) { toast.error(error.message); return; }
+                          const res = data as any;
+                          if (!res?.success) { toast.error(res?.error || "فشلت العملية"); return; }
 
-                        // Update request status
-                        await supabase.from("subscription_requests").update({ status: "approved", reviewed_by: user!.id, reviewed_at: new Date().toISOString() }).eq("id", r.id);
+                          // Update request status
+                          await supabase.from("subscription_requests").update({ status: "approved", reviewed_by: user!.id, reviewed_at: new Date().toISOString() }).eq("id", r.id);
 
-                        // Send WhatsApp confirmation
-                        const phoneNum = r.phone_number || profile?.phone_number;
-                        if (phoneNum) {
-                          const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
-                          try {
-                            await supabase.functions.invoke("whatsapp-otp", {
-                              body: {
-                                action: "send_subscription_confirmation",
-                                subscription_data: {
-                                  phone_number: phoneNum,
-                                  plan_name: plan?.name_ar || plan?.name || "اشتراك",
-                                  credits: plan?.credits_per_month || 0,
-                                  starts_at: new Date().toISOString(),
-                                  expires_at: expiresAt,
+                          // Send WhatsApp confirmation
+                          const phoneNum = r.phone_number || profile?.phone_number;
+                          if (phoneNum) {
+                            const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+                            try {
+                              await supabase.functions.invoke("whatsapp-otp", {
+                                body: {
+                                  action: "send_subscription_confirmation",
+                                  subscription_data: {
+                                    phone_number: phoneNum,
+                                    plan_name: plan?.name_ar || plan?.name || "اشتراك",
+                                    credits: plan?.credits_per_month || 0,
+                                    starts_at: new Date().toISOString(),
+                                    expires_at: expiresAt,
+                                  },
                                 },
-                              },
-                            });
-                          } catch (e) {
-                            console.error("WhatsApp notification failed:", e);
+                              });
+                            } catch (e) {
+                              console.error("WhatsApp notification failed:", e);
+                            }
                           }
-                        }
 
-                        toast.success("تم تفعيل الاشتراك وإرسال إشعار WhatsApp");
-                        fetchData();
-                      }}>
-                        <Crown className="w-3.5 h-3.5" />
-                        تفعيل الاشتراك (30 يوم)
-                      </Button>
+                          toast.success("تم تفعيل الاشتراك وإرسال إشعار WhatsApp");
+                          fetchData();
+                        }}>
+                          <Crown className="w-3.5 h-3.5" />
+                          تفعيل (30 يوم)
+                        </Button>
+                        <Button size="sm" variant="destructive" className="text-xs gap-1.5" onClick={async () => {
+                          if (!confirm("هل أنت متأكد من حذف هذا الطلب؟ سيتمكن المستخدم من إرسال طلب جديد.")) return;
+                          const { error } = await supabase.from("subscription_requests").delete().eq("id", r.id);
+                          if (error) { toast.error(error.message); return; }
+                          toast.success("تم حذف الطلب بنجاح");
+                          fetchData();
+                        }}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                          حذف
+                        </Button>
+                      </div>
                     )}
                   </div>
                 );
