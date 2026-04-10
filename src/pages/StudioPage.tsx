@@ -292,8 +292,8 @@ const StudioPage = () => {
       if (avatarMaxDurationSeconds && mediaDurationSeconds > avatarMaxDurationSeconds) return avatarMaxDurationSeconds;
       return rounded;
     }
-    // For avatar models without detected duration, return null (prevent fallback to videoDuration)
-    if (isAvatar) return null;
+    // For avatar models without detected duration, use a sensible default (5s) so pricing still works
+    if (isAvatar) return 5;
     return videoDuration ? parseInt(videoDuration) : null;
   }, [selectedTool, mediaDurationSeconds, videoDuration, avatarMaxDurationSeconds]);
 
@@ -396,14 +396,9 @@ const StudioPage = () => {
     setRefImages([]);
   };
 
-  // Pre-select model from query param.
-  // For Avatar / Transfer studios specifically, auto-select the first model
-  // because their upload UI is visible even before choosing a model, which can
-  // otherwise leave the generate button permanently disabled in a confusing way.
+  // Pre-select model from query param only — no auto-selection for avatar/transfer.
   useEffect(() => {
     if (categoryTools.length === 0) return;
-
-    const shouldAutoSelectDefaultTool = category === "avatar" || category === "transfer";
 
     const modelId = searchParams.get("model");
     if (modelId) {
@@ -419,18 +414,9 @@ const StudioPage = () => {
       }
     }
 
-    if (!selectedTool && shouldAutoSelectDefaultTool) {
-      handleSelectModel(categoryTools[0]);
-      return;
-    }
-
     // If selected tool is not in current category, clear selection
     if (selectedTool && !categoryTools.some((t) => t.id === selectedTool.id)) {
-      if (shouldAutoSelectDefaultTool) {
-        handleSelectModel(categoryTools[0]);
-      } else {
-        setSelectedTool(null);
-      }
+      setSelectedTool(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, categoryTools, selectedTool, searchParams, setSearchParams]);
@@ -1611,7 +1597,13 @@ const StudioPage = () => {
           )}
 
           {/* ── Avatar uploads ── */}
-          {isAvatarTool && (
+          {isAvatarTool && !selectedTool && (
+            <div className="rounded-xl border-2 border-dashed border-border/40 bg-secondary/10 p-6 flex flex-col items-center justify-center gap-2 text-center">
+              <Sparkles className="w-6 h-6 text-muted-foreground/40" />
+              <p className="text-xs font-semibold text-muted-foreground/70">اختر النموذج أولاً من القائمة أعلاه</p>
+            </div>
+          )}
+          {isAvatarTool && selectedTool && (
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-muted-foreground/70">الملفات</label>
               <div className="flex gap-2 items-stretch">
@@ -1880,8 +1872,8 @@ const StudioPage = () => {
   const isGenerateDisabled = loading || !selectedTool || insufficientCredits
     || (isImageOnlyTool && refImages.length === 0)
     || (isShootsTool && refImages.length === 0 && !prompt.trim())
-    || (isAvatarAudioModel && (!avatarImage || !avatarAudio || mediaDurationSeconds === null))
-    || (isAvatarAnimateModel && (!avatarImage || !avatarVideo || mediaDurationSeconds === null))
+    || (isAvatarAudioModel && (!avatarImage || !avatarAudio))
+    || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))
     || (isGrokI2V && refImages.length !== 1)
     || (isGrokReference && (refImages.length < 1 || !prompt.trim()));
 
