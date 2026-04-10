@@ -396,9 +396,14 @@ const StudioPage = () => {
     setRefImages([]);
   };
 
-  // Pre-select model from query param only (no auto-select fallback)
+  // Pre-select model from query param.
+  // For Avatar / Transfer studios specifically, auto-select the first model
+  // because their upload UI is visible even before choosing a model, which can
+  // otherwise leave the generate button permanently disabled in a confusing way.
   useEffect(() => {
     if (categoryTools.length === 0) return;
+
+    const shouldAutoSelectDefaultTool = category === "avatar" || category === "transfer";
 
     const modelId = searchParams.get("model");
     if (modelId) {
@@ -414,12 +419,21 @@ const StudioPage = () => {
       }
     }
 
+    if (!selectedTool && shouldAutoSelectDefaultTool) {
+      handleSelectModel(categoryTools[0]);
+      return;
+    }
+
     // If selected tool is not in current category, clear selection
     if (selectedTool && !categoryTools.some((t) => t.id === selectedTool.id)) {
-      setSelectedTool(null);
+      if (shouldAutoSelectDefaultTool) {
+        handleSelectModel(categoryTools[0]);
+      } else {
+        setSelectedTool(null);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryTools, selectedTool, searchParams, setSearchParams]);
+  }, [category, categoryTools, selectedTool, searchParams, setSearchParams]);
 
   const tool = selectedTool;
   const isVideoTool = category === "video";
