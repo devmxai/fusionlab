@@ -396,14 +396,9 @@ const StudioPage = () => {
     setRefImages([]);
   };
 
-  // Pre-select model from query param.
-  // For Avatar / Transfer studios specifically, auto-select the first model
-  // because their upload UI is visible even before choosing a model, which can
-  // otherwise leave the generate button permanently disabled in a confusing way.
+  // Pre-select model from query param only — no auto-selection for avatar/transfer.
   useEffect(() => {
     if (categoryTools.length === 0) return;
-
-    const shouldAutoSelectDefaultTool = category === "avatar" || category === "transfer";
 
     const modelId = searchParams.get("model");
     if (modelId) {
@@ -419,18 +414,9 @@ const StudioPage = () => {
       }
     }
 
-    if (!selectedTool && shouldAutoSelectDefaultTool) {
-      handleSelectModel(categoryTools[0]);
-      return;
-    }
-
     // If selected tool is not in current category, clear selection
     if (selectedTool && !categoryTools.some((t) => t.id === selectedTool.id)) {
-      if (shouldAutoSelectDefaultTool) {
-        handleSelectModel(categoryTools[0]);
-      } else {
-        setSelectedTool(null);
-      }
+      setSelectedTool(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, categoryTools, selectedTool, searchParams, setSearchParams]);
@@ -1880,8 +1866,8 @@ const StudioPage = () => {
   const isGenerateDisabled = loading || !selectedTool || insufficientCredits
     || (isImageOnlyTool && refImages.length === 0)
     || (isShootsTool && refImages.length === 0 && !prompt.trim())
-    || (isAvatarAudioModel && (!avatarImage || !avatarAudio || mediaDurationSeconds === null))
-    || (isAvatarAnimateModel && (!avatarImage || !avatarVideo || mediaDurationSeconds === null))
+    || (isAvatarAudioModel && (!avatarImage || !avatarAudio))
+    || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))
     || (isGrokI2V && refImages.length !== 1)
     || (isGrokReference && (refImages.length < 1 || !prompt.trim()));
 
