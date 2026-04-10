@@ -1597,7 +1597,13 @@ const StudioPage = () => {
           )}
 
           {/* ── Avatar uploads ── */}
-          {isAvatarTool && (
+          {isAvatarTool && !selectedTool && (
+            <div className="rounded-xl border-2 border-dashed border-border/40 bg-secondary/10 p-6 flex flex-col items-center justify-center gap-2 text-center">
+              <Sparkles className="w-6 h-6 text-muted-foreground/40" />
+              <p className="text-xs font-semibold text-muted-foreground/70">اختر النموذج أولاً من القائمة أعلاه</p>
+            </div>
+          )}
+          {isAvatarTool && selectedTool && (
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-muted-foreground/70">الملفات</label>
               <div className="flex gap-2 items-stretch">
