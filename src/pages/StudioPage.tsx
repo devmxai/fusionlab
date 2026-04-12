@@ -1869,7 +1869,7 @@ const StudioPage = () => {
     </div>
   );
 
-  const isGenerateDisabled = loading || !selectedTool || insufficientCredits
+  const isGenerateDisabled = loading || !selectedTool
     || (isImageOnlyTool && refImages.length === 0)
     || (isShootsTool && refImages.length === 0 && !prompt.trim())
     || (isAvatarAudioModel && (!avatarImage || !avatarAudio))
@@ -1877,7 +1877,9 @@ const StudioPage = () => {
     || (isGrokI2V && refImages.length !== 1)
     || (isGrokReference && (refImages.length < 1 || !prompt.trim()));
 
-  const generateBtnLabel = isImageOnlyTool ? (category === "remove-bg" ? "حذف الخلفية" : "رفع الجودة") : "بدء التوليد";
+  const generateBtnLabel = insufficientCredits
+    ? "الرصيد غير كافي"
+    : isImageOnlyTool ? (category === "remove-bg" ? "حذف الخلفية" : "رفع الجودة") : "بدء التوليد";
 
   // ── Preview card (shared between desktop & mobile) ──
   const previewCard = (maxH: string) => (
