@@ -2028,11 +2028,14 @@ const StudioPage = () => {
                   )}
                 </div>
               )}
-              <Button onClick={handleGenerate} disabled={isGenerateDisabled} className="w-full rounded-xl gap-2 h-11 text-sm font-bold shadow-lg">
+              <Button onClick={handleGenerate} disabled={isGenerateDisabled} className={`w-full rounded-xl gap-2 h-11 text-sm font-bold shadow-lg ${insufficientCredits ? "bg-destructive/80 hover:bg-destructive/90" : ""}`}>
                 <Sparkles className="w-4 h-4" />
                 <span>{generateBtnLabel}</span>
-                {estimatedCost > 0 && <span className="text-[11px] font-bold opacity-80">{estimatedCost} كريدت</span>}
+                {estimatedCost > 0 && !insufficientCredits && <span className="text-[11px] font-bold opacity-80">{estimatedCost} كريدت</span>}
               </Button>
+              {insufficientCredits && (
+                <p className="text-[10px] text-destructive text-center mt-1">رصيدك {credits} كريدت — التكلفة {estimatedCost} كريدت. يرجى شحن رصيدك.</p>
+              )}
             </div>
           </aside>
 
@@ -2077,10 +2080,13 @@ const StudioPage = () => {
                     {refImages.length > 0 ? `تم اختيار ${refImages.length} صورة` : "اختر صورة للمعالجة"}
                   </span>
                 </div>
-                <Button onClick={handleGenerate} disabled={isGenerateDisabled} className="w-full rounded-xl gap-2 h-11 text-sm font-bold shadow-lg">
+                <Button onClick={handleGenerate} disabled={isGenerateDisabled} className={`w-full rounded-xl gap-2 h-11 text-sm font-bold shadow-lg ${insufficientCredits ? "bg-destructive/80 hover:bg-destructive/90" : ""}`}>
                   <Sparkles className="w-4 h-4" /><span>{generateBtnLabel}</span>
-                  {estimatedCost > 0 && <span className="text-[11px] font-bold opacity-80">{estimatedCost} كريدت</span>}
+                  {estimatedCost > 0 && !insufficientCredits && <span className="text-[11px] font-bold opacity-80">{estimatedCost} كريدت</span>}
                 </Button>
+                {insufficientCredits && (
+                  <p className="text-[10px] text-destructive text-center mt-1">رصيدك {credits} كريدت — التكلفة {estimatedCost} كريدت. يرجى شحن رصيدك.</p>
+                )}
               </div>
             ) : (
               <div className="space-y-2">
@@ -2135,11 +2141,14 @@ const StudioPage = () => {
                     )}
                   </div>
                 </div>
-                <Button onClick={handleGenerate} disabled={isGenerateDisabled} className="w-full rounded-xl gap-2 h-11 text-sm font-bold shadow-lg">
+                <Button onClick={handleGenerate} disabled={isGenerateDisabled} className={`w-full rounded-xl gap-2 h-11 text-sm font-bold shadow-lg ${insufficientCredits ? "bg-destructive/80 hover:bg-destructive/90" : ""}`}>
                   <Sparkles className="w-4 h-4" />
                   <span>{generateBtnLabel}</span>
-                  {estimatedCost > 0 && <span className="text-[11px] font-bold opacity-80">{estimatedCost} كريدت</span>}
+                  {estimatedCost > 0 && !insufficientCredits && <span className="text-[11px] font-bold opacity-80">{estimatedCost} كريدت</span>}
                 </Button>
+                {insufficientCredits && (
+                  <p className="text-[10px] text-destructive text-center mt-1">رصيدك {credits} كريدت — التكلفة {estimatedCost} كريدت. يرجى شحن رصيدك.</p>
+                )}
               </div>
             )}
           </div>
