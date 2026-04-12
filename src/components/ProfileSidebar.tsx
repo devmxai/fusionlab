@@ -181,7 +181,7 @@ const ProfileSidebar = ({ open, onClose }: ProfileSidebarProps) => {
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "مستخدم";
   const userAvatar = user?.user_metadata?.avatar_url || getAvatarForUser(user?.id || "default");
-  const creditsDisplay = `${credits}`;
+  const creditsDisplay = credits.toLocaleString("en");
 
   const menuCards = [
     { icon: Settings, label: "الحساب", color: "text-primary", action: () => setView("account") },
