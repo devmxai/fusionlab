@@ -115,7 +115,12 @@ serve(async (req) => {
       // ─── TTS Route ───
       if (apiType === "tts" && ttsParams) {
         const ttsText = (ttsParams.text || "") as string;
-        const spokenText = ttsText.replace(/\[(short pause|medium pause|long pause|whispering|shouting|sarcasm|laughing|sigh|fast|extremely fast|robotic|uhm|gasp|groan|scared|curious|bored)\]/gi, "").replace(/\s+/g, " ").trim();
+        const spokenText = ttsText
+          .replace(/\[[^\]]+\]/g, "")
+          .replace(/\*[^*]+\*/g, "")
+          .replace(/\.{3,}/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
         const charCount = spokenText.length;
 
         if (charCount > 5000) {
@@ -127,9 +132,16 @@ serve(async (req) => {
           });
         }
 
+        // Map our internal model id to the actual Gemini model id.
+        // Default = standard (Voice). 'gemini-tts-pro' = latest 3.1 (Voice Pro).
+        const geminiModel =
+          model === "gemini-tts-pro"
+            ? "gemini-3.1-flash-tts-preview"
+            : "gemini-2.5-flash-preview-tts";
+
         const ttsResponse = await fetch(`${supabaseUrl}/functions/v1/gemini-tts`, {
           method: "POST", headers: internalHeaders,
-          body: JSON.stringify({ action: "synthesize", ...ttsParams }),
+          body: JSON.stringify({ action: "synthesize", prebuiltModel: geminiModel, ...ttsParams }),
         });
 
         const ttsData = await ttsResponse.json();
@@ -148,6 +160,7 @@ serve(async (req) => {
           success: true, reservationId, creditsCharged,
           apiType: "tts", plan: resData.plan,
           audioBase64: ttsData.audioBase64, mimeType: ttsData.mimeType, voiceName: ttsData.voiceName,
+          model: ttsData.model,
         });
       }
 
