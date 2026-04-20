@@ -513,8 +513,21 @@ const AudioStudioPage = () => {
     }
   };
 
+  // Keep ref to currently-playing preview audio so we can cancel it
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+
   const handlePreviewVoice = async (voice?: GeminiVoice) => {
     const v = voice || selectedVoice;
+
+    // Stop any prior preview / library audio so playback isn't blocked
+    if (previewAudioRef.current) {
+      try { previewAudioRef.current.pause(); } catch { /* noop */ }
+      previewAudioRef.current = null;
+    }
+    if (libAudioRef.current) {
+      try { libAudioRef.current.pause(); } catch { /* noop */ }
+    }
+
     setPreviewingVoice(v.name);
     try {
       const { data, error } = await supabase.functions.invoke("gemini-tts", {
@@ -530,13 +543,29 @@ const AudioStudioPage = () => {
           stability,
         },
       });
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
-      if (data?.audioBase64) {
-        const url = base64ToAudioUrl(data.audioBase64, data.mimeType || "audio/mp3");
-        const audio = new Audio(url);
-        audio.play();
-        audio.onended = () => URL.revokeObjectURL(url);
+      if (error) {
+        console.error("Preview invoke error:", error);
+        throw new Error(error.message || "فشل استدعاء المعاينة");
+      }
+      if (data?.error) {
+        console.error("Preview server error:", data);
+        throw new Error(typeof data.error === "string" ? data.error : "خطأ من الخادم");
+      }
+      if (!data?.audioBase64) {
+        throw new Error("لم يتم استلام صوت من المعاينة");
+      }
+      const url = base64ToAudioUrl(data.audioBase64, data.mimeType || "audio/wav");
+      const audio = new Audio(url);
+      previewAudioRef.current = audio;
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        if (previewAudioRef.current === audio) previewAudioRef.current = null;
+      };
+      try {
+        await audio.play();
+      } catch (playErr) {
+        URL.revokeObjectURL(url);
+        throw new Error("المتصفح منع التشغيل التلقائي. اضغط زر المعاينة مرة أخرى.");
       }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "خطأ في المعاينة");
