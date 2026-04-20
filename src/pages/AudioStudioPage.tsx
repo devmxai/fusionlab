@@ -618,7 +618,7 @@ const AudioStudioPage = () => {
               <Menu className="w-4 h-4 text-muted-foreground" />
             </button>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium">
-              {selectedVoice.label}
+              {tierConfig.label} · {selectedVoice.label}
             </span>
           </div>
 
