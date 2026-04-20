@@ -8,7 +8,11 @@ const corsHeaders = {
 };
 
 const GEMINI_API = "https://generativelanguage.googleapis.com/v1beta/models";
-const MODEL = "gemini-2.5-flash-preview-tts";
+const DEFAULT_MODEL = "gemini-2.5-flash-preview-tts";
+const ALLOWED_MODELS = new Set([
+  "gemini-2.5-flash-preview-tts", // Fusion Voice (standard)
+  "gemini-3.1-flash-tts-preview",  // Fusion Voice Pro (latest, supports audio tags)
+]);
 const OFFICIAL_GEMINI_FLASH_TTS_VOICES = new Set([
   "Achernar", "Achird", "Algenib", "Algieba", "Alnilam", "Aoede",
   "Autonoe", "Callirrhoe", "Charon", "Despina", "Enceladus",
