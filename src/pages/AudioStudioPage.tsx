@@ -229,21 +229,31 @@ const AudioStudioPage = () => {
   const charCount = useMemo(() => getSpokenCharCount(text), [text, getSpokenCharCount]);
   const isOverLimit = charCount > MAX_TTS_CHARS;
 
-  // Dynamic pricing based on character count
+  // Dynamic pricing based on character count + selected tier
   const pricingParams = useMemo(() => ({
-    model: "gemini-tts",
+    model: tierConfig.modelId,
     resolution: null,
     quality: null,
     durationSeconds: null,
     hasAudio: null,
     characterCount: charCount > 0 ? charCount : null,
-  }), [charCount]);
+  }), [charCount, tierConfig.modelId]);
 
   const { price } = usePricing(pricingParams);
   const estimatedCost = price?.credits ?? 0;
   const insufficientCredits = charCount > 0 && credits < estimatedCost;
 
-  const [selectedVoice, setSelectedVoice] = useState<GeminiVoice>(geminiVoices[0]);
+  // Persist selected voice across sessions AND generations
+  const [selectedVoice, setSelectedVoice] = useState<GeminiVoice>(() => {
+    if (typeof window === "undefined") return geminiVoices[0];
+    const saved = localStorage.getItem(STORAGE_KEY_VOICE);
+    const found = saved ? geminiVoices.find((v) => v.name === saved) : null;
+    return found || geminiVoices[0];
+  });
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_VOICE, selectedVoice.name);
+  }, [selectedVoice.name]);
+
   const [speakingRate, setSpeakingRate] = useState(1.0);
   const [pitch, setPitch] = useState(0);
   const [stability, setStability] = useState(0.7);
