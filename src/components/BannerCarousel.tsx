@@ -69,14 +69,12 @@ const BannerCarousel = () => {
 
   const handleBannerClick = (banner: Banner, e: React.MouseEvent) => {
     e.preventDefault();
-    if (banner.linked_studio) {
-      navigate(banner.linked_studio);
-    } else if (banner.cta_link) {
-      if (banner.cta_link.startsWith("http")) {
-        window.open(banner.cta_link, "_blank");
-      } else {
-        navigate(banner.cta_link);
-      }
+    const target = banner.linked_studio || banner.cta_link;
+    const safe = classifyLink(target);
+    if (safe.kind === "internal") {
+      navigate(safe.path);
+    } else if (safe.kind === "external") {
+      window.open(safe.url, "_blank", "noopener,noreferrer");
     }
   };
 

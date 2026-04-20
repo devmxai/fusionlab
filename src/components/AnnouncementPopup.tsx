@@ -54,12 +54,11 @@ const AnnouncementPopup = () => {
 
   const handleCta = () => {
     handleDismiss();
-    if (announcement?.cta_link) {
-      if (announcement.cta_link.startsWith("http")) {
-        window.open(announcement.cta_link, "_blank");
-      } else {
-        navigate(announcement.cta_link);
-      }
+    const safe = classifyLink(announcement?.cta_link);
+    if (safe.kind === "internal") {
+      navigate(safe.path);
+    } else if (safe.kind === "external") {
+      window.open(safe.url, "_blank", "noopener,noreferrer");
     }
   };
 
