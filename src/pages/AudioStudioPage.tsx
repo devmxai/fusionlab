@@ -33,7 +33,39 @@ interface GeminiVoice {
   description: string;
 }
 
-const GEMINI_FLASH_TTS_MODEL = "gemini-2.5-flash-preview-tts";
+// ─── Fusion Voice tiers ───
+type VoiceTier = "standard" | "pro";
+
+interface VoiceTierConfig {
+  id: VoiceTier;
+  label: string;
+  badge: string;
+  modelId: string;
+  geminiModel: string;
+  description: string;
+}
+
+const VOICE_TIERS: Record<VoiceTier, VoiceTierConfig> = {
+  standard: {
+    id: "standard",
+    label: "Fusion Voice",
+    badge: "Gemini 2.5",
+    modelId: "gemini-tts",
+    geminiModel: "gemini-2.5-flash-preview-tts",
+    description: "أصوات طبيعية بأداء عربي ممتاز — مدعوم بـ Gemini 2.5 Flash TTS.",
+  },
+  pro: {
+    id: "pro",
+    label: "Fusion Voice Pro",
+    badge: "Gemini 3.1 · Audio Tags",
+    modelId: "gemini-tts-pro",
+    geminiModel: "gemini-3.1-flash-tts-preview",
+    description: "النموذج الأحدث بأعلى جودة وتعبير، مع دعم Audio Tags إنجليزية لتحكم دقيق.",
+  },
+};
+
+const STORAGE_KEY_TIER = "fusion-voice-tier";
+const STORAGE_KEY_VOICE = "fusion-voice-selected";
 
 const geminiVoices: GeminiVoice[] = [
   // ─── Male Voices (17) ───
