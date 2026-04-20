@@ -5,6 +5,7 @@ import { Dialog, DialogPortal, DialogOverlay } from "@/components/ui/dialog";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
 import { X, Sparkles } from "lucide-react";
+import { classifyLink } from "@/lib/safe-link";
 
 interface Announcement {
   id: string;
