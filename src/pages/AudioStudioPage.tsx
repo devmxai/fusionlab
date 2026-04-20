@@ -741,19 +741,31 @@ const AudioStudioPage = () => {
                   </span>
                 )}
               </div>
-              {/* Inline Tags - Emoji Chips */}
+              {/* Inline Tags - switch by tier (Standard = Arabic emoji tags, Pro = English Audio Tags) */}
               <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
-                {inlineTags.map((tag) => (
-                  <button
-                    key={tag.id}
-                    onClick={() => insertTag(tag)}
-                    title={tag.label}
-                    className="shrink-0 flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-foreground transition-all border border-primary/10 hover:border-primary/30"
-                  >
-                    <span className="text-sm">{tag.emoji}</span>
-                    <span className="text-[10px] text-muted-foreground">{tag.label}</span>
-                  </button>
-                ))}
+                {voiceTier === "standard"
+                  ? inlineTags.map((tag) => (
+                      <button
+                        key={tag.id}
+                        onClick={() => insertTag({ id: tag.id, emoji: tag.emoji, label: tag.label, tag: tag.tag })}
+                        title={tag.label}
+                        className="shrink-0 flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-foreground transition-all border border-primary/10 hover:border-primary/30"
+                      >
+                        <span className="text-sm">{tag.emoji}</span>
+                        <span className="text-[10px] text-muted-foreground">{tag.label}</span>
+                      </button>
+                    ))
+                  : proAudioTags.map((tag) => (
+                      <button
+                        key={tag.id}
+                        onClick={() => insertTag({ id: tag.id, emoji: tag.emoji, label: tag.label, tag: tag.tag })}
+                        title={`${tag.label} — ${tag.tag}`}
+                        className="shrink-0 flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-foreground transition-all border border-primary/10 hover:border-primary/30"
+                      >
+                        <span className="text-sm">{tag.emoji}</span>
+                        <span className="text-[10px] text-muted-foreground">{tag.label}</span>
+                      </button>
+                    ))}
               </div>
             </div>
 
