@@ -284,10 +284,10 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
-    const modelValidationError = validateModelLock(body as Record<string, unknown>);
+    const { model: resolvedModel, error: modelValidationError } = resolveModel(body as Record<string, unknown>);
     if (modelValidationError) {
       return new Response(
-        JSON.stringify({ error: modelValidationError, model: MODEL }),
+        JSON.stringify({ error: modelValidationError, allowed: Array.from(ALLOWED_MODELS) }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -310,7 +310,7 @@ serve(async (req) => {
 
     // ─── Generate TTS (billable - internal only) ───
     if (action === "synthesize") {
-      return await handleTTSRequest(body, GOOGLE_API_KEY, corsHeaders);
+      return await handleTTSRequest(body, GOOGLE_API_KEY, corsHeaders, resolvedModel);
     }
 
     // ─── Preview (free - allowed from client) ───
@@ -328,7 +328,7 @@ serve(async (req) => {
       const voiceValidationError = validateOfficialVoice(voiceName);
       if (voiceValidationError) {
         return new Response(
-          JSON.stringify({ error: voiceValidationError, model: MODEL }),
+          JSON.stringify({ error: voiceValidationError, model: resolvedModel }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -366,7 +366,7 @@ serve(async (req) => {
       };
 
       const response = await fetch(
-        `${GEMINI_API}/${MODEL}:generateContent?key=${GOOGLE_API_KEY}`,
+        `${GEMINI_API}/${resolvedModel}:generateContent?key=${GOOGLE_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -400,13 +400,13 @@ serve(async (req) => {
       if (prevMime.startsWith("audio/L16") || prevMime.startsWith("audio/pcm")) {
         const wavResult = pcmToWav(prevB64, prevMime);
         return new Response(
-          JSON.stringify({ ...wavResult, model: MODEL, voiceName }),
+          JSON.stringify({ ...wavResult, model: resolvedModel, voiceName }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
       return new Response(
-        JSON.stringify({ audioBase64: prevB64, mimeType: prevMime, model: MODEL, voiceName }),
+        JSON.stringify({ audioBase64: prevB64, mimeType: prevMime, model: resolvedModel, voiceName }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
