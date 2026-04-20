@@ -390,8 +390,8 @@ const AudioStudioPage = () => {
       // ── Step 1: Start generation (server: auth → entitlement → price → reserve → TTS) ──
       const { data: startResult, error: startError } = await supabase.functions.invoke("start-generation", {
         body: {
-          toolId: "gemini-tts",
-          model: "gemini-tts",
+          toolId: tierConfig.modelId,
+          model: tierConfig.modelId,
           apiType: "tts",
           characterCount: charCount,
           idempotencyKey,
