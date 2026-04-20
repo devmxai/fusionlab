@@ -68,19 +68,23 @@ function pcmToWav(rawB64: string, rawMime: string): { audioBase64: string; mimeT
   return { audioBase64: wavB64, mimeType: "audio/wav" };
 }
 
-function validateModelLock(body: Record<string, unknown>): string | null {
-  const requestedModel =
+function resolveModel(body: Record<string, unknown>): { model: string; error: string | null } {
+  const requested =
     typeof body.prebuiltModel === "string"
       ? body.prebuiltModel
       : typeof body.model === "string"
       ? body.model
       : null;
 
-  if (requestedModel && requestedModel !== MODEL) {
-    return `Only ${MODEL} is allowed for this endpoint`;
+  if (!requested) {
+    return { model: DEFAULT_MODEL, error: null };
   }
 
-  return null;
+  if (!ALLOWED_MODELS.has(requested)) {
+    return { model: DEFAULT_MODEL, error: `Model '${requested}' is not allowed. Allowed: ${Array.from(ALLOWED_MODELS).join(", ")}` };
+  }
+
+  return { model: requested, error: null };
 }
 
 function validateOfficialVoice(voiceName: string): string | null {
