@@ -12,7 +12,9 @@ const KIE_UPLOAD_BASE = "https://kieai.redpandaai.co";
 
 // Actions that consume credits MUST only be called from internal edge functions
 const BILLABLE_ACTIONS = new Set(["create", "veo-create", "flux-kontext-create"]);
-// Non-billable actions (upload, status, credits) remain accessible to authenticated users
+// Admin/internal-only actions that expose provider account data
+const ADMIN_ONLY_ACTIONS = new Set(["credits"]);
+// Non-billable actions (upload, status) remain accessible to authenticated users
 const INTERNAL_SECRET = "x-internal-caller";
 
 function normalizeProviderState(taskData: Record<string, any>): string {
