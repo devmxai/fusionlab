@@ -4,23 +4,36 @@ import { useAuth } from "@/contexts/AuthContext";
 import CreditRingAvatar from "@/components/CreditRingAvatar";
 import ProfileSidebar from "@/components/ProfileSidebar";
 import GenerationQueueSidebar from "@/components/GenerationQueueSidebar";
+import { Coins } from "lucide-react";
 
 const HomeHeader = () => {
-  const { user } = useAuth();
+  const { user, credits } = useAuth();
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
+  const creditsDisplay = credits.toLocaleString("en");
 
   return (
     <>
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/30">
         <div className="flex items-center justify-between px-4 sm:px-6 lg:px-10 xl:px-16 py-3">
           {/* Right side (first in RTL): Profile */}
-          {user ? (
-            <CreditRingAvatar onClick={() => setProfileOpen(true)} />
-          ) : (
-            <CreditRingAvatar onClick={() => navigate("/auth")} />
-          )}
+          <div className="flex items-center gap-2" dir="rtl">
+            {user ? (
+              <CreditRingAvatar onClick={() => setProfileOpen(true)} />
+            ) : (
+              <CreditRingAvatar onClick={() => navigate("/auth")} />
+            )}
+            <div
+              className="h-8 px-2.5 rounded-full bg-secondary/60 border border-border/40 flex items-center gap-1.5 shadow-sm"
+              aria-label={`Credits: ${creditsDisplay}`}
+            >
+              <Coins className="w-3.5 h-3.5 text-primary" />
+              <span className="text-[11px] font-extrabold text-foreground tabular-nums" dir="ltr">
+                {creditsDisplay}
+              </span>
+            </div>
+          </div>
 
           {/* Center Logo */}
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
