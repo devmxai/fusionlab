@@ -33,7 +33,39 @@ interface GeminiVoice {
   description: string;
 }
 
-const GEMINI_FLASH_TTS_MODEL = "gemini-2.5-flash-preview-tts";
+// ─── Fusion Voice tiers ───
+type VoiceTier = "standard" | "pro";
+
+interface VoiceTierConfig {
+  id: VoiceTier;
+  label: string;
+  badge: string;
+  modelId: string;
+  geminiModel: string;
+  description: string;
+}
+
+const VOICE_TIERS: Record<VoiceTier, VoiceTierConfig> = {
+  standard: {
+    id: "standard",
+    label: "Fusion Voice",
+    badge: "Gemini 2.5",
+    modelId: "gemini-tts",
+    geminiModel: "gemini-2.5-flash-preview-tts",
+    description: "أصوات طبيعية بأداء عربي ممتاز — مدعوم بـ Gemini 2.5 Flash TTS.",
+  },
+  pro: {
+    id: "pro",
+    label: "Fusion Voice Pro",
+    badge: "Gemini 3.1 · Audio Tags",
+    modelId: "gemini-tts-pro",
+    geminiModel: "gemini-3.1-flash-tts-preview",
+    description: "النموذج الأحدث بأعلى جودة وتعبير، مع دعم Audio Tags إنجليزية لتحكم دقيق.",
+  },
+};
+
+const STORAGE_KEY_TIER = "fusion-voice-tier";
+const STORAGE_KEY_VOICE = "fusion-voice-selected";
 
 const geminiVoices: GeminiVoice[] = [
   // ─── Male Voices (17) ───
@@ -110,9 +142,40 @@ const inlineTags: InlineTag[] = [
   { id: "gasp", emoji: "😲", label: "شهقة", tag: "*شهقة*" },
 ];
 
-// Build emoji↔tag maps
-const emojiToTag = new Map(inlineTags.map((t) => [t.emoji, t.tag]));
-const tagToEmoji = new Map(inlineTags.map((t) => [t.tag, t.emoji]));
+// ─── Pro Audio Tags (English brackets, official Gemini 3.1 syntax) ───
+interface ProAudioTag {
+  id: string;
+  emoji: string;
+  label: string;
+  tag: string; // English bracket tag, e.g. "[whispers]"
+}
+
+const proAudioTags: ProAudioTag[] = [
+  { id: "p-whispers", emoji: "🤫", label: "همس", tag: "[whispers]" },
+  { id: "p-shouting", emoji: "🗣️", label: "صراخ", tag: "[shouting]" },
+  { id: "p-laughs", emoji: "😂", label: "ضحك", tag: "[laughs]" },
+  { id: "p-giggles", emoji: "😊", label: "ضحكة خفيفة", tag: "[giggles]" },
+  { id: "p-sighs", emoji: "😮‍💨", label: "تنهيدة", tag: "[sighs]" },
+  { id: "p-gasp", emoji: "😲", label: "شهقة", tag: "[gasp]" },
+  { id: "p-sarcastic", emoji: "😏", label: "سخرية", tag: "[sarcastic]" },
+  { id: "p-excited", emoji: "🤩", label: "حماس", tag: "[excited]" },
+  { id: "p-amazed", emoji: "😍", label: "إعجاب", tag: "[amazed]" },
+  { id: "p-curious", emoji: "🤔", label: "فضول", tag: "[curious]" },
+  { id: "p-bored", emoji: "😑", label: "ملل", tag: "[bored]" },
+  { id: "p-tired", emoji: "😴", label: "تعب", tag: "[tired]" },
+  { id: "p-panicked", emoji: "😨", label: "ذعر", tag: "[panicked]" },
+  { id: "p-trembling", emoji: "😟", label: "ارتجاف", tag: "[trembling]" },
+  { id: "p-serious", emoji: "😐", label: "جدية", tag: "[serious]" },
+  { id: "p-mischievous", emoji: "😈", label: "مكر", tag: "[mischievously]" },
+  { id: "p-crying", emoji: "😢", label: "بكاء", tag: "[crying]" },
+  { id: "p-fast", emoji: "⚡", label: "سريع", tag: "[very fast]" },
+  { id: "p-slow", emoji: "🐢", label: "بطيء", tag: "[very slow]" },
+];
+
+// Build emoji↔tag maps (combined for both standard and pro)
+const allTagsForMaps = [...inlineTags, ...proAudioTags];
+const emojiToTag = new Map(allTagsForMaps.map((t) => [t.emoji, t.tag]));
+const tagToEmoji = new Map(allTagsForMaps.map((t) => [t.tag, t.emoji]));
 
 // Convert emojis back to [tags] before sending to backend
 function emojisToTags(input: string): string {
@@ -140,10 +203,21 @@ const AudioStudioPage = () => {
   const MAX_TTS_CHARS = 5000;
 
   // ─── State ───
+  const [voiceTier, setVoiceTier] = useState<VoiceTier>(() => {
+    if (typeof window === "undefined") return "standard";
+    const saved = localStorage.getItem(STORAGE_KEY_TIER);
+    return saved === "pro" ? "pro" : "standard";
+  });
+  const tierConfig = VOICE_TIERS[voiceTier];
+
   const [styleInstruction, setStyleInstruction] = useState("");
   const [text, setText] = useState("");
   const [voiceGenderTab, setVoiceGenderTab] = useState<"male" | "female">("male");
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_TIER, voiceTier);
+  }, [voiceTier]);
 
   // Count only spoken characters (exclude emoji tags)
   const getSpokenCharCount = useCallback((input: string): number => {
@@ -155,21 +229,31 @@ const AudioStudioPage = () => {
   const charCount = useMemo(() => getSpokenCharCount(text), [text, getSpokenCharCount]);
   const isOverLimit = charCount > MAX_TTS_CHARS;
 
-  // Dynamic pricing based on character count
+  // Dynamic pricing based on character count + selected tier
   const pricingParams = useMemo(() => ({
-    model: "gemini-tts",
+    model: tierConfig.modelId,
     resolution: null,
     quality: null,
     durationSeconds: null,
     hasAudio: null,
     characterCount: charCount > 0 ? charCount : null,
-  }), [charCount]);
+  }), [charCount, tierConfig.modelId]);
 
   const { price } = usePricing(pricingParams);
   const estimatedCost = price?.credits ?? 0;
   const insufficientCredits = charCount > 0 && credits < estimatedCost;
 
-  const [selectedVoice, setSelectedVoice] = useState<GeminiVoice>(geminiVoices[0]);
+  // Persist selected voice across sessions AND generations
+  const [selectedVoice, setSelectedVoice] = useState<GeminiVoice>(() => {
+    if (typeof window === "undefined") return geminiVoices[0];
+    const saved = localStorage.getItem(STORAGE_KEY_VOICE);
+    const found = saved ? geminiVoices.find((v) => v.name === saved) : null;
+    return found || geminiVoices[0];
+  });
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_VOICE, selectedVoice.name);
+  }, [selectedVoice.name]);
+
   const [speakingRate, setSpeakingRate] = useState(1.0);
   const [pitch, setPitch] = useState(0);
   const [stability, setStability] = useState(0.7);
@@ -306,8 +390,8 @@ const AudioStudioPage = () => {
       // ── Step 1: Start generation (server: auth → entitlement → price → reserve → TTS) ──
       const { data: startResult, error: startError } = await supabase.functions.invoke("start-generation", {
         body: {
-          toolId: "gemini-tts",
-          model: "gemini-tts",
+          toolId: tierConfig.modelId,
+          model: tierConfig.modelId,
           apiType: "tts",
           characterCount: charCount,
           idempotencyKey,
@@ -436,7 +520,7 @@ const AudioStudioPage = () => {
       const { data, error } = await supabase.functions.invoke("gemini-tts", {
         body: {
           action: "preview",
-          prebuiltModel: GEMINI_FLASH_TTS_MODEL,
+          prebuiltModel: tierConfig.geminiModel,
           voiceName: v.name,
           previewText: "مرحباً، أنا صوتك الجديد. كيف أبدو؟",
           styleInstruction: styleInstruction.trim(),

@@ -8,7 +8,11 @@ const corsHeaders = {
 };
 
 const GEMINI_API = "https://generativelanguage.googleapis.com/v1beta/models";
-const MODEL = "gemini-2.5-flash-preview-tts";
+const DEFAULT_MODEL = "gemini-2.5-flash-preview-tts";
+const ALLOWED_MODELS = new Set([
+  "gemini-2.5-flash-preview-tts", // Fusion Voice (standard)
+  "gemini-3.1-flash-tts-preview",  // Fusion Voice Pro (latest, supports audio tags)
+]);
 const OFFICIAL_GEMINI_FLASH_TTS_VOICES = new Set([
   "Achernar", "Achird", "Algenib", "Algieba", "Alnilam", "Aoede",
   "Autonoe", "Callirrhoe", "Charon", "Despina", "Enceladus",
@@ -64,19 +68,23 @@ function pcmToWav(rawB64: string, rawMime: string): { audioBase64: string; mimeT
   return { audioBase64: wavB64, mimeType: "audio/wav" };
 }
 
-function validateModelLock(body: Record<string, unknown>): string | null {
-  const requestedModel =
+function resolveModel(body: Record<string, unknown>): { model: string; error: string | null } {
+  const requested =
     typeof body.prebuiltModel === "string"
       ? body.prebuiltModel
       : typeof body.model === "string"
       ? body.model
       : null;
 
-  if (requestedModel && requestedModel !== MODEL) {
-    return `Only ${MODEL} is allowed for this endpoint`;
+  if (!requested) {
+    return { model: DEFAULT_MODEL, error: null };
   }
 
-  return null;
+  if (!ALLOWED_MODELS.has(requested)) {
+    return { model: DEFAULT_MODEL, error: `Model '${requested}' is not allowed. Allowed: ${Array.from(ALLOWED_MODELS).join(", ")}` };
+  }
+
+  return { model: requested, error: null };
 }
 
 function validateOfficialVoice(voiceName: string): string | null {
@@ -98,6 +106,7 @@ async function handleTTSRequest(
   body: Record<string, unknown>,
   GOOGLE_API_KEY: string,
   corsHeaders: Record<string, string>,
+  resolvedModel: string,
 ): Promise<Response> {
   const {
     text,
@@ -114,7 +123,7 @@ async function handleTTSRequest(
   const voiceValidationError = validateOfficialVoice(voiceName);
   if (voiceValidationError) {
     return new Response(
-      JSON.stringify({ error: voiceValidationError, model: MODEL }),
+      JSON.stringify({ error: voiceValidationError, model: resolvedModel }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -135,12 +144,13 @@ async function handleTTSRequest(
     );
   }
 
-  // Build prompt using Director's Notes pattern (official Gemini TTS approach)
-  // Stage directions like *يضحك*, *بسخرية*, pauses via "..." are kept inline
+  const isProModel = resolvedModel === "gemini-3.1-flash-tts-preview";
+
+  // Build prompt using Director's Notes pattern
   const promptParts: string[] = [];
   promptParts.push("# AUDIO PROFILE");
   promptParts.push("متحدث عربي أصلي بأداء طبيعي وتعبيرات عاطفية واقعية.");
-  
+
   promptParts.push("\n## DIRECTOR'S NOTES");
   promptParts.push("اللغة: العربية فقط بنطق أصيل وطبيعي.");
 
@@ -153,15 +163,19 @@ async function handleTTSRequest(
   if (styleInstruction) promptParts.push(`الأسلوب: ${styleInstruction}`);
   if (emotionHint) promptParts.push(`المشاعر: ${emotionHint}.`);
   if (toneHint) promptParts.push(`النبرة: ${toneHint}.`);
-  
+
   if (speakingRate > 1.3) promptParts.push("الإيقاع: سريع ونشيط.");
   else if (speakingRate < 0.8) promptParts.push("الإيقاع: بطيء ومتأنٍ.");
-  
+
   if (stability < 0.5) promptParts.push("التنوع: اسمح بتنوع صوتي أكثر وتعبير عاطفي أقوى.");
   if (stability > 0.8) promptParts.push("الثبات: حافظ على نبرة صوت ثابتة ومتسقة.");
 
-  // Inline stage directions guidance
-  promptParts.push("\nالنص يحتوي على توجيهات أداء مضمنة بين نجمتين مثل *يضحك* أو *بسخرية*. نفّذها كأداء صوتي حقيقي (ضحك فعلي، نبرة ساخرة، همس حقيقي) ولا تنطق الكلمات بين النجمتين. النقاط المتتالية ... تعني وقفة صامتة.");
+  // Inline directions guidance — different per model
+  if (isProModel) {
+    promptParts.push("\nالنص قد يحتوي على Audio Tags إنجليزية بين أقواس مربعة مثل [whispers] [laughs] [excited] [shouting] [sarcastic] [sighs]. نفّذها كأداء صوتي حقيقي ولا تنطق محتوى الأقواس. كذلك قد يحتوي على وسوم عربية بين نجمتين مثل *يضحك* أو *يهمس* — نفّذها بنفس الطريقة. النقاط المتتالية ... تعني وقفة صامتة.");
+  } else {
+    promptParts.push("\nالنص يحتوي على توجيهات أداء مضمنة بين نجمتين مثل *يضحك* أو *بسخرية*. نفّذها كأداء صوتي حقيقي (ضحك فعلي، نبرة ساخرة، همس حقيقي) ولا تنطق الكلمات بين النجمتين. النقاط المتتالية ... تعني وقفة صامتة.");
+  }
 
   promptParts.push("\n## TRANSCRIPT");
   promptParts.push(spokenText);
@@ -181,10 +195,10 @@ async function handleTTSRequest(
     },
   };
 
-  console.log("TTS request:", JSON.stringify({ model: MODEL, voiceName, textLength: text.length }));
+  console.log("TTS request:", JSON.stringify({ model: resolvedModel, voiceName, textLength: text.length }));
 
   const response = await fetch(
-    `${GEMINI_API}/${MODEL}:generateContent?key=${GOOGLE_API_KEY}`,
+    `${GEMINI_API}/${resolvedModel}:generateContent?key=${GOOGLE_API_KEY}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -221,13 +235,13 @@ async function handleTTSRequest(
   if (rawMime.startsWith("audio/L16") || rawMime.startsWith("audio/pcm")) {
     const wavResult = pcmToWav(rawB64, rawMime);
     return new Response(
-      JSON.stringify({ ...wavResult, model: MODEL, voiceName }),
+      JSON.stringify({ ...wavResult, model: resolvedModel, voiceName }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
   return new Response(
-    JSON.stringify({ audioBase64: rawB64, mimeType: rawMime, model: MODEL, voiceName }),
+    JSON.stringify({ audioBase64: rawB64, mimeType: rawMime, model: resolvedModel, voiceName }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 }
@@ -270,10 +284,10 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
-    const modelValidationError = validateModelLock(body as Record<string, unknown>);
+    const { model: resolvedModel, error: modelValidationError } = resolveModel(body as Record<string, unknown>);
     if (modelValidationError) {
       return new Response(
-        JSON.stringify({ error: modelValidationError, model: MODEL }),
+        JSON.stringify({ error: modelValidationError, allowed: Array.from(ALLOWED_MODELS) }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -296,7 +310,7 @@ serve(async (req) => {
 
     // ─── Generate TTS (billable - internal only) ───
     if (action === "synthesize") {
-      return await handleTTSRequest(body, GOOGLE_API_KEY, corsHeaders);
+      return await handleTTSRequest(body, GOOGLE_API_KEY, corsHeaders, resolvedModel);
     }
 
     // ─── Preview (free - allowed from client) ───
@@ -314,7 +328,7 @@ serve(async (req) => {
       const voiceValidationError = validateOfficialVoice(voiceName);
       if (voiceValidationError) {
         return new Response(
-          JSON.stringify({ error: voiceValidationError, model: MODEL }),
+          JSON.stringify({ error: voiceValidationError, model: resolvedModel }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -352,7 +366,7 @@ serve(async (req) => {
       };
 
       const response = await fetch(
-        `${GEMINI_API}/${MODEL}:generateContent?key=${GOOGLE_API_KEY}`,
+        `${GEMINI_API}/${resolvedModel}:generateContent?key=${GOOGLE_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -386,13 +400,13 @@ serve(async (req) => {
       if (prevMime.startsWith("audio/L16") || prevMime.startsWith("audio/pcm")) {
         const wavResult = pcmToWav(prevB64, prevMime);
         return new Response(
-          JSON.stringify({ ...wavResult, model: MODEL, voiceName }),
+          JSON.stringify({ ...wavResult, model: resolvedModel, voiceName }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
       return new Response(
-        JSON.stringify({ audioBase64: prevB64, mimeType: prevMime, model: MODEL, voiceName }),
+        JSON.stringify({ audioBase64: prevB64, mimeType: prevMime, model: resolvedModel, voiceName }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
