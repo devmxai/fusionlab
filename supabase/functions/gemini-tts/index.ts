@@ -232,7 +232,8 @@ async function handleTTSRequest(
   const rawMime = audioPart.inlineData.mimeType as string;
   const rawB64 = audioPart.inlineData.data as string;
 
-  if (rawMime.startsWith("audio/L16") || rawMime.startsWith("audio/pcm")) {
+  const lowerMime = rawMime.toLowerCase();
+  if (lowerMime.startsWith("audio/l16") || lowerMime.startsWith("audio/pcm")) {
     const wavResult = pcmToWav(rawB64, rawMime);
     return new Response(
       JSON.stringify({ ...wavResult, model: resolvedModel, voiceName }),
