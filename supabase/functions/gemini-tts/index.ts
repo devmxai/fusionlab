@@ -314,7 +314,7 @@ serve(async (req) => {
       return await handleTTSRequest(body, GOOGLE_API_KEY, corsHeaders, resolvedModel);
     }
 
-    // ─── Preview (free - allowed from client) ───
+    // ─── Preview (free - allowed from client, but with strict input limits) ───
     if (action === "preview") {
       const {
         voiceName = "Kore",
@@ -334,7 +334,10 @@ serve(async (req) => {
         );
       }
 
-      const previewRawText = previewText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟";
+      // Hard cap on preview text length to prevent abuse of free endpoint
+      const PREVIEW_MAX_CHARS = 200;
+      const safePreviewText = typeof previewText === "string" ? previewText.slice(0, PREVIEW_MAX_CHARS) : "";
+      const previewRawText = safePreviewText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟";
 
       const previewParts: string[] = [];
       previewParts.push("# AUDIO PROFILE");

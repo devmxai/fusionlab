@@ -5,6 +5,7 @@ import { Dialog, DialogPortal, DialogOverlay } from "@/components/ui/dialog";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
 import { X, Sparkles } from "lucide-react";
+import { classifyLink } from "@/lib/safe-link";
 
 interface Announcement {
   id: string;
@@ -54,12 +55,11 @@ const AnnouncementPopup = () => {
 
   const handleCta = () => {
     handleDismiss();
-    if (announcement?.cta_link) {
-      if (announcement.cta_link.startsWith("http")) {
-        window.open(announcement.cta_link, "_blank");
-      } else {
-        navigate(announcement.cta_link);
-      }
+    const safe = classifyLink(announcement?.cta_link);
+    if (safe.kind === "internal") {
+      navigate(safe.path);
+    } else if (safe.kind === "external") {
+      window.open(safe.url, "_blank", "noopener,noreferrer");
     }
   };
 

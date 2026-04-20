@@ -12,7 +12,9 @@ const KIE_UPLOAD_BASE = "https://kieai.redpandaai.co";
 
 // Actions that consume credits MUST only be called from internal edge functions
 const BILLABLE_ACTIONS = new Set(["create", "veo-create", "flux-kontext-create"]);
-// Non-billable actions (upload, status, credits) remain accessible to authenticated users
+// Admin/internal-only actions that expose provider account data
+const ADMIN_ONLY_ACTIONS = new Set(["credits"]);
+// Non-billable actions (upload, status) remain accessible to authenticated users
 const INTERNAL_SECRET = "x-internal-caller";
 
 function normalizeProviderState(taskData: Record<string, any>): string {
@@ -200,6 +202,34 @@ serve(async (req) => {
           error: "Direct provider calls are not allowed. Use start-generation endpoint.",
           code: "DIRECT_CALL_BLOCKED",
         }, 403);
+      }
+    }
+
+    // ── SECURITY: Admin-only actions (provider account data) ──
+    if (ADMIN_ONLY_ACTIONS.has(action)) {
+      const internalCaller = req.headers.get(INTERNAL_SECRET);
+      const expectedSecret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      const isInternal = internalCaller && internalCaller === expectedSecret;
+
+      if (!isInternal) {
+        // Check if caller is admin via service-role client
+        const adminClient = createClient(
+          supabaseUrl,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        );
+        const { data: roles } = await adminClient
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .in("role", ["admin", "super_admin"]);
+
+        if (!roles || roles.length === 0) {
+          console.warn(`BLOCKED admin-only action by non-admin: action=${action}, user=${user.id}`);
+          return jsonRes({
+            error: "This action requires admin privileges.",
+            code: "ADMIN_REQUIRED",
+          }, 403);
+        }
       }
     }
 

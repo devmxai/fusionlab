@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles } from "lucide-react";
+import { classifyLink } from "@/lib/safe-link";
 
 interface Banner {
   id: string;
@@ -69,14 +70,12 @@ const BannerCarousel = () => {
 
   const handleBannerClick = (banner: Banner, e: React.MouseEvent) => {
     e.preventDefault();
-    if (banner.linked_studio) {
-      navigate(banner.linked_studio);
-    } else if (banner.cta_link) {
-      if (banner.cta_link.startsWith("http")) {
-        window.open(banner.cta_link, "_blank");
-      } else {
-        navigate(banner.cta_link);
-      }
+    const target = banner.linked_studio || banner.cta_link;
+    const safe = classifyLink(target);
+    if (safe.kind === "internal") {
+      navigate(safe.path);
+    } else if (safe.kind === "external") {
+      window.open(safe.url, "_blank", "noopener,noreferrer");
     }
   };
 
