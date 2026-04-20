@@ -685,14 +685,34 @@ const StudioPage = () => {
       reader.readAsDataURL(file);
     });
 
+  // Infer a safe MIME type from filename when the browser reports an empty/unknown type
+  // (common with .mov/.mkv on Windows). Avoids "file format not supported" rejections from Storage.
+  const inferContentType = (file: File): string => {
+    if (file.type && file.type !== "application/octet-stream") return file.type;
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    const map: Record<string, string> = {
+      mp4: "video/mp4", m4v: "video/mp4",
+      mov: "video/quicktime", qt: "video/quicktime",
+      webm: "video/webm", mkv: "video/x-matroska",
+      avi: "video/x-msvideo", "3gp": "video/3gpp",
+      jpg: "image/jpeg", jpeg: "image/jpeg",
+      png: "image/png", webp: "image/webp",
+      gif: "image/gif", heic: "image/heic",
+      mp3: "audio/mpeg", wav: "audio/wav",
+      m4a: "audio/mp4", aac: "audio/aac", ogg: "audio/ogg",
+    };
+    return map[ext] || "application/octet-stream";
+  };
+
   // Upload large files (videos) to private temp-uploads bucket and return a short-lived signed URL
   // The signed URL is valid for 2 hours to give upstream providers ample time to fetch the asset.
   const uploadViaStorage = async (file: File, prefix: string): Promise<string> => {
     const ext = file.name.split(".").pop() || "mp4";
     const path = `${user!.id}/${prefix}_${Date.now()}.${ext}`;
+    const contentType = inferContentType(file);
     const { error: uploadError } = await supabase.storage
       .from("temp-uploads")
-      .upload(path, file, { contentType: file.type || "video/mp4", upsert: false });
+      .upload(path, file, { contentType, upsert: false });
     if (uploadError) throw new Error("فشل رفع الملف: " + uploadError.message);
     const { data: signed, error: signedErr } = await supabase.storage
       .from("temp-uploads")
