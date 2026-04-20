@@ -520,7 +520,7 @@ const AudioStudioPage = () => {
       const { data, error } = await supabase.functions.invoke("gemini-tts", {
         body: {
           action: "preview",
-          prebuiltModel: GEMINI_FLASH_TTS_MODEL,
+          prebuiltModel: tierConfig.geminiModel,
           voiceName: v.name,
           previewText: "مرحباً، أنا صوتك الجديد. كيف أبدو؟",
           styleInstruction: styleInstruction.trim(),
