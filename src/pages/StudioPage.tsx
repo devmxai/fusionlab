@@ -685,7 +685,8 @@ const StudioPage = () => {
       reader.readAsDataURL(file);
     });
 
-  // Upload large files (videos) directly to Supabase Storage, returning a public URL
+  // Upload large files (videos) to private temp-uploads bucket and return a short-lived signed URL
+  // The signed URL is valid for 2 hours to give upstream providers ample time to fetch the asset.
   const uploadViaStorage = async (file: File, prefix: string): Promise<string> => {
     const ext = file.name.split(".").pop() || "mp4";
     const path = `${user!.id}/${prefix}_${Date.now()}.${ext}`;
@@ -693,9 +694,11 @@ const StudioPage = () => {
       .from("temp-uploads")
       .upload(path, file, { contentType: file.type || "video/mp4", upsert: false });
     if (uploadError) throw new Error("فشل رفع الملف: " + uploadError.message);
-    const { data: urlData } = supabase.storage.from("temp-uploads").getPublicUrl(path);
-    if (!urlData?.publicUrl) throw new Error("تعذر الحصول على رابط الملف");
-    return urlData.publicUrl;
+    const { data: signed, error: signedErr } = await supabase.storage
+      .from("temp-uploads")
+      .createSignedUrl(path, 60 * 60 * 2); // 2 hours
+    if (signedErr || !signed?.signedUrl) throw new Error("تعذر الحصول على رابط الملف");
+    return signed.signedUrl;
   };
 
   // Smart upload: use Storage more aggressively for media that may exceed edge payload limits after base64 expansion.
