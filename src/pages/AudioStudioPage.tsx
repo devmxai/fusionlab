@@ -142,9 +142,40 @@ const inlineTags: InlineTag[] = [
   { id: "gasp", emoji: "😲", label: "شهقة", tag: "*شهقة*" },
 ];
 
-// Build emoji↔tag maps
-const emojiToTag = new Map(inlineTags.map((t) => [t.emoji, t.tag]));
-const tagToEmoji = new Map(inlineTags.map((t) => [t.tag, t.emoji]));
+// ─── Pro Audio Tags (English brackets, official Gemini 3.1 syntax) ───
+interface ProAudioTag {
+  id: string;
+  emoji: string;
+  label: string;
+  tag: string; // English bracket tag, e.g. "[whispers]"
+}
+
+const proAudioTags: ProAudioTag[] = [
+  { id: "p-whispers", emoji: "🤫", label: "همس", tag: "[whispers]" },
+  { id: "p-shouting", emoji: "🗣️", label: "صراخ", tag: "[shouting]" },
+  { id: "p-laughs", emoji: "😂", label: "ضحك", tag: "[laughs]" },
+  { id: "p-giggles", emoji: "😊", label: "ضحكة خفيفة", tag: "[giggles]" },
+  { id: "p-sighs", emoji: "😮‍💨", label: "تنهيدة", tag: "[sighs]" },
+  { id: "p-gasp", emoji: "😲", label: "شهقة", tag: "[gasp]" },
+  { id: "p-sarcastic", emoji: "😏", label: "سخرية", tag: "[sarcastic]" },
+  { id: "p-excited", emoji: "🤩", label: "حماس", tag: "[excited]" },
+  { id: "p-amazed", emoji: "😍", label: "إعجاب", tag: "[amazed]" },
+  { id: "p-curious", emoji: "🤔", label: "فضول", tag: "[curious]" },
+  { id: "p-bored", emoji: "😑", label: "ملل", tag: "[bored]" },
+  { id: "p-tired", emoji: "😴", label: "تعب", tag: "[tired]" },
+  { id: "p-panicked", emoji: "😨", label: "ذعر", tag: "[panicked]" },
+  { id: "p-trembling", emoji: "😟", label: "ارتجاف", tag: "[trembling]" },
+  { id: "p-serious", emoji: "😐", label: "جدية", tag: "[serious]" },
+  { id: "p-mischievous", emoji: "😈", label: "مكر", tag: "[mischievously]" },
+  { id: "p-crying", emoji: "😢", label: "بكاء", tag: "[crying]" },
+  { id: "p-fast", emoji: "⚡", label: "سريع", tag: "[very fast]" },
+  { id: "p-slow", emoji: "🐢", label: "بطيء", tag: "[very slow]" },
+];
+
+// Build emoji↔tag maps (combined for both standard and pro)
+const allTagsForMaps = [...inlineTags, ...proAudioTags];
+const emojiToTag = new Map(allTagsForMaps.map((t) => [t.emoji, t.tag]));
+const tagToEmoji = new Map(allTagsForMaps.map((t) => [t.tag, t.emoji]));
 
 // Convert emojis back to [tags] before sending to backend
 function emojisToTags(input: string): string {
