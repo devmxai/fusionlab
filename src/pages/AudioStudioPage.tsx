@@ -203,10 +203,21 @@ const AudioStudioPage = () => {
   const MAX_TTS_CHARS = 5000;
 
   // ─── State ───
+  const [voiceTier, setVoiceTier] = useState<VoiceTier>(() => {
+    if (typeof window === "undefined") return "standard";
+    const saved = localStorage.getItem(STORAGE_KEY_TIER);
+    return saved === "pro" ? "pro" : "standard";
+  });
+  const tierConfig = VOICE_TIERS[voiceTier];
+
   const [styleInstruction, setStyleInstruction] = useState("");
   const [text, setText] = useState("");
   const [voiceGenderTab, setVoiceGenderTab] = useState<"male" | "female">("male");
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_TIER, voiceTier);
+  }, [voiceTier]);
 
   // Count only spoken characters (exclude emoji tags)
   const getSpokenCharCount = useCallback((input: string): number => {
