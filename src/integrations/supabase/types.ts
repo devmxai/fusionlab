@@ -455,7 +455,9 @@ export type Database = {
           created_at: string | null
           expires_at: string
           id: string
+          locked_until: string | null
           otp_code: string
+          otp_hash: string | null
           phone_number: string
           user_id: string
           verified: boolean | null
@@ -465,7 +467,9 @@ export type Database = {
           created_at?: string | null
           expires_at?: string
           id?: string
+          locked_until?: string | null
           otp_code: string
+          otp_hash?: string | null
           phone_number: string
           user_id: string
           verified?: boolean | null
@@ -475,7 +479,9 @@ export type Database = {
           created_at?: string | null
           expires_at?: string
           id?: string
+          locked_until?: string | null
           otp_code?: string
+          otp_hash?: string | null
           phone_number?: string
           user_id?: string
           verified?: boolean | null
@@ -1006,6 +1012,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      hash_otp: {
+        Args: { p_otp: string; p_phone: string; p_user_id: string }
+        Returns: string
       }
       reconciliation_check: { Args: never; Returns: Json }
       release_credits: { Args: { p_reservation_id: string }; Returns: Json }
