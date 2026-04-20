@@ -650,6 +650,35 @@ const AudioStudioPage = () => {
         <div className="w-full flex flex-col lg:flex-row gap-6">
           {/* Left Column - Main content */}
           <div className="flex-1 space-y-4 min-w-0">
+            {/* ─── Voice Tier Tabs (Fusion Voice / Fusion Voice Pro) ─── */}
+            <div className="space-y-2">
+              <div className="flex rounded-xl bg-secondary/40 p-1 border border-border/40">
+                {(Object.keys(VOICE_TIERS) as VoiceTier[]).map((tierId) => {
+                  const t = VOICE_TIERS[tierId];
+                  const active = voiceTier === tierId;
+                  return (
+                    <button
+                      key={tierId}
+                      onClick={() => setVoiceTier(tierId)}
+                      className={`flex-1 flex flex-col items-center gap-0.5 py-2 px-3 rounded-lg transition-all ${
+                        active
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <span className="text-xs font-bold">{t.label}</span>
+                      <span className={`text-[9px] ${active ? "opacity-90" : "opacity-60"}`}>
+                        {t.badge}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground px-1 leading-relaxed">
+                {tierConfig.description}
+              </p>
+            </div>
+
             {/* Style Instructions */}
             <div className="space-y-2">
               <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
