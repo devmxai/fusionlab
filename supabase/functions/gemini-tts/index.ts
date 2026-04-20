@@ -398,7 +398,8 @@ serve(async (req) => {
       const prevMime = audioPart.inlineData.mimeType as string;
       const prevB64 = audioPart.inlineData.data as string;
 
-      if (prevMime.startsWith("audio/L16") || prevMime.startsWith("audio/pcm")) {
+      const prevLowerMime = prevMime.toLowerCase();
+      if (prevLowerMime.startsWith("audio/l16") || prevLowerMime.startsWith("audio/pcm")) {
         const wavResult = pcmToWav(prevB64, prevMime);
         return new Response(
           JSON.stringify({ ...wavResult, model: resolvedModel, voiceName }),
