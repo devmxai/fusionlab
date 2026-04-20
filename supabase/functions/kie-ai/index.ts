@@ -205,6 +205,34 @@ serve(async (req) => {
       }
     }
 
+    // ── SECURITY: Admin-only actions (provider account data) ──
+    if (ADMIN_ONLY_ACTIONS.has(action)) {
+      const internalCaller = req.headers.get(INTERNAL_SECRET);
+      const expectedSecret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      const isInternal = internalCaller && internalCaller === expectedSecret;
+
+      if (!isInternal) {
+        // Check if caller is admin via service-role client
+        const adminClient = createClient(
+          supabaseUrl,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        );
+        const { data: roles } = await adminClient
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .in("role", ["admin", "super_admin"]);
+
+        if (!roles || roles.length === 0) {
+          console.warn(`BLOCKED admin-only action by non-admin: action=${action}, user=${user.id}`);
+          return jsonRes({
+            error: "This action requires admin privileges.",
+            code: "ADMIN_REQUIRED",
+          }, 403);
+        }
+      }
+    }
+
     // ─── Upload file (base64) ───
     if (action === "upload") {
       const { base64Data, fileName } = body;
