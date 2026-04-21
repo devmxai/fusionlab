@@ -102,6 +102,125 @@ function normalizeText(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Build a Gemini TTS prompt that follows the OFFICIAL prompting guide
+ * (https://ai.google.dev/gemini-api/docs/speech-generation#prompting-guide).
+ *
+ * Critical principles:
+ *  - Gemini TTS has NO API params for speakingRate/pitch/stability — they MUST
+ *    be expressed in natural language in the SAME line as the "Say:" prefix
+ *    so the model treats them as direct delivery instructions.
+ *  - Do NOT prepend persona text that overrides the chosen voice's natural
+ *    timbre (e.g. always saying "متحدث عربي أصلي" makes every voice sound the
+ *    same, masking Puck/Charon/Enceladus/etc. character differences).
+ *  - The user's style hint must be the PRIMARY directive, placed immediately
+ *    before the transcript using Google's recommended "Say <directives>:" form.
+ *  - Audio tags ([whispers], [laughs], …) are inline modifiers — never wrap
+ *    them in extra Arabic explanation that the model might read aloud.
+ */
+function buildTTSPrompt(opts: {
+  spokenText: string;
+  isProModel: boolean;
+  styleInstruction?: string;
+  dialectHint?: string;
+  emotionHint?: string;
+  toneHint?: string;
+  speakingRate?: number;
+  stability?: number;
+}): string {
+  const {
+    spokenText,
+    isProModel,
+    styleInstruction = "",
+    dialectHint = "",
+    emotionHint = "",
+    toneHint = "",
+    speakingRate = 1.0,
+    stability = 0.7,
+  } = opts;
+
+  // Build a single, concise English directive line. Google's docs explicitly
+  // recommend English audio-tag / direction wording for non-English transcripts
+  // ("If your transcript is not in English, for best results we recommend that
+  // you still use English audio tags").
+  const directives: string[] = [];
+
+  if (dialectHint && dialectHint.trim()) {
+    directives.push(`in an authentic ${dialectHint.trim()} delivery`);
+  }
+
+  if (styleInstruction && styleInstruction.trim()) {
+    // User's free-form style is the strongest signal — pass it through verbatim
+    // so the model honors specific cues like "صوت إعلاني حماسي" or "نبرة ساخرة".
+    directives.push(`with this performance direction: ${styleInstruction.trim()}`);
+  }
+
+  if (toneHint && toneHint.trim()) {
+    directives.push(`tone: ${toneHint.trim()}`);
+  }
+
+  if (emotionHint && emotionHint.trim()) {
+    directives.push(`emotion: ${emotionHint.trim()}`);
+  }
+
+  // Map slider values to NATURAL-LANGUAGE pace words.
+  // The thresholds are tighter than before so any slider movement away from 1.0
+  // is reflected audibly (the previous >1.3 / <0.8 thresholds rarely triggered).
+  if (speakingRate >= 1.6) directives.push("at a very fast pace");
+  else if (speakingRate >= 1.25) directives.push("at a noticeably faster pace");
+  else if (speakingRate >= 1.1) directives.push("slightly faster than normal");
+  else if (speakingRate <= 0.6) directives.push("at a very slow, deliberate pace");
+  else if (speakingRate <= 0.8) directives.push("at a noticeably slower pace");
+  else if (speakingRate <= 0.9) directives.push("slightly slower than normal");
+
+  // Stability → expressiveness (low stability = more dynamic range/variation).
+  if (stability <= 0.3) directives.push("with very expressive, dynamic emotional variation");
+  else if (stability <= 0.5) directives.push("with expressive variation");
+  else if (stability >= 0.9) directives.push("with a steady, consistent tone throughout");
+  else if (stability >= 0.75) directives.push("with a stable tone");
+
+  // Compose the final "Say …:" line per Google's official examples.
+  // Example from docs: `Say in an spooky voice: "By the pricking of my thumbs..."`
+  const directiveLine = directives.length > 0
+    ? `Say ${directives.join(", ")}:`
+    : "Say:";
+
+  // Brief inline-tags reminder ONLY when relevant (kept short so the model
+  // doesn't echo it). Pro model uses English bracket tags; Standard uses
+  // Arabic *...* stage directions.
+  const hasBracketTags = /\[[^\]]+\]/.test(spokenText);
+  const hasStarTags = /\*[^*]+\*/.test(spokenText);
+  const hasPauses = /\.{3,}/.test(spokenText);
+
+  const reminders: string[] = [];
+  if (isProModel && hasBracketTags) {
+    reminders.push("Bracketed tags like [whispers] [laughs] [shouting] are performance modifiers — perform them, do not speak the bracket text.");
+  }
+  if (hasStarTags) {
+    reminders.push("Words between asterisks like *يضحك* are stage directions — perform the action (real laugh, whisper, sigh, etc.), do not read the asterisk text.");
+  }
+  if (hasPauses) {
+    reminders.push("Sequences of dots ( ... ) indicate silent pauses.");
+  }
+
+  // Final prompt structure:
+  //   1) one-line reminder block (only if needed)
+  //   2) the "Say <directives>:" line
+  //   3) a blank line
+  //   4) the transcript itself, on its own — quoted so the model treats it as
+  //      the literal thing to read.
+  const lines: string[] = [];
+  if (reminders.length > 0) {
+    lines.push(reminders.join(" "));
+    lines.push("");
+  }
+  lines.push(directiveLine);
+  lines.push("");
+  lines.push(spokenText);
+
+  return lines.join("\n");
+}
+
 async function handleTTSRequest(
   body: Record<string, unknown>,
   GOOGLE_API_KEY: string,
@@ -112,7 +231,7 @@ async function handleTTSRequest(
     text,
     voiceName = "Kore",
     speakingRate = 1.0,
-    pitch = 0,
+    pitch: _pitch = 0, // accepted but unused — Gemini TTS has no pitch param
     stability = 0.7,
     dialectHint = "",
     emotionHint = "",
@@ -146,41 +265,17 @@ async function handleTTSRequest(
 
   const isProModel = resolvedModel === "gemini-3.1-flash-tts-preview";
 
-  // Build prompt using Director's Notes pattern
-  const promptParts: string[] = [];
-  promptParts.push("# AUDIO PROFILE");
-  promptParts.push("متحدث عربي أصلي بأداء طبيعي وتعبيرات عاطفية واقعية.");
+  const fullPrompt = buildTTSPrompt({
+    spokenText,
+    isProModel,
+    styleInstruction,
+    dialectHint,
+    emotionHint,
+    toneHint,
+    speakingRate,
+    stability,
+  });
 
-  promptParts.push("\n## DIRECTOR'S NOTES");
-  promptParts.push("اللغة: العربية فقط بنطق أصيل وطبيعي.");
-
-  if (dialectHint) {
-    promptParts.push(`اللهجة: ${dialectHint}.`);
-  } else {
-    promptParts.push("اللهجة: عراقية عامية طبيعية.");
-  }
-
-  if (styleInstruction) promptParts.push(`الأسلوب: ${styleInstruction}`);
-  if (emotionHint) promptParts.push(`المشاعر: ${emotionHint}.`);
-  if (toneHint) promptParts.push(`النبرة: ${toneHint}.`);
-
-  if (speakingRate > 1.3) promptParts.push("الإيقاع: سريع ونشيط.");
-  else if (speakingRate < 0.8) promptParts.push("الإيقاع: بطيء ومتأنٍ.");
-
-  if (stability < 0.5) promptParts.push("التنوع: اسمح بتنوع صوتي أكثر وتعبير عاطفي أقوى.");
-  if (stability > 0.8) promptParts.push("الثبات: حافظ على نبرة صوت ثابتة ومتسقة.");
-
-  // Inline directions guidance — different per model
-  if (isProModel) {
-    promptParts.push("\nالنص قد يحتوي على Audio Tags إنجليزية بين أقواس مربعة مثل [whispers] [laughs] [excited] [shouting] [sarcastic] [sighs]. نفّذها كأداء صوتي حقيقي ولا تنطق محتوى الأقواس. كذلك قد يحتوي على وسوم عربية بين نجمتين مثل *يضحك* أو *يهمس* — نفّذها بنفس الطريقة. النقاط المتتالية ... تعني وقفة صامتة.");
-  } else {
-    promptParts.push("\nالنص يحتوي على توجيهات أداء مضمنة بين نجمتين مثل *يضحك* أو *بسخرية*. نفّذها كأداء صوتي حقيقي (ضحك فعلي، نبرة ساخرة، همس حقيقي) ولا تنطق الكلمات بين النجمتين. النقاط المتتالية ... تعني وقفة صامتة.");
-  }
-
-  promptParts.push("\n## TRANSCRIPT");
-  promptParts.push(spokenText);
-
-  const fullPrompt = promptParts.join("\n");
   const contents = [{ parts: [{ text: fullPrompt }] }];
 
   const requestBody = {
