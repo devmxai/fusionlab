@@ -704,21 +704,25 @@ const StudioPage = () => {
     return map[ext] || "application/octet-stream";
   };
 
-  // Upload large files (videos) to private temp-uploads bucket and return a short-lived signed URL
-  // The signed URL is valid for 2 hours to give upstream providers ample time to fetch the asset.
+  // Upload large files (videos) to public temp-uploads bucket and return a clean public URL
+  // ending with the correct file extension (e.g. .mp4, .mov). External AI providers like KIE.AI
+  // detect the file format from the URL extension; signed URLs with `?token=...` were rejected
+  // with "file format not supported". Security is preserved via unguessable random paths.
   const uploadViaStorage = async (file: File, prefix: string): Promise<string> => {
-    const ext = file.name.split(".").pop() || "mp4";
-    const path = `${user!.id}/${prefix}_${Date.now()}.${ext}`;
+    const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
+    // Unguessable path: user id + timestamp + 16-byte random hex
+    const rand = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    const path = `${user!.id}/${prefix}_${Date.now()}_${rand}.${ext}`;
     const contentType = inferContentType(file);
     const { error: uploadError } = await supabase.storage
       .from("temp-uploads")
       .upload(path, file, { contentType, upsert: false });
     if (uploadError) throw new Error("فشل رفع الملف: " + uploadError.message);
-    const { data: signed, error: signedErr } = await supabase.storage
-      .from("temp-uploads")
-      .createSignedUrl(path, 60 * 60 * 2); // 2 hours
-    if (signedErr || !signed?.signedUrl) throw new Error("تعذر الحصول على رابط الملف");
-    return signed.signedUrl;
+    const { data: pub } = supabase.storage.from("temp-uploads").getPublicUrl(path);
+    if (!pub?.publicUrl) throw new Error("تعذر الحصول على رابط الملف");
+    return pub.publicUrl;
   };
 
   // Smart upload: use Storage more aggressively for media that may exceed edge payload limits after base64 expansion.
