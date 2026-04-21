@@ -403,8 +403,10 @@ const AudioStudioPage = () => {
             pitch,
             stability,
             dialectHint,
-            emotionHint: styleInstruction.trim() ? "طبيعي وبشري" : "",
-            toneHint: styleInstruction.trim() ? "واضح وقريب من المستمع" : "",
+            // Do NOT auto-inject generic emotionHint/toneHint — they dilute the
+            // user's real style direction and make all voices sound similar.
+            emotionHint: "",
+            toneHint: "",
           },
         },
       });
