@@ -403,8 +403,10 @@ const AudioStudioPage = () => {
             pitch,
             stability,
             dialectHint,
-            emotionHint: styleInstruction.trim() ? "طبيعي وبشري" : "",
-            toneHint: styleInstruction.trim() ? "واضح وقريب من المستمع" : "",
+            // Do NOT auto-inject generic emotionHint/toneHint — they dilute the
+            // user's real style direction and make all voices sound similar.
+            emotionHint: "",
+            toneHint: "",
           },
         },
       });
@@ -538,8 +540,9 @@ const AudioStudioPage = () => {
           previewText: "مرحباً، أنا صوتك الجديد. كيف أبدو؟",
           styleInstruction: styleInstruction.trim(),
           dialectHint: "لهجة عراقية عامية طبيعية",
-          emotionHint: styleInstruction.trim() ? "طبيعي وبشري" : "",
-          toneHint: styleInstruction.trim() ? "واضح وقريب من المستمع" : "",
+          // Keep previews clean — let the chosen voice's natural character come through.
+          emotionHint: "",
+          toneHint: "",
           stability,
         },
       });
