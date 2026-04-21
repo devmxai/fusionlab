@@ -434,23 +434,16 @@ serve(async (req) => {
       const safePreviewText = typeof previewText === "string" ? previewText.slice(0, PREVIEW_MAX_CHARS) : "";
       const previewRawText = safePreviewText || "مرحباً، أنا صوتك الجديد. كيف أبدو؟";
 
-      const previewParts: string[] = [];
-      previewParts.push("# AUDIO PROFILE");
-      previewParts.push("متحدث عربي أصلي بأداء طبيعي.");
-      previewParts.push("\n## DIRECTOR'S NOTES");
-      previewParts.push("اللغة: العربية فقط بنطق أصيل.");
-      if (prevDialect) previewParts.push(`اللهجة: ${prevDialect}.`);
-      else previewParts.push("اللهجة: عراقية عامية طبيعية.");
-      if (prevStyle) previewParts.push(`الأسلوب: ${prevStyle}`);
-      if (prevEmotion) previewParts.push(`المشاعر: ${prevEmotion}.`);
-      if (prevTone) previewParts.push(`النبرة: ${prevTone}.`);
-      if (prevStability < 0.5) previewParts.push("التنوع: تعبير عاطفي أقوى.");
-      if (prevStability > 0.8) previewParts.push("الثبات: نبرة ثابتة.");
-
-      previewParts.push("\n## TRANSCRIPT");
-      previewParts.push(normalizeText(previewRawText));
-
-      const previewPrompt = previewParts.join("\n");
+      const previewPrompt = buildTTSPrompt({
+        spokenText: normalizeText(previewRawText),
+        isProModel: resolvedModel === "gemini-3.1-flash-tts-preview",
+        styleInstruction: prevStyle,
+        dialectHint: prevDialect,
+        emotionHint: prevEmotion,
+        toneHint: prevTone,
+        speakingRate: 1.0,
+        stability: prevStability,
+      });
 
       const requestBody = {
         contents: [{ parts: [{ text: previewPrompt }] }],
