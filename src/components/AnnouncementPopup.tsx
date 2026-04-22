@@ -34,9 +34,10 @@ const AnnouncementPopup = () => {
 
       if (error || !data) return;
 
-      // Check localStorage for show_once
-      const dismissedKey = `announcement_dismissed_${data.id}`;
-      if (data.show_once && localStorage.getItem(dismissedKey)) return;
+      // Show at most twice per user (count-based instead of one-shot)
+      const viewsKey = `announcement_views_${data.id}`;
+      const views = parseInt(localStorage.getItem(viewsKey) || "0", 10);
+      if (data.show_once && views >= 2) return;
 
       setAnnouncement(data);
       // Small delay for better UX
@@ -49,7 +50,9 @@ const AnnouncementPopup = () => {
   const handleDismiss = () => {
     setOpen(false);
     if (announcement?.show_once) {
-      localStorage.setItem(`announcement_dismissed_${announcement.id}`, "true");
+      const viewsKey = `announcement_views_${announcement.id}`;
+      const views = parseInt(localStorage.getItem(viewsKey) || "0", 10);
+      localStorage.setItem(viewsKey, String(views + 1));
     }
   };
 
