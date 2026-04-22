@@ -134,6 +134,17 @@ const StudioPage = () => {
   const [framePreviewUrl, setFramePreviewUrl] = useState<string | null>(null);
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
 
+  // ── Seedance 2.0 / 2.0 Fast: dedicated guided UX ──
+  const [seedanceMode, setSeedanceMode] = useState<SeedanceMode>("text");
+  const [seedanceFirstFrame, setSeedanceFirstFrame] = useState<SeedanceAsset | null>(null);
+  const [seedanceLastFrame, setSeedanceLastFrame] = useState<SeedanceAsset | null>(null);
+  const [seedanceCharRefs, setSeedanceCharRefs] = useState<SeedanceAsset[]>([]);
+  const [seedanceLocationRefs, setSeedanceLocationRefs] = useState<SeedanceAsset[]>([]);
+  const [seedanceStyleRefs, setSeedanceStyleRefs] = useState<SeedanceAsset[]>([]);
+  const [seedanceMotionVideo, setSeedanceMotionVideo] = useState<SeedanceMediaAsset | null>(null);
+  const [seedanceAudioRef, setSeedanceAudioRef] = useState<SeedanceMediaAsset | null>(null);
+  const [seedanceGenerateAudio, setSeedanceGenerateAudio] = useState(false);
+
   const bottomBarRef = useRef<HTMLDivElement>(null);
   const desktopPromptRef = useRef<HTMLTextAreaElement>(null);
   const mobilePromptRef = useRef<HTMLTextAreaElement>(null);
