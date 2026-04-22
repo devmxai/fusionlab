@@ -419,6 +419,21 @@ const StudioPage = () => {
     setGrokMode("i2v");
     refImages.forEach(img => URL.revokeObjectURL(img.preview));
     setRefImages([]);
+    // Reset Seedance 2 state
+    if (seedanceFirstFrame?.preview?.startsWith("blob:")) URL.revokeObjectURL(seedanceFirstFrame.preview);
+    if (seedanceLastFrame?.preview?.startsWith("blob:")) URL.revokeObjectURL(seedanceLastFrame.preview);
+    [...seedanceCharRefs, ...seedanceLocationRefs, ...seedanceStyleRefs].forEach((a) => {
+      if (a.preview.startsWith("blob:")) URL.revokeObjectURL(a.preview);
+    });
+    setSeedanceMode("text");
+    setSeedanceFirstFrame(null);
+    setSeedanceLastFrame(null);
+    setSeedanceCharRefs([]);
+    setSeedanceLocationRefs([]);
+    setSeedanceStyleRefs([]);
+    setSeedanceMotionVideo(null);
+    setSeedanceAudioRef(null);
+    setSeedanceGenerateAudio(false);
   };
 
   // Pre-select model from query param only — no auto-selection for avatar/transfer.
