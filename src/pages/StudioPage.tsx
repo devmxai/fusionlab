@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import ImageMentionPopover from "@/components/studio/ImageMentionPopover";
 import StoryboardPromptEditor, { StoryboardPromptEditorRef } from "@/components/studio/StoryboardPromptEditor";
 import { compileStoryboardPrompt } from "@/lib/storyboard-compiler";
+import SeedancePanel, { type SeedanceMode, type SeedanceAsset, type SeedanceMediaAsset } from "@/components/studio/SeedancePanel";
 
 type AspectRatio = "auto" | "1:1" | "2:3" | "3:2" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
 type Resolution = string;
@@ -132,6 +133,17 @@ const StudioPage = () => {
   const [cropState, setCropState] = useState<{ imageSrc: string; file: File; type: "first" | "last" | "ref"; refIndex?: number } | null>(null);
   const [framePreviewUrl, setFramePreviewUrl] = useState<string | null>(null);
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
+
+  // ── Seedance 2.0 / 2.0 Fast: dedicated guided UX ──
+  const [seedanceMode, setSeedanceMode] = useState<SeedanceMode>("text");
+  const [seedanceFirstFrame, setSeedanceFirstFrame] = useState<SeedanceAsset | null>(null);
+  const [seedanceLastFrame, setSeedanceLastFrame] = useState<SeedanceAsset | null>(null);
+  const [seedanceCharRefs, setSeedanceCharRefs] = useState<SeedanceAsset[]>([]);
+  const [seedanceLocationRefs, setSeedanceLocationRefs] = useState<SeedanceAsset[]>([]);
+  const [seedanceStyleRefs, setSeedanceStyleRefs] = useState<SeedanceAsset[]>([]);
+  const [seedanceMotionVideo, setSeedanceMotionVideo] = useState<SeedanceMediaAsset | null>(null);
+  const [seedanceAudioRef, setSeedanceAudioRef] = useState<SeedanceMediaAsset | null>(null);
+  const [seedanceGenerateAudio, setSeedanceGenerateAudio] = useState(false);
 
   const bottomBarRef = useRef<HTMLDivElement>(null);
   const desktopPromptRef = useRef<HTMLTextAreaElement>(null);
@@ -333,6 +345,14 @@ const StudioPage = () => {
     return null;
   }, [selectedTool, resolution]);
 
+  // Seedance 2.0 / 2.0 Fast detection
+  const isSeedance2 =
+    !!selectedTool &&
+    (selectedTool.model === "bytedance/seedance-2" || selectedTool.model === "bytedance/seedance-2-fast");
+
+  const seedanceTotalRefImages =
+    seedanceCharRefs.length + seedanceLocationRefs.length + seedanceStyleRefs.length;
+
   // Dynamic pricing based on selected model + options
   const pricingParams = useMemo(() => {
     if (!selectedTool) return null;
@@ -343,14 +363,19 @@ const StudioPage = () => {
       modelForPricing = "grok-imagine/image-to-video";
     }
 
+    // Seedance 2: audio surcharge follows the toggle, not the avatar default
+    const seedance2 =
+      selectedTool.model === "bytedance/seedance-2" || selectedTool.model === "bytedance/seedance-2-fast";
+    const effectiveHasAudio = seedance2 ? seedanceGenerateAudio : hasAudioForPricing;
+
     return {
       model: modelForPricing,
       resolution: isAvatar ? avatarPricingResolution : (resolution || null),
       quality: quality || null,
       durationSeconds: effectiveDurationSeconds,
-      hasAudio: hasAudioForPricing,
+      hasAudio: effectiveHasAudio,
     };
-  }, [selectedTool, resolution, quality, effectiveDurationSeconds, hasAudioForPricing, avatarPricingResolution, effectiveAvatarModel, refImages.length]);
+  }, [selectedTool, resolution, quality, effectiveDurationSeconds, hasAudioForPricing, avatarPricingResolution, effectiveAvatarModel, refImages.length, seedanceGenerateAudio]);
 
   const { price } = usePricing(pricingParams);
   const { checkAccess } = usePlanGating(selectedTool?.model || null);
@@ -394,6 +419,21 @@ const StudioPage = () => {
     setGrokMode("i2v");
     refImages.forEach(img => URL.revokeObjectURL(img.preview));
     setRefImages([]);
+    // Reset Seedance 2 state
+    if (seedanceFirstFrame?.preview?.startsWith("blob:")) URL.revokeObjectURL(seedanceFirstFrame.preview);
+    if (seedanceLastFrame?.preview?.startsWith("blob:")) URL.revokeObjectURL(seedanceLastFrame.preview);
+    [...seedanceCharRefs, ...seedanceLocationRefs, ...seedanceStyleRefs].forEach((a) => {
+      if (a.preview.startsWith("blob:")) URL.revokeObjectURL(a.preview);
+    });
+    setSeedanceMode("text");
+    setSeedanceFirstFrame(null);
+    setSeedanceLastFrame(null);
+    setSeedanceCharRefs([]);
+    setSeedanceLocationRefs([]);
+    setSeedanceStyleRefs([]);
+    setSeedanceMotionVideo(null);
+    setSeedanceAudioRef(null);
+    setSeedanceGenerateAudio(false);
   };
 
   // Pre-select model from query param only — no auto-selection for avatar/transfer.
@@ -794,7 +834,18 @@ const StudioPage = () => {
         if (maxTag > refImages.length) { toast.error(`الوصف يشير إلى @image${maxTag} لكن لديك ${refImages.length} صور فقط`); return; }
       }
     }
-    if (!isImageOnlyTool && !isRemixTool && !isAvatarTool && !prompt.trim() && refImages.length === 0 && !firstFrame) {
+    // ── Seedance 2.0 / 2.0 Fast — mode-aware validation ──
+    if (isSeedance2) {
+      if (!prompt.trim()) { toast.error("اكتب وصفاً للفيديو"); return; }
+      if (seedanceMode === "first" && !seedanceFirstFrame) { toast.error("ارفع إطار البداية"); return; }
+      if (seedanceMode === "first-last" && (!seedanceFirstFrame || !seedanceLastFrame)) {
+        toast.error("ارفع إطار البداية وإطار النهاية"); return;
+      }
+      if (seedanceMode === "multimodal" && seedanceTotalRefImages === 0 && !seedanceMotionVideo && !seedanceAudioRef) {
+        toast.error("ارفع صورة مرجعية واحدة على الأقل"); return;
+      }
+    }
+    if (!isImageOnlyTool && !isRemixTool && !isAvatarTool && !isSeedance2 && !prompt.trim() && refImages.length === 0 && !firstFrame) {
       toast.error("اكتب وصفاً أو ارفع صورة");
       return;
     }
@@ -883,6 +934,37 @@ const StudioPage = () => {
         setProgress(10);
       }
 
+      // ── Seedance 2.0 / 2.0 Fast — mode-aware uploads ──
+      let seedanceFirstUrl = "";
+      let seedanceLastUrl = "";
+      let seedanceRefImageUrls: string[] = [];
+      let seedanceRefVideoUrls: string[] = [];
+      let seedanceRefAudioUrls: string[] = [];
+      if (isSeedance2) {
+        setStatus("جاري رفع الملفات...");
+        setProgress(3);
+        const uploadAsset = async (a: SeedanceAsset, prefix: string) => smartUploadFile(a.file, prefix);
+        if (seedanceMode === "first" && seedanceFirstFrame) {
+          seedanceFirstUrl = await uploadAsset(seedanceFirstFrame, "seedance_first");
+        } else if (seedanceMode === "first-last") {
+          if (seedanceFirstFrame) seedanceFirstUrl = await uploadAsset(seedanceFirstFrame, "seedance_first");
+          if (seedanceLastFrame) seedanceLastUrl = await uploadAsset(seedanceLastFrame, "seedance_last");
+        } else if (seedanceMode === "multimodal") {
+          // Order: characters → locations → styles (kept under 9 by the panel)
+          const allRefs = [...seedanceCharRefs, ...seedanceLocationRefs, ...seedanceStyleRefs].slice(0, 9);
+          for (let i = 0; i < allRefs.length; i++) {
+            seedanceRefImageUrls.push(await uploadAsset(allRefs[i], `seedance_ref_${i}`));
+          }
+          if (seedanceMotionVideo) {
+            seedanceRefVideoUrls = [await smartUploadFile(seedanceMotionVideo.file, "seedance_motion")];
+          }
+          if (seedanceAudioRef) {
+            seedanceRefAudioUrls = [await smartUploadFile(seedanceAudioRef.file, "seedance_audio_ref")];
+          }
+        }
+        setProgress(10);
+      }
+
       // ── Step 2: Build model input ──
       // For Kling Avatar: use the effective model (pro when 1080p selected)
       // For Grok Video: switch to image-to-video model when images are provided
@@ -898,6 +980,15 @@ const StudioPage = () => {
         ...(avatarAudioUrl && { audio_url: avatarAudioUrl }),
         ...(avatarVideoUrl && { video_url: avatarVideoUrl }),
         ...(imageUrls?.[0] && isAvatarTool && { image_url: imageUrls[0] }),
+        ...(isSeedance2 && {
+          seedanceMode,
+          generate_audio: seedanceGenerateAudio,
+          ...(seedanceFirstUrl && { first_frame_url: seedanceFirstUrl }),
+          ...(seedanceLastUrl && { last_frame_url: seedanceLastUrl }),
+          ...(seedanceRefImageUrls.length && { reference_image_urls: seedanceRefImageUrls }),
+          ...(seedanceRefVideoUrls.length && { reference_video_urls: seedanceRefVideoUrls }),
+          ...(seedanceRefAudioUrls.length && { reference_audio_urls: seedanceRefAudioUrls }),
+        }),
       };
       const apiAspectRatio = aspectRatio === "auto" ? "1:1" : aspectRatio;
 
@@ -1490,6 +1581,31 @@ const StudioPage = () => {
             </div>
           )}
 
+          {/* ── Seedance 2.0 / 2.0 Fast — guided mode UX ── */}
+          {isSeedance2 && (
+            <SeedancePanel
+              mode={seedanceMode}
+              onModeChange={setSeedanceMode}
+              firstFrame={seedanceFirstFrame}
+              lastFrame={seedanceLastFrame}
+              onFirstFrameChange={setSeedanceFirstFrame}
+              onLastFrameChange={setSeedanceLastFrame}
+              characterRefs={seedanceCharRefs}
+              locationRefs={seedanceLocationRefs}
+              styleRefs={seedanceStyleRefs}
+              onCharacterRefsChange={setSeedanceCharRefs}
+              onLocationRefsChange={setSeedanceLocationRefs}
+              onStyleRefsChange={setSeedanceStyleRefs}
+              motionVideo={seedanceMotionVideo}
+              audioRef={seedanceAudioRef}
+              onMotionVideoChange={setSeedanceMotionVideo}
+              onAudioRefChange={setSeedanceAudioRef}
+              generateAudio={seedanceGenerateAudio}
+              onGenerateAudioChange={setSeedanceGenerateAudio}
+              totalRefImages={seedanceTotalRefImages}
+            />
+          )}
+
           {/* ── Frame uploads ── */}
           {hasFrameMode && (
             <div className="space-y-2">
@@ -1902,7 +2018,13 @@ const StudioPage = () => {
     || (isAvatarAudioModel && (!avatarImage || !avatarAudio))
     || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))
     || (isGrokI2V && refImages.length !== 1)
-    || (isGrokReference && (refImages.length < 1 || !prompt.trim()));
+    || (isGrokReference && (refImages.length < 1 || !prompt.trim()))
+    || (isSeedance2 && (
+      !prompt.trim()
+      || (seedanceMode === "first" && !seedanceFirstFrame)
+      || (seedanceMode === "first-last" && (!seedanceFirstFrame || !seedanceLastFrame))
+      || (seedanceMode === "multimodal" && seedanceTotalRefImages === 0 && !seedanceMotionVideo && !seedanceAudioRef)
+    ));
 
   const generateBtnLabel = insufficientCredits
     ? "الرصيد غير كافي"
