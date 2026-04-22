@@ -2018,7 +2018,13 @@ const StudioPage = () => {
     || (isAvatarAudioModel && (!avatarImage || !avatarAudio))
     || (isAvatarAnimateModel && (!avatarImage || !avatarVideo))
     || (isGrokI2V && refImages.length !== 1)
-    || (isGrokReference && (refImages.length < 1 || !prompt.trim()));
+    || (isGrokReference && (refImages.length < 1 || !prompt.trim()))
+    || (isSeedance2 && (
+      !prompt.trim()
+      || (seedanceMode === "first" && !seedanceFirstFrame)
+      || (seedanceMode === "first-last" && (!seedanceFirstFrame || !seedanceLastFrame))
+      || (seedanceMode === "multimodal" && seedanceTotalRefImages === 0 && !seedanceMotionVideo && !seedanceAudioRef)
+    ));
 
   const generateBtnLabel = insufficientCredits
     ? "الرصيد غير كافي"
