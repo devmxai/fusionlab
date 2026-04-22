@@ -225,18 +225,28 @@ export const tools: AITool[] = [
     category: "فيديو",
     model: "grok-imagine/text-to-video",
   },
-  // Seedance 2 — hidden (under development)
-  // {
-  //   id: "seedance-2",
-  //   title: "Seedance 2",
-  //   provider: "Bytedance",
-  //   description: "أحدث نموذج فيديو سينمائي بجودة استثنائية",
-  //   image: "seedance2-card",
-  //   isPro: false,
-  //   category: "فيديو",
-  //   model: "bytedance/seedance-2",
-  //   frameMode: "first-last",
-  // },
+  // Seedance 2.0 — flagship Bytedance video model with 4 mutually-exclusive modes
+  {
+    id: "seedance-2",
+    title: "Seedance 2.0",
+    provider: "Bytedance",
+    description: "أعلى جودة سينمائية بأربع طرق إنشاء (نص، إطار بداية، بداية ونهاية، مرجع متعدد)",
+    image: "seedance2-card",
+    isPro: false,
+    category: "فيديو",
+    model: "bytedance/seedance-2",
+  },
+  // Seedance 2.0 Fast — same modes, faster + cheaper, capped at 720p
+  {
+    id: "seedance-2-fast",
+    title: "Seedance 2.0 Fast",
+    provider: "Bytedance",
+    description: "نفس قدرات Seedance 2.0 بسرعة أعلى وتكلفة أقل (حتى 720p)",
+    image: "seedance2-card",
+    isPro: false,
+    category: "فيديو",
+    model: "bytedance/seedance-2-fast",
+  },
   {
     id: "seedance",
     title: "Seedance 1.5 Pro",
