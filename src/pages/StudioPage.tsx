@@ -345,6 +345,14 @@ const StudioPage = () => {
     return null;
   }, [selectedTool, resolution]);
 
+  // Seedance 2.0 / 2.0 Fast detection
+  const isSeedance2 =
+    !!selectedTool &&
+    (selectedTool.model === "bytedance/seedance-2" || selectedTool.model === "bytedance/seedance-2-fast");
+
+  const seedanceTotalRefImages =
+    seedanceCharRefs.length + seedanceLocationRefs.length + seedanceStyleRefs.length;
+
   // Dynamic pricing based on selected model + options
   const pricingParams = useMemo(() => {
     if (!selectedTool) return null;
@@ -355,14 +363,19 @@ const StudioPage = () => {
       modelForPricing = "grok-imagine/image-to-video";
     }
 
+    // Seedance 2: audio surcharge follows the toggle, not the avatar default
+    const seedance2 =
+      selectedTool.model === "bytedance/seedance-2" || selectedTool.model === "bytedance/seedance-2-fast";
+    const effectiveHasAudio = seedance2 ? seedanceGenerateAudio : hasAudioForPricing;
+
     return {
       model: modelForPricing,
       resolution: isAvatar ? avatarPricingResolution : (resolution || null),
       quality: quality || null,
       durationSeconds: effectiveDurationSeconds,
-      hasAudio: hasAudioForPricing,
+      hasAudio: effectiveHasAudio,
     };
-  }, [selectedTool, resolution, quality, effectiveDurationSeconds, hasAudioForPricing, avatarPricingResolution, effectiveAvatarModel, refImages.length]);
+  }, [selectedTool, resolution, quality, effectiveDurationSeconds, hasAudioForPricing, avatarPricingResolution, effectiveAvatarModel, refImages.length, seedanceGenerateAudio]);
 
   const { price } = usePricing(pricingParams);
   const { checkAccess } = usePlanGating(selectedTool?.model || null);
