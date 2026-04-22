@@ -934,6 +934,37 @@ const StudioPage = () => {
         setProgress(10);
       }
 
+      // ── Seedance 2.0 / 2.0 Fast — mode-aware uploads ──
+      let seedanceFirstUrl = "";
+      let seedanceLastUrl = "";
+      let seedanceRefImageUrls: string[] = [];
+      let seedanceRefVideoUrls: string[] = [];
+      let seedanceRefAudioUrls: string[] = [];
+      if (isSeedance2) {
+        setStatus("جاري رفع الملفات...");
+        setProgress(3);
+        const uploadAsset = async (a: SeedanceAsset, prefix: string) => smartUploadFile(a.file, prefix);
+        if (seedanceMode === "first" && seedanceFirstFrame) {
+          seedanceFirstUrl = await uploadAsset(seedanceFirstFrame, "seedance_first");
+        } else if (seedanceMode === "first-last") {
+          if (seedanceFirstFrame) seedanceFirstUrl = await uploadAsset(seedanceFirstFrame, "seedance_first");
+          if (seedanceLastFrame) seedanceLastUrl = await uploadAsset(seedanceLastFrame, "seedance_last");
+        } else if (seedanceMode === "multimodal") {
+          // Order: characters → locations → styles (kept under 9 by the panel)
+          const allRefs = [...seedanceCharRefs, ...seedanceLocationRefs, ...seedanceStyleRefs].slice(0, 9);
+          for (let i = 0; i < allRefs.length; i++) {
+            seedanceRefImageUrls.push(await uploadAsset(allRefs[i], `seedance_ref_${i}`));
+          }
+          if (seedanceMotionVideo) {
+            seedanceRefVideoUrls = [await smartUploadFile(seedanceMotionVideo.file, "seedance_motion")];
+          }
+          if (seedanceAudioRef) {
+            seedanceRefAudioUrls = [await smartUploadFile(seedanceAudioRef.file, "seedance_audio_ref")];
+          }
+        }
+        setProgress(10);
+      }
+
       // ── Step 2: Build model input ──
       // For Kling Avatar: use the effective model (pro when 1080p selected)
       // For Grok Video: switch to image-to-video model when images are provided
@@ -949,6 +980,15 @@ const StudioPage = () => {
         ...(avatarAudioUrl && { audio_url: avatarAudioUrl }),
         ...(avatarVideoUrl && { video_url: avatarVideoUrl }),
         ...(imageUrls?.[0] && isAvatarTool && { image_url: imageUrls[0] }),
+        ...(isSeedance2 && {
+          seedanceMode,
+          generate_audio: seedanceGenerateAudio,
+          ...(seedanceFirstUrl && { first_frame_url: seedanceFirstUrl }),
+          ...(seedanceLastUrl && { last_frame_url: seedanceLastUrl }),
+          ...(seedanceRefImageUrls.length && { reference_image_urls: seedanceRefImageUrls }),
+          ...(seedanceRefVideoUrls.length && { reference_video_urls: seedanceRefVideoUrls }),
+          ...(seedanceRefAudioUrls.length && { reference_audio_urls: seedanceRefAudioUrls }),
+        }),
       };
       const apiAspectRatio = aspectRatio === "auto" ? "1:1" : aspectRatio;
 
