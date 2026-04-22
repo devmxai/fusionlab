@@ -161,13 +161,19 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
     frameMode: "first-last",
   },
 
-  // Docs: aspect_ratio 16:9,4:3,1:1,3:4,9:16,21:9 | duration number | resolution 480p,720p | quality normal,fast
+  // Docs (KIE.AI): aspect_ratio 1:1,4:3,3:4,16:9,9:16,21:9,adaptive | duration 4-15 | resolution 480p,720p,1080p | generate_audio bool
+  // Modes (mutually exclusive): text | first | first-last | multimodal
   "bytedance/seedance-2": {
-    aspectRatios: ["1:1", "4:3", "3:4", "16:9", "9:16", "21:9"],
-    durations: ["4", "5", "6", "8", "10"],
+    aspectRatios: ["adaptive", "1:1", "4:3", "3:4", "16:9", "9:16", "21:9"],
+    durationRange: { min: 4, max: 15, step: 1 },
+    resolutions: ["480p", "720p", "1080p"],
+  },
+
+  // Docs (KIE.AI): same fields as Seedance 2.0, resolution capped at 720p, faster generation
+  "bytedance/seedance-2-fast": {
+    aspectRatios: ["adaptive", "1:1", "4:3", "3:4", "16:9", "9:16", "21:9"],
+    durationRange: { min: 4, max: 15, step: 1 },
     resolutions: ["480p", "720p"],
-    qualities: ["normal", "fast"],
-    frameMode: "first-last",
   },
 
   // Docs: aspect_ratio 21:9,16:9,4:3,1:1,3:4,9:16 | duration 5,10 | resolution 480p,720p,1080p
