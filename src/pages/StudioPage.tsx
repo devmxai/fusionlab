@@ -1530,6 +1530,31 @@ const StudioPage = () => {
             </div>
           )}
 
+          {/* ── Seedance 2.0 / 2.0 Fast — guided mode UX ── */}
+          {isSeedance2 && (
+            <SeedancePanel
+              mode={seedanceMode}
+              onModeChange={setSeedanceMode}
+              firstFrame={seedanceFirstFrame}
+              lastFrame={seedanceLastFrame}
+              onFirstFrameChange={setSeedanceFirstFrame}
+              onLastFrameChange={setSeedanceLastFrame}
+              characterRefs={seedanceCharRefs}
+              locationRefs={seedanceLocationRefs}
+              styleRefs={seedanceStyleRefs}
+              onCharacterRefsChange={setSeedanceCharRefs}
+              onLocationRefsChange={setSeedanceLocationRefs}
+              onStyleRefsChange={setSeedanceStyleRefs}
+              motionVideo={seedanceMotionVideo}
+              audioRef={seedanceAudioRef}
+              onMotionVideoChange={setSeedanceMotionVideo}
+              onAudioRefChange={setSeedanceAudioRef}
+              generateAudio={seedanceGenerateAudio}
+              onGenerateAudioChange={setSeedanceGenerateAudio}
+              totalRefImages={seedanceTotalRefImages}
+            />
+          )}
+
           {/* ── Frame uploads ── */}
           {hasFrameMode && (
             <div className="space-y-2">
