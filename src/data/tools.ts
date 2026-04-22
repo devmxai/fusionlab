@@ -574,17 +574,38 @@ export function buildModelInput(
     return input;
   }
 
-  if (model === "bytedance/seedance-2") {
+  // ─── Seedance 2.0 / 2.0 Fast — mode-aware payload ──────────────────────────
+  // Modes (mutually exclusive per official docs):
+  //   "text"        → prompt only
+  //   "first"       → first_frame_url
+  //   "first-last"  → first_frame_url + last_frame_url
+  //   "multimodal"  → reference_image_urls / reference_video_urls / reference_audio_urls
+  if (model === "bytedance/seedance-2" || model === "bytedance/seedance-2-fast") {
+    const seedanceMode = (extraParams?.seedanceMode as string) || "text";
+    const generateAudio = Boolean(extraParams?.generate_audio);
     const input: Record<string, unknown> = {
       prompt,
       aspect_ratio: aspectRatio || "16:9",
       resolution: (extraParams?.resolution as string) || "720p",
-      duration: parseInt((extraParams?.duration as string) || "5"),
+      duration: parseInt((extraParams?.duration as string) || "5", 10),
+      generate_audio: generateAudio,
+      web_search: false,
     };
-    if (extraParams?.quality === "fast") {
-      // Fast mode - no specific param, just lower resolution default
+
+    if (seedanceMode === "first" && extraParams?.first_frame_url) {
+      input.first_frame_url = extraParams.first_frame_url as string;
+    } else if (seedanceMode === "first-last") {
+      if (extraParams?.first_frame_url) input.first_frame_url = extraParams.first_frame_url as string;
+      if (extraParams?.last_frame_url) input.last_frame_url = extraParams.last_frame_url as string;
+    } else if (seedanceMode === "multimodal") {
+      const refImgs = (extraParams?.reference_image_urls as string[] | undefined) ?? imageUrls ?? [];
+      if (refImgs.length) input.reference_image_urls = refImgs.slice(0, 9);
+      const refVids = extraParams?.reference_video_urls as string[] | undefined;
+      if (refVids?.length) input.reference_video_urls = refVids.slice(0, 3);
+      const refAuds = extraParams?.reference_audio_urls as string[] | undefined;
+      if (refAuds?.length) input.reference_audio_urls = refAuds.slice(0, 3);
     }
-    if (imageUrls?.length) input.reference_image_urls = imageUrls.slice(0, 2);
+    // text mode: no asset fields
     return input;
   }
 
