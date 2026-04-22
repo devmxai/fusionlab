@@ -834,7 +834,18 @@ const StudioPage = () => {
         if (maxTag > refImages.length) { toast.error(`الوصف يشير إلى @image${maxTag} لكن لديك ${refImages.length} صور فقط`); return; }
       }
     }
-    if (!isImageOnlyTool && !isRemixTool && !isAvatarTool && !prompt.trim() && refImages.length === 0 && !firstFrame) {
+    // ── Seedance 2.0 / 2.0 Fast — mode-aware validation ──
+    if (isSeedance2) {
+      if (!prompt.trim()) { toast.error("اكتب وصفاً للفيديو"); return; }
+      if (seedanceMode === "first" && !seedanceFirstFrame) { toast.error("ارفع إطار البداية"); return; }
+      if (seedanceMode === "first-last" && (!seedanceFirstFrame || !seedanceLastFrame)) {
+        toast.error("ارفع إطار البداية وإطار النهاية"); return;
+      }
+      if (seedanceMode === "multimodal" && seedanceTotalRefImages === 0 && !seedanceMotionVideo && !seedanceAudioRef) {
+        toast.error("ارفع صورة مرجعية واحدة على الأقل"); return;
+      }
+    }
+    if (!isImageOnlyTool && !isRemixTool && !isAvatarTool && !isSeedance2 && !prompt.trim() && refImages.length === 0 && !firstFrame) {
       toast.error("اكتب وصفاً أو ارفع صورة");
       return;
     }
