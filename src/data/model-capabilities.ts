@@ -138,8 +138,10 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
   },
 
   // GPT Image 2 — aspect_ratio: auto, 1:1, 9:16, 16:9, 4:3, 3:4
+  // Supports both text-to-image (no images) and image-to-image (1-16 reference images)
   "gpt-image-2-text-to-image": {
     aspectRatios: ["1:1", "3:4", "4:3", "9:16", "16:9"],
+    maxImages: 16,
   },
   "gpt-image-2-image-to-image": {
     aspectRatios: ["1:1", "3:4", "4:3", "9:16", "16:9"],
