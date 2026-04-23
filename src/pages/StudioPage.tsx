@@ -972,6 +972,10 @@ const StudioPage = () => {
       if (tool.model === "grok-imagine/text-to-video" && imageUrls?.length) {
         apiModel = "grok-imagine/image-to-video";
       }
+      // GPT Image 2: auto-switch to image-to-image when reference images are provided
+      if (tool.model === "gpt-image-2-text-to-image" && imageUrls?.length) {
+        apiModel = "gpt-image-2-image-to-image";
+      }
       const extraParams: Record<string, unknown> = {
         upscale_factor: upscaleFactor,
         duration: videoDuration,
