@@ -91,6 +91,16 @@ export const tools: AITool[] = [
     category: "صور",
     model: "flux-2/pro-text-to-image",
   },
+  {
+    id: "gpt-image-2",
+    title: "GPT Image 2",
+    provider: "OpenAI",
+    description: "أحدث جيل من OpenAI لتوليد صور بدقة عالية ونصوص واضحة",
+    image: "image-gen",
+    isPro: true,
+    category: "صور",
+    model: "gpt-image-2-text-to-image",
+  },
   // Grok Imagine (hidden from images — only used via Shoots)
   // {
   //   id: "grok-imagine",
@@ -167,6 +177,16 @@ export const tools: AITool[] = [
     isPro: true,
     category: "ريمكس",
     model: "gpt-image/1.5-image-to-image",
+  },
+  {
+    id: "gpt-image-2-edit",
+    title: "GPT Image 2",
+    provider: "OpenAI",
+    description: "تعديل ودمج حتى 16 صورة بأحدث جيل من OpenAI",
+    image: "image-merge",
+    isPro: true,
+    category: "ريمكس",
+    model: "gpt-image-2-image-to-image",
   },
   {
     id: "seedream-4-5-edit",
@@ -256,6 +276,18 @@ export const tools: AITool[] = [
     isPro: true,
     category: "فيديو",
     model: "bytedance/seedance-1.5-pro",
+    frameMode: "first-last",
+  },
+  {
+    id: "veo31-lite",
+    title: "Veo 3.1 Lite",
+    provider: "Google",
+    description: "أرخص خيار من Veo 3.1 للإنتاج بحجم كبير",
+    image: "video-gen",
+    isPro: false,
+    category: "فيديو",
+    model: "veo3_lite",
+    isVeoApi: true,
     frameMode: "first-last",
   },
   {
@@ -676,7 +708,7 @@ export function buildModelInput(
   }
 
   // ─── VEO 3.1 ───
-  if (model === "veo3" || model === "veo3_fast") {
+  if (model === "veo3" || model === "veo3_fast" || model === "veo3_lite") {
     const input: Record<string, unknown> = {
       prompt,
       model,
@@ -685,6 +717,25 @@ export function buildModelInput(
     };
     if (imageUrls?.length) input.imageUrls = imageUrls.slice(0, 2);
     return input;
+  }
+
+  // ─── GPT Image 2 — Text to Image ───
+  if (model === "gpt-image-2-text-to-image") {
+    return {
+      prompt,
+      aspect_ratio: aspectRatio || "auto",
+      nsfw_checker: true,
+    };
+  }
+
+  // ─── GPT Image 2 — Image to Image ───
+  if (model === "gpt-image-2-image-to-image") {
+    return {
+      prompt,
+      input_urls: imageUrls || [],
+      aspect_ratio: aspectRatio || "auto",
+      nsfw_checker: true,
+    };
   }
 
   // ─── UTILITY MODELS ───

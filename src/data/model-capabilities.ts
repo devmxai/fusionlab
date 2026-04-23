@@ -121,6 +121,11 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
   },
 
   // Docs: aspect_ratio 9:16,16:9 | duration 8 | first+last frame via imageUrls
+  "veo3_lite": {
+    aspectRatios: ["9:16", "16:9"],
+    durations: ["8"],
+    frameMode: "first-last",
+  },
   "veo3_fast": {
     aspectRatios: ["9:16", "16:9"],
     durations: ["8"],
@@ -130,6 +135,16 @@ export const modelCapabilities: Record<string, ModelCapabilities> = {
     aspectRatios: ["9:16", "16:9"],
     durations: ["8"],
     frameMode: "first-last",
+  },
+
+  // GPT Image 2 — aspect_ratio: auto, 1:1, 9:16, 16:9, 4:3, 3:4
+  "gpt-image-2-text-to-image": {
+    aspectRatios: ["1:1", "3:4", "4:3", "9:16", "16:9"],
+  },
+  "gpt-image-2-image-to-image": {
+    aspectRatios: ["1:1", "3:4", "4:3", "9:16", "16:9"],
+    maxImages: 16,
+    minImages: 1,
   },
 
   // Docs: aspect_ratio 16:9,9:16,1:1 | duration 3-15 | mode std,pro | sound bool | first+last frame via image_urls
