@@ -31,15 +31,16 @@ export const categories = [
 
 export const tools: AITool[] = [
   // ─── Image Models ───
+  // GPT Image 2 — featured first
   {
-    id: "z-image",
-    title: "Z Image",
-    provider: "KIE.AI",
-    description: "توليد صور واقعية فائقة الجودة",
+    id: "gpt-image-2",
+    title: "GPT Image 2",
+    provider: "OpenAI",
+    description: "أحدث جيل من OpenAI لتوليد صور بدقة عالية ونصوص واضحة",
     image: "image-gen",
-    isPro: false,
+    isPro: true,
     category: "صور",
-    model: "z-image",
+    model: "gpt-image-2-text-to-image",
   },
   {
     id: "nano-banana",
@@ -60,6 +61,16 @@ export const tools: AITool[] = [
     isPro: true,
     category: "صور",
     model: "nano-banana-pro",
+  },
+  {
+    id: "z-image",
+    title: "Z Image",
+    provider: "KIE.AI",
+    description: "توليد صور واقعية فائقة الجودة",
+    image: "image-gen",
+    isPro: false,
+    category: "صور",
+    model: "z-image",
   },
   {
     id: "seedream-5-lite",
@@ -91,16 +102,6 @@ export const tools: AITool[] = [
     category: "صور",
     model: "flux-2/pro-text-to-image",
   },
-  {
-    id: "gpt-image-2",
-    title: "GPT Image 2",
-    provider: "OpenAI",
-    description: "أحدث جيل من OpenAI لتوليد صور بدقة عالية ونصوص واضحة",
-    image: "image-gen",
-    isPro: true,
-    category: "صور",
-    model: "gpt-image-2-text-to-image",
-  },
   // Grok Imagine (hidden from images — only used via Shoots)
   // {
   //   id: "grok-imagine",
@@ -126,6 +127,17 @@ export const tools: AITool[] = [
   },
 
   // ─── Remix / Image Edit Models ───
+  // GPT Image 2 Edit — featured first
+  {
+    id: "gpt-image-2-edit",
+    title: "GPT Image 2",
+    provider: "OpenAI",
+    description: "تعديل ودمج حتى 16 صورة بأحدث جيل من OpenAI",
+    image: "image-merge",
+    isPro: true,
+    category: "ريمكس",
+    model: "gpt-image-2-image-to-image",
+  },
   {
     id: "nano-banana-edit",
     title: "Nano Banana Edit",
@@ -167,26 +179,6 @@ export const tools: AITool[] = [
     isPro: false,
     category: "ريمكس",
     model: "qwen/image-edit",
-  },
-  {
-    id: "gpt-image-1-5-edit",
-    title: "GPT Image 1.5",
-    provider: "OpenAI",
-    description: "تعديل ودمج حتى 16 صورة بذكاء",
-    image: "image-merge",
-    isPro: true,
-    category: "ريمكس",
-    model: "gpt-image/1.5-image-to-image",
-  },
-  {
-    id: "gpt-image-2-edit",
-    title: "GPT Image 2",
-    provider: "OpenAI",
-    description: "تعديل ودمج حتى 16 صورة بأحدث جيل من OpenAI",
-    image: "image-merge",
-    isPro: true,
-    category: "ريمكس",
-    model: "gpt-image-2-image-to-image",
   },
   {
     id: "seedream-4-5-edit",
