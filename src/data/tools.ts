@@ -712,10 +712,12 @@ export function buildModelInput(
   }
 
   // ─── GPT Image 2 — Text to Image ───
+  // Resolution tiers: 1K (6cr), 2K (10cr), 4K (16cr)
   if (model === "gpt-image-2-text-to-image") {
     return {
       prompt,
       aspect_ratio: aspectRatio || "auto",
+      resolution: (extraParams?.resolution as string) || resolution || "1K",
       nsfw_checker: true,
     };
   }
@@ -726,6 +728,7 @@ export function buildModelInput(
       prompt,
       input_urls: imageUrls || [],
       aspect_ratio: aspectRatio || "auto",
+      resolution: (extraParams?.resolution as string) || resolution || "1K",
       nsfw_checker: true,
     };
   }
