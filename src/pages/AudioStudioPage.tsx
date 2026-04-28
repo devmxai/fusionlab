@@ -23,6 +23,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePricing } from "@/hooks/use-pricing";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // ─── Official Gemini Voices (all 30) ───
 interface GeminiVoice {
@@ -214,6 +224,7 @@ const AudioStudioPage = () => {
   const [text, setText] = useState("");
   const [voiceGenderTab, setVoiceGenderTab] = useState<"male" | "female">("male");
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
+  const [showProWarning, setShowProWarning] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_TIER, voiceTier);
@@ -856,7 +867,13 @@ const AudioStudioPage = () => {
             {/* Action Buttons */}
             <div className="flex gap-2">
               <Button
-                onClick={handleGenerate}
+                onClick={() => {
+                  if (voiceTier === "pro" && text.trim() && !insufficientCredits && !isOverLimit) {
+                    setShowProWarning(true);
+                  } else {
+                    handleGenerate();
+                  }
+                }}
                 disabled={loading || !text.trim() || insufficientCredits || isOverLimit}
                 className={`flex-1 gap-2 h-11 rounded-xl text-sm font-bold shadow-md ${insufficientCredits ? "bg-destructive hover:bg-destructive/90" : ""}`}
               >
@@ -1229,6 +1246,42 @@ const AudioStudioPage = () => {
           </>
         )}
       </AnimatePresence>
+
+      {/* ─── Pro Tier Cost Warning Dialog ─── */}
+      <AlertDialog open={showProWarning} onOpenChange={setShowProWarning}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-lg flex items-center gap-2">
+              ⚠️ تنبيه: نموذج عالي التكلفة
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-right space-y-3 pt-2">
+              <span className="block">
+                أنت على وشك التوليد باستخدام <strong className="text-primary">Fusion Voice Pro</strong> (Gemini 3.1) — هذا النموذج <strong className="text-destructive">أغلى بـ 5 أضعاف</strong> من النموذج العادي.
+              </span>
+              <span className="block bg-muted/50 rounded-lg p-3 text-sm">
+                💰 التكلفة المتوقعة: <strong className="text-foreground">{estimatedCost} كريدت</strong> ({charCount} حرف)
+                <br />
+                💡 للنصوص الطويلة، يُنصح بـ <strong>Fusion Voice</strong> العادي.
+              </span>
+              <span className="block text-xs opacity-80">
+                هل تريد المتابعة؟
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowProWarning(false);
+                handleGenerate();
+              }}
+              className="bg-primary hover:bg-primary/90"
+            >
+              نعم، تابع التوليد
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
