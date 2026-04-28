@@ -224,6 +224,7 @@ const AudioStudioPage = () => {
   const [text, setText] = useState("");
   const [voiceGenderTab, setVoiceGenderTab] = useState<"male" | "female">("male");
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
+  const [showProWarning, setShowProWarning] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_TIER, voiceTier);
