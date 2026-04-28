@@ -1246,6 +1246,42 @@ const AudioStudioPage = () => {
           </>
         )}
       </AnimatePresence>
+
+      {/* ─── Pro Tier Cost Warning Dialog ─── */}
+      <AlertDialog open={showProWarning} onOpenChange={setShowProWarning}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-lg flex items-center gap-2">
+              ⚠️ تنبيه: نموذج عالي التكلفة
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-right space-y-3 pt-2">
+              <span className="block">
+                أنت على وشك التوليد باستخدام <strong className="text-primary">Fusion Voice Pro</strong> (Gemini 3.1) — هذا النموذج <strong className="text-destructive">أغلى بـ 5 أضعاف</strong> من النموذج العادي.
+              </span>
+              <span className="block bg-muted/50 rounded-lg p-3 text-sm">
+                💰 التكلفة المتوقعة: <strong className="text-foreground">{estimatedCost} كريدت</strong> ({charCount} حرف)
+                <br />
+                💡 للنصوص الطويلة، يُنصح بـ <strong>Fusion Voice</strong> العادي.
+              </span>
+              <span className="block text-xs opacity-80">
+                هل تريد المتابعة؟
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowProWarning(false);
+                handleGenerate();
+              }}
+              className="bg-primary hover:bg-primary/90"
+            >
+              نعم، تابع التوليد
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
