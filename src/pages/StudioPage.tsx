@@ -903,14 +903,21 @@ const StudioPage = () => {
       if (isAvatarTool && avatarImage) {
         setStatus("جاري رفع الملفات...");
         setProgress(3);
+        console.log("[AVATAR DIAG] image input:", { hasFile: !!avatarImage.file, fileName: avatarImage.file?.name, fileSize: avatarImage.file?.size, fileType: avatarImage.file?.type, sourceUrl: avatarImage.sourceUrl });
 
-        if (avatarImage.file) {
-          const imgUrl = await smartUploadFile(avatarImage.file, "avatar_img");
-          imageUrls = [imgUrl];
-        } else if (avatarImage.sourceUrl) {
-          imageUrls = [avatarImage.sourceUrl];
-        } else {
-          throw new Error("تعذر قراءة الصورة المحددة");
+        try {
+          if (avatarImage.file) {
+            const imgUrl = await smartUploadFile(avatarImage.file, "avatar_img");
+            imageUrls = [imgUrl];
+            console.log("[AVATAR DIAG] image uploaded:", imgUrl);
+          } else if (avatarImage.sourceUrl) {
+            imageUrls = [avatarImage.sourceUrl];
+          } else {
+            throw new Error("تعذر قراءة الصورة المحددة");
+          }
+        } catch (uploadErr) {
+          console.error("[AVATAR DIAG] image upload failed:", uploadErr);
+          throw new Error("فشل رفع الصورة: " + (uploadErr instanceof Error ? uploadErr.message : String(uploadErr)));
         }
 
         setProgress(8);
@@ -919,12 +926,19 @@ const StudioPage = () => {
       let avatarAudioUrl = "";
       let avatarVideoUrl = "";
       if (isAvatarAudioModel && avatarAudio) {
-        if (avatarAudio.file) {
-          avatarAudioUrl = await smartUploadFile(avatarAudio.file, "avatar_audio");
-        } else if (avatarAudio.sourceUrl) {
-          avatarAudioUrl = avatarAudio.sourceUrl;
-        } else {
-          throw new Error("تعذر قراءة الملف الصوتي المحدد");
+        console.log("[AVATAR DIAG] audio input:", { hasFile: !!avatarAudio.file, fileName: avatarAudio.file?.name, fileSize: avatarAudio.file?.size, fileType: avatarAudio.file?.type, sourceUrl: avatarAudio.sourceUrl, mediaDurationSeconds });
+        try {
+          if (avatarAudio.file) {
+            avatarAudioUrl = await smartUploadFile(avatarAudio.file, "avatar_audio");
+            console.log("[AVATAR DIAG] audio uploaded:", avatarAudioUrl);
+          } else if (avatarAudio.sourceUrl) {
+            avatarAudioUrl = avatarAudio.sourceUrl;
+          } else {
+            throw new Error("تعذر قراءة الملف الصوتي المحدد");
+          }
+        } catch (uploadErr) {
+          console.error("[AVATAR DIAG] audio upload failed:", uploadErr);
+          throw new Error("فشل رفع الصوت: " + (uploadErr instanceof Error ? uploadErr.message : String(uploadErr)));
         }
         setProgress(10);
       }
