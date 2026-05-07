@@ -4,7 +4,6 @@ import HomeHeader from "@/components/HomeHeader";
 import CategoryFilter from "@/components/CategoryFilter";
 import BannerCarousel from "@/components/BannerCarousel";
 import ToolCard from "@/components/ToolCard";
-import AnnouncementPopup from "@/components/AnnouncementPopup";
 import { supabase } from "@/integrations/supabase/client";
 import { tools, AITool } from "@/data/tools";
 import { Flame, ImageIcon, Video, TrendingUp, Copy, Layers } from "lucide-react";
@@ -168,7 +167,6 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <HomeHeader />
-      <AnnouncementPopup />
       <div className="w-full">
         <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
         <BannerCarousel />
