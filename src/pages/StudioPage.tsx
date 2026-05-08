@@ -720,9 +720,29 @@ const StudioPage = () => {
   const fileToBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve((reader.result as string).split(",")[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+      reader.onload = () => {
+        try {
+          const result = reader.result as string;
+          const comma = result.indexOf(",");
+          if (comma === -1) {
+            reject(new Error("تعذر قراءة الملف (تنسيق غير صالح)"));
+            return;
+          }
+          resolve(result.slice(comma + 1));
+        } catch (e) {
+          reject(new Error("تعذر قراءة الملف: " + (e instanceof Error ? e.message : String(e))));
+        }
+      };
+      reader.onerror = () => {
+        const err = reader.error;
+        reject(new Error("فشل قراءة الملف: " + (err?.message || err?.name || "خطأ غير معروف")));
+      };
+      reader.onabort = () => reject(new Error("تم إلغاء قراءة الملف"));
+      try {
+        reader.readAsDataURL(file);
+      } catch (e) {
+        reject(new Error("تعذر بدء قراءة الملف: " + (e instanceof Error ? e.message : String(e))));
+      }
     });
 
   // Infer a safe MIME type from filename when the browser reports an empty/unknown type
