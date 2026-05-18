@@ -21,15 +21,17 @@ interface Banner {
 
 const studioOptions = [
   { value: "none", label: "بدون ربط" },
-  { value: "/studio/video", label: "🎬 فيديو" },
-  { value: "/studio/images", label: "🖼️ صور" },
-  { value: "/studio/shoots", label: "📸 شوتس" },
-  { value: "/studio/remix", label: "🔄 ريمكس" },
+  { value: "/studio?tab=text-to-video", label: "🎬 فيديو" },
+  { value: "/studio?tab=image-to-video", label: "🖼️➡️🎬 صورة إلى فيديو" },
+  { value: "/studio?tab=storyboard", label: "🎞️ ستوريبورد" },
+  { value: "/studio?tab=audio-to-video", label: "🧑 افتار (صوت إلى فيديو)" },
+  { value: "/studio?tab=video-to-video", label: "✨ ترانسفير (فيديو إلى فيديو)" },
+  { value: "/studio?tab=text-to-image", label: "🖼️ صور" },
+  { value: "/studio?tab=image-to-image", label: "🔄 تعديل صور" },
+  { value: "/studio?tab=shoots", label: "📸 شوتس" },
+  { value: "/studio?tab=remove-bg", label: "🗑️ حذف الخلفية" },
+  { value: "/studio?tab=upscale", label: "📐 رفع الجودة" },
   { value: "/studio/audio", label: "🎙️ صوت" },
-  { value: "/studio/avatar", label: "🧑 افتار" },
-  { value: "/studio/transfer", label: "✨ ترانسفير" },
-  { value: "/studio/remove-bg", label: "🗑️ حذف الخلفية" },
-  { value: "/studio/upscale", label: "📐 رفع الجودة" },
 ];
 
 const getStudioLabel = (value: string | null) => {
