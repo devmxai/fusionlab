@@ -1451,8 +1451,8 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
         <motion.div key="no-model" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2, ease: "easeOut" }}
           className="flex flex-col items-center justify-center gap-3 text-center px-4">
           <Sparkles className="w-9 h-9 text-primary opacity-40" />
-          <h2 className="text-base font-bold text-foreground/70">اختر النموذج</h2>
-          <p className="text-xs text-muted-foreground/60">اختر النموذج للبدء</p>
+          <h2 className="text-base font-bold text-foreground/70">Select Model</h2>
+          <p className="text-xs text-muted-foreground/60">Select a model to start</p>
         </motion.div>
       );
     }
