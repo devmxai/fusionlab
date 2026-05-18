@@ -2367,7 +2367,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
                     </button>
                   )}
                    <div className="relative flex-1">
-                    {isGrokReference && refImages.length > 0 ? (
+                    {((isGrokReference || (isStoryboardTab && isSeedance2)) && refImages.length > 0) ? (
                       <StoryboardPromptEditor
                         ref={mobileStoryboardRef}
                         value={prompt}
