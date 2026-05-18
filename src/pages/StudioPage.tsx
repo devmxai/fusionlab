@@ -1650,6 +1650,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
               generateAudio={seedanceGenerateAudio}
               onGenerateAudioChange={setSeedanceGenerateAudio}
               totalRefImages={seedanceTotalRefImages}
+              hideModeSelector={forcedSeedanceMode !== null}
             />
           )}
 
