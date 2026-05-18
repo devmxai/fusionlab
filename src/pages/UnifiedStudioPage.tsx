@@ -94,7 +94,7 @@ const UnifiedStudioPage = () => {
   );
 
   return (
-    <div className="h-[100dvh] w-full bg-background flex flex-col overflow-hidden" dir="rtl">
+    <div className="h-[100dvh] w-full bg-background flex flex-col overflow-hidden" dir="ltr">
       {/* ─── Minimal Top Header ─── */}
       <header className="shrink-0 bg-nav-bg/95 backdrop-blur-xl border-b border-border/40">
         <div className="flex items-center justify-between px-4 sm:px-6 py-2.5">

@@ -71,10 +71,10 @@ export default function CropDialog({ open, imageSrc, aspectRatio, onConfirm, onC
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onCancel(); }}>
-      <DialogContent className="max-w-lg p-0 overflow-hidden bg-card border-primary/20" dir="rtl">
+      <DialogContent className="max-w-lg p-0 overflow-hidden bg-card border-primary/20" dir="ltr">
         <div className="p-4 pb-2">
-          <h3 className="text-sm font-bold text-foreground">قص الصورة</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">اضبط الصورة لتتناسب مع قياس الفيديو المختار</p>
+          <h3 className="text-sm font-bold text-foreground">Crop image</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Adjust the image to fit the selected video aspect</p>
         </div>
         <div className="relative w-full bg-black/90" style={{ height: "350px" }}>
           <Cropper
@@ -89,7 +89,7 @@ export default function CropDialog({ open, imageSrc, aspectRatio, onConfirm, onC
         </div>
         <div className="px-4 py-2">
           <div className="flex items-center gap-3">
-            <span className="text-[10px] text-muted-foreground shrink-0">تكبير</span>
+            <span className="text-[10px] text-muted-foreground shrink-0">Zoom</span>
             <Slider
               value={[zoom]}
               min={1}
@@ -102,9 +102,9 @@ export default function CropDialog({ open, imageSrc, aspectRatio, onConfirm, onC
         </div>
         <div className="flex gap-2 p-4 pt-2 justify-start">
           <Button onClick={handleConfirm} size="sm" disabled={!croppedAreaPixels || isConfirming}>
-            {isConfirming ? "جاري القص..." : "تأكيد القص"}
+            {isConfirming ? "Cropping..." : "Confirm crop"}
           </Button>
-          <Button variant="outline" size="sm" onClick={onCancel}>إلغاء</Button>
+          <Button variant="outline" size="sm" onClick={onCancel}>Cancel</Button>
         </div>
       </DialogContent>
     </Dialog>
