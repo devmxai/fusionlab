@@ -30,7 +30,7 @@ export const studioGroups: StudioGroup[] = [
     subtabs: [
       {
         id: "text-to-video",
-        label: "Text → Video",
+        label: "text to video",
         category: "video",
         toolIds: [
           "grok-video",
@@ -47,7 +47,7 @@ export const studioGroups: StudioGroup[] = [
       },
       {
         id: "image-to-video",
-        label: "Image → Video",
+        label: "image to video",
         category: "video",
         toolIds: [
           "grok-video",
@@ -62,12 +62,12 @@ export const studioGroups: StudioGroup[] = [
       },
       {
         id: "audio-to-video",
-        label: "Audio → Video",
+        label: "audio to video",
         category: "avatar",
       },
       {
         id: "video-to-video",
-        label: "Video → Video",
+        label: "video to video",
         category: "transfer",
       },
     ],
@@ -78,27 +78,27 @@ export const studioGroups: StudioGroup[] = [
     subtabs: [
       {
         id: "text-to-image",
-        label: "Text → Image",
+        label: "text to image",
         category: "images",
       },
       {
         id: "image-to-image",
-        label: "Image → Image",
+        label: "image to image",
         category: "remix",
       },
       {
         id: "shoots",
-        label: "Shoots",
+        label: "shoots",
         category: "shoots",
       },
       {
         id: "remove-bg",
-        label: "Remove BG",
+        label: "remove background",
         category: "remove-bg",
       },
       {
         id: "upscale",
-        label: "Upscale",
+        label: "upscale",
         category: "upscale",
       },
     ],
