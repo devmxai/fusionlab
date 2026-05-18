@@ -1381,7 +1381,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
       selectedTool ? "bg-primary/10 border-primary/50" : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"
     }`}>
       <span className={`text-xs font-bold truncate max-w-[110px] ${selectedTool ? "text-primary" : "text-foreground"}`}>
-        {selectedTool?.title || "اختر النموذج"}
+        {selectedTool?.title || "Select Model"}
       </span>
       <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${modelSelectorOpen ? "rotate-180" : ""}`} />
     </button>
