@@ -153,7 +153,18 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
 
   // ── Seedance 2.0 / 2.0 Fast: dedicated guided UX ──
-  const [seedanceMode, setSeedanceMode] = useState<SeedanceMode>("text");
+  // The current sub-tab dictates the Seedance mode — no duplicate mode selector inside the panel.
+  const forcedSeedanceMode: SeedanceMode | null =
+    subTabId === "text-to-video" ? "text"
+    : subTabId === "image-to-video" ? "first"
+    : null;
+  const [seedanceMode, setSeedanceMode] = useState<SeedanceMode>(forcedSeedanceMode ?? "text");
+  useEffect(() => {
+    if (forcedSeedanceMode && forcedSeedanceMode !== seedanceMode) {
+      setSeedanceMode(forcedSeedanceMode);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forcedSeedanceMode]);
   const [seedanceFirstFrame, setSeedanceFirstFrame] = useState<SeedanceAsset | null>(null);
   const [seedanceLastFrame, setSeedanceLastFrame] = useState<SeedanceAsset | null>(null);
   const [seedanceCharRefs, setSeedanceCharRefs] = useState<SeedanceAsset[]>([]);
