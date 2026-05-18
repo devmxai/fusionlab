@@ -558,7 +558,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (refImages.length + files.length > maxImages) {
-      toast.error(`الحد الأقصى ${maxImages} صور`);
+      toast.error(`Max ${maxImages} images`);
       return;
     }
     const newImages = files.map((file) => ({ file, preview: URL.createObjectURL(file) }));
@@ -651,7 +651,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
     for (const file of files) {
       const currentLen = refImages.length;
       if (currentLen >= maxForMode) {
-        toast.error(grokMode === "i2v" ? "Image واحدة فقط في وضع image(s) إلى فيديو" : `الحد الأقصى ${maxForMode} Reference Images`);
+        toast.error(grokMode === "i2v" ? "Only one image in image-to-video mode" : `Max ${maxForMode} reference images`);
         break;
       }
       const preview = URL.createObjectURL(file);
@@ -844,7 +844,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
       return;
     }
     if (isAvatarAudioModel && avatarMaxDurationSeconds && mediaDurationSeconds > avatarMaxDurationSeconds) {
-      toast.error(`مدة الصوت ${mediaDurationSeconds.toFixed(1)}ث وexceeds the maximum لهذا النموذج (${avatarMaxDurationSeconds}ث)`);
+      toast.error(`Audio duration ${mediaDurationSeconds.toFixed(1)}s exceeds the maximum (${avatarMaxDurationSeconds}s) for this model`);
       return;
     }
     if (isAvatarAnimateModel && (!avatarImage || !avatarVideo)) {
@@ -866,7 +866,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
         if (!prompt.trim()) { toast.error("Write a prompt for the reference video"); return; }
         if (parseInt(videoDuration) > 10) { toast.error("Maximum duration in reference video mode is 10 seconds"); return; }
         const maxTag = (() => { let m = 0; for (const match of prompt.matchAll(/@image(\d+)/g)) { const n = parseInt(match[1]); if (n > m) m = n; } return m; })();
-        if (maxTag > refImages.length) { toast.error(`الوصف يشير إلى @image${maxTag} لكن لديك ${refImages.length} صور فقط`); return; }
+        if (maxTag > refImages.length) { toast.error(`Prompt references @image${maxTag} but you only have ${refImages.length} images`); return; }
       }
     }
     // ── Seedance 2.0 / 2.0 Fast — mode-aware validation ──
@@ -1111,11 +1111,11 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
         if (err === "entitlement_denied") {
           const details = startResult.details;
           if (details?.reason === "plan_upgrade_required") {
-            toast.error(`هذا النموذج يتطلب خطة ${details.required_plan} أو أعلى`);
+            toast.error(`This model requires the ${details.required_plan} plan or higher`);
           } else if (details?.reason === "daily_limit_reached") {
-            toast.error(`وصلت للحد اليومي (${details.limit} توليدة)`);
+            toast.error(`You hit the daily limit (${details.limit} generations)`);
           } else if (details?.reason === "duration_exceeded") {
-            toast.error(`Duration exceeds the maximum لخطتك (${details.max_duration}ث)`);
+            toast.error(`Duration exceeds the maximum for your plan (${details.max_duration}s)`);
           } else {
             toast.error("You don't have access to this model");
           }
@@ -1232,7 +1232,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           // If it's a "background" message from long-running timeout, don't treat as real failure
           const isBackgroundContinue = errorMsg?.includes("running in background");
           if (isBackgroundContinue) {
-            toast.info("النموذج running in background — تابع النتيجة من قائمة \"قيد التوليد\"", { duration: 6000 });
+            toast.info("Model is running in the background — track it from the \"In progress\" list", { duration: 6000 });
             setStatus("");
             setProgress(0);
             setLoading(false);
@@ -1779,7 +1779,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                           <div className="relative w-full h-full">
                             <img src={img.preview} alt={`Reference Image ${idx + 1}`} className="w-full h-full object-cover rounded-lg" />
                             <button onClick={(e) => { e.stopPropagation(); removeImage(slotIdx); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"><X className="w-3 h-3 text-destructive-foreground" /></button>
-                            <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">مرجعية {idx + 1}</span>
+                            <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">Ref {idx + 1}</span>
                           </div>
                         ) : (
                           <div className="flex flex-col items-center justify-center gap-1.5 h-full"><Plus className="w-5 h-5 text-muted-foreground/50" /><span className="text-[10px] font-semibold text-muted-foreground/60">Reference Image</span></div>
@@ -1832,7 +1832,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                         onPlay={() => setIsAvatarAudioPlaying(true)} onPause={() => setIsAvatarAudioPlaying(false)} onEnded={() => setIsAvatarAudioPlaying(false)} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1"><Music className="w-3 h-3 text-primary shrink-0" /><span className="text-[10px] font-medium text-foreground truncate">{avatarAudio.name}</span></div>
-                        {mediaDurationSeconds !== null && <span className="text-[9px] text-muted-foreground">{Math.ceil(mediaDurationSeconds)}ث</span>}
+                        {mediaDurationSeconds !== null && <span className="text-[9px] text-muted-foreground">{Math.ceil(mediaDurationSeconds)}s</span>}
                       </div>
                       <button onClick={() => { stopAvatarAudioPreview(); if (avatarAudio.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarAudio.previewUrl); setAvatarAudio(null); setMediaDurationSeconds(null); }}
                         className="w-5 h-5 rounded-full bg-destructive flex items-center justify-center shrink-0"><X className="w-3 h-3 text-destructive-foreground" /></button>
@@ -2049,7 +2049,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/50 border border-border/30">
               <div className="flex items-center gap-3 text-[10px] text-muted-foreground flex-1 flex-wrap">
                 <span className="font-bold text-foreground">{resolution?.toUpperCase()}</span><span>•</span>
-                <span>{effectiveDurationSeconds}ث</span><span>•</span>
+                <span>{effectiveDurationSeconds}s</span><span>•</span>
                 <span>{Math.round((price.credits / effectiveDurationSeconds) * 10) / 10} credits/sec</span><span>•</span>
                 <span className="font-bold text-primary">{price.credits} credits</span>
               </div>
@@ -2057,7 +2057,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           )}
           {mediaDurationExceedsLimit && (
             <div className="px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/30">
-              <span className="text-[10px] text-destructive font-medium">⚠️ Duration {mediaDurationSeconds!.toFixed(1)}ث exceeds the maximum ({avatarMaxDurationSeconds}ث) for this model. Generation won't start until you pick a shorter audio.</span>
+              <span className="text-[10px] text-destructive font-medium">⚠️ Duration {mediaDurationSeconds!.toFixed(1)}s exceeds the maximum ({avatarMaxDurationSeconds}s) for this model. Generation won't start until you pick a shorter audio.</span>
             </div>
           )}
         </>
@@ -2177,14 +2177,14 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
   );
 
   return (
-    <div className={`${embedded ? "h-full" : "h-[100dvh]"} bg-background flex overflow-hidden`} dir="rtl">
+    <div className={`${embedded ? "h-full" : "h-[100dvh]"} bg-background flex overflow-hidden`} dir="ltr">
       {hiddenInputs}
 
       {!isMobile ? (
         /* ═══════════ DESKTOP LAYOUT ═══════════ */
         <>
           {/* ── Left Control Panel ── */}
-          <aside className={`${embedded ? "w-[400px]" : "w-[340px]"} shrink-0 h-full bg-card/50 backdrop-blur-xl border-l border-border/20 flex flex-col`}>
+          <aside className={`${embedded ? "w-[400px]" : "w-[340px]"} shrink-0 h-full bg-card/50 backdrop-blur-xl border-r border-border/20 flex flex-col`}>
             {headerSlot && (
               <div className="shrink-0 border-b border-border/15">{headerSlot}</div>
             )}
@@ -2228,7 +2228,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder={isShootsTool ? "Describe the camera angles you want..." : isAvatarTool ? "Optional performance prompt..." : isRemixTool ? "Describe the edit you want..." : isGrokI2V ? "Describe the video motion you want..." : "Write a prompt for what you want to generate..."}
                         className="min-h-[100px] max-h-[180px] resize-none rounded-xl bg-secondary/30 border-border/30 text-sm placeholder:text-muted-foreground/50"
-                        dir="rtl"
+                        dir="ltr"
                         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading) { e.preventDefault(); handleGenerate(); } }}
                       />
                     </>

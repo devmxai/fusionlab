@@ -238,7 +238,7 @@ export function SeedancePanel(props: SeedancePanelProps) {
             />
             <FrameSlot
               asset={lastFrame}
-              label="إطار النهاية"
+              label="End Frame"
               onPick={() => lastInputRef.current?.click()}
               onRemove={() => {
                 if (lastFrame?.preview?.startsWith("blob:")) URL.revokeObjectURL(lastFrame.preview);
