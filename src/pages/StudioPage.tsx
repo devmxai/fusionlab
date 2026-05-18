@@ -67,8 +67,18 @@ const ratioConfig: Record<string, { label: string; cssAspect: string; placeholde
   "21:9": { label: "21:9",  cssAspect: "21/9", placeholderMaxW: "min(96vw, 820px)" },
 };
 
-const StudioPage = () => {
-  const { category } = useParams();
+interface StudioPageProps {
+  /** Override the category (used when embedded in UnifiedStudioPage) */
+  categoryProp?: string;
+  /** Optional whitelist of tool ids visible in this view */
+  toolIdFilter?: string[];
+  /** When embedded, hide the back-arrow/title header */
+  embedded?: boolean;
+}
+
+const StudioPage = ({ categoryProp, toolIdFilter, embedded }: StudioPageProps = {}) => {
+  const { category: categoryParam } = useParams();
+  const category = categoryProp ?? categoryParam;
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -85,10 +95,13 @@ const StudioPage = () => {
   const { pollJob, fetchJobs } = useQueue();
   const categoryName = category ? categorySlugMap[category] : undefined;
 
-  const categoryTools = useMemo(
-    () => tools.filter((t) => t.category === categoryName),
-    [categoryName]
-  );
+  const categoryTools = useMemo(() => {
+    const inCategory = tools.filter((t) => t.category === categoryName);
+    if (!toolIdFilter || toolIdFilter.length === 0) return inCategory;
+    return toolIdFilter
+      .map((id) => inCategory.find((t) => t.id === id))
+      .filter((t): t is AITool => !!t);
+  }, [categoryName, toolIdFilter]);
 
   // ── State ──
   const [selectedTool, setSelectedTool] = useState<AITool | null>(null);
