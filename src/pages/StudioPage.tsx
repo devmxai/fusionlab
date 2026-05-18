@@ -1620,7 +1620,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
       {!selectedTool ? (
         <div className="flex flex-col items-center py-10 gap-2">
           <Sparkles className="w-6 h-6 text-muted-foreground/30" />
-          <p className="text-xs text-muted-foreground/50">اختر نموذجاً للبدء</p>
+          <p className="text-xs text-muted-foreground/50">Select a model to start</p>
         </div>
       ) : (
         <>
