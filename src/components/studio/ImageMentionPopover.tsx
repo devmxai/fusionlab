@@ -117,7 +117,7 @@ export default function ImageMentionPopover({ images, prompt, textareaRef, onIns
         dir="rtl"
       >
         <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground border-b border-border/20">
-          اختر صورة للإشارة إليها
+          Pick an image to reference
         </div>
         <div className="max-h-48 overflow-y-auto py-1">
           {filteredImages.map(({ img, idx }) => (
@@ -132,7 +132,7 @@ export default function ImageMentionPopover({ images, prompt, textareaRef, onIns
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-xs font-bold text-primary font-mono">@image{idx + 1}</span>
-                <span className="text-[10px] text-muted-foreground mr-2">الصورة {idx + 1}</span>
+                <span className="text-[10px] text-muted-foreground mr-2">Image {idx + 1}</span>
               </div>
               <ImageIcon className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
             </button>

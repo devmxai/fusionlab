@@ -38,25 +38,25 @@ const categorySlugMap: Record<string, string> = {
   audio: "صوت",
   avatar: "افتار",
   transfer: "ترانسفير",
-  "remove-bg": "حذف الخلفية",
-  upscale: "رفع الجودة",
-  shoots: "شوتس",
+  "remove-bg": "Remove BG",
+  upscale: "Upscale",
+  shoots: "Shoots",
 };
 
 const categoryTitleMap: Record<string, string> = {
-  images: "استديو الصور",
+  images: "استديو Images",
   video: "استديو الفيديو",
   remix: "استديو الريمكس",
   audio: "استديو الصوت",
   avatar: "استديو الأفتار",
   transfer: "استديو الترانسفير",
-  "remove-bg": "حذف الخلفية",
-  upscale: "رفع الجودة",
-  shoots: "شوتس",
+  "remove-bg": "Remove BG",
+  upscale: "Upscale",
+  shoots: "Shoots",
 };
 
 const ratioConfig: Record<string, { label: string; cssAspect: string; placeholderMaxW: string }> = {
-  "auto": { label: "تلقائي",  cssAspect: "1/1",  placeholderMaxW: "min(92vw, 560px)" },
+  "auto": { label: "Auto",  cssAspect: "1/1",  placeholderMaxW: "min(92vw, 560px)" },
   "1:1":  { label: "1:1",   cssAspect: "1/1",  placeholderMaxW: "min(92vw, 560px)" },
   "2:3":  { label: "2:3",   cssAspect: "2/3",  placeholderMaxW: "min(80vw, 440px)" },
   "3:2":  { label: "3:2",   cssAspect: "3/2",  placeholderMaxW: "min(94vw, 700px)" },
@@ -237,7 +237,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
     }
 
     setMediaDurationSeconds(null);
-    toast.error("تعذر قراءة مدة الملف الصوتي — اختر ملفًا آخر");
+    toast.error("Could not read audio duration — pick another file");
   };
 
   const toggleAvatarAudioPreview = async (e: React.MouseEvent) => {
@@ -253,7 +253,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
       }
     } catch {
       setIsAvatarAudioPlaying(false);
-      toast.error("تعذر تشغيل المعاينة الصوتية");
+      toast.error("Could not play audio preview");
     }
   };
 
@@ -287,7 +287,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
       try {
         await applyAvatarAudioFromSource(audioUrl, audioName || "audio.mp3");
       } catch {
-        toast.error("تعذر إدراج الصوت من الاستوديو");
+        toast.error("Could not insert audio from studio");
       }
     })();
   }, [category]);
@@ -496,12 +496,12 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
 
   // Showcase: animated cycling text per category
   const showcaseTexts: Record<string, string[]> = {
-    transfer: ["نقل الحركة من فيديو إلى صورة", "استبدال الشخصية في الفيديو", "تحريك صورة ثابتة بحركة واقعية", "دمج ملامح جديدة بسلاسة"],
-    images: ["توليد صور بالذكاء الاصطناعي", "تصميم شخصيات واقعية", "إنشاء مشاهد خيالية", "أسلوب فني فريد بكل مرة"],
-    video: ["توليد فيديو من النص", "تحويل الأفكار لمقاطع متحركة", "مؤثرات بصرية سينمائية", "حركة طبيعية وسلسة"],
-    seedance: ["فيديو سينمائي بتقنية Seedance", "حركة واقعية بجودة استثنائية", "رقص وحركة طبيعية بالذكاء الاصطناعي", "أحدث نموذج من ByteDance"],
-    remix: ["تعديل الصور بالذكاء الاصطناعي", "دمج صورتين في واحدة", "تغيير الأسلوب الفني", "تحرير احترافي بنقرة"],
-    avatar: ["تحريك صورة بالصوت", "إنشاء أفتار متحدث", "دمج الصوت مع الوجه", "شخصية رقمية نابضة بالحياة"],
+    transfer: ["Transfer motion from video to image", "Replace the character in a video", "Animate a still image with realistic motion", "Blend new features seamlessly"],
+    images: ["Generate images with AI", "Design realistic characters", "Create imaginative scenes", "A unique artistic style every time"],
+    video: ["Generate video from text", "Turn ideas into motion clips", "Cinematic visual effects", "Smooth, natural motion"],
+    seedance: ["Cinematic video with Seedance", "Realistic motion with exceptional quality", "Natural dance and movement with AI", "Latest model from ByteDance"],
+    remix: ["AI image editing", "Merge two images into one", "Change the artistic style", "Professional editing in one click"],
+    avatar: ["Animate an image with audio", "Create a talking avatar", "Sync audio with the face", "A digital character that comes alive"],
   };
   const currentShowcaseTexts = showcaseTexts[category || ""] || [];
   const [showcaseTextIdx, setShowcaseTextIdx] = useState(0);
@@ -533,8 +533,8 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
       <div className="h-screen bg-background flex flex-col items-center justify-center gap-4" dir="rtl">
         <Sparkles className="w-12 h-12 text-primary opacity-50" />
         <h1 className="text-2xl font-bold text-primary">Coming Soon</h1>
-        <p className="text-sm text-muted-foreground">قسم الشوتس قيد التطوير — ترقبوا التحديث القادم</p>
-        <Button variant="outline" size="sm" onClick={() => navigate("/")}>العودة</Button>
+        <p className="text-sm text-muted-foreground">Shoots section is in development — stay tuned</p>
+        <Button variant="outline" size="sm" onClick={() => navigate("/")}>Back</Button>
       </div>
     );
   }
@@ -544,9 +544,9 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
       <div className="h-screen bg-background flex flex-col items-center justify-center gap-3" dir="rtl">
         <Sparkles className="w-10 h-10 text-primary opacity-40" />
         <p className="text-muted-foreground text-sm">
-          {categoryName ? "لا توجد نماذج متاحة لهذا التصنيف حالياً" : "التصنيف غير موجود"}
+          {categoryName ? "No models available for this category yet" : "Category not found"}
         </p>
-        <Button variant="outline" size="sm" onClick={() => navigate("/")}>العودة</Button>
+        <Button variant="outline" size="sm" onClick={() => navigate("/")}>Back</Button>
       </div>
     );
   }
@@ -595,7 +595,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
   useEffect(() => {
     if (selectedTool?.model?.startsWith("grok-imagine/") && refImages.length > 0 && quality === "spicy") {
       setQuality("normal");
-      toast.info("تم التبديل من Spicy إلى Normal — وضع Spicy غير متاح مع الصور المرجعية");
+      toast.info("Switched from Spicy to Normal — Spicy mode is not available with reference images");
     }
   }, [refImages.length, selectedTool, quality]);
 
@@ -603,7 +603,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
   useEffect(() => {
     if (selectedTool?.model?.startsWith("grok-imagine/") && grokMode === "reference" && parseInt(videoDuration) > 10) {
       setVideoDuration("10");
-      toast.info("الحد الأقصى للمدة في وضع الفيديو المرجعي هو 10 ثوانٍ");
+      toast.info("Maximum duration in reference video mode is 10 seconds");
     }
   }, [grokMode, selectedTool, videoDuration]);
 
@@ -616,7 +616,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
     const hasFrames = !!(firstFrame || lastFrame);
     const hasRefs = refImages.length > 0;
     if (hasFrames || hasRefs) {
-      toast.info("تم تغيير القياس — اضغط على الصورة لإعادة القص بالقياس الجديد", { duration: 5000 });
+      toast.info("Aspect ratio changed — click the image to re-crop at the new ratio", { duration: 5000 });
     }
   }, [aspectRatio, firstFrame, lastFrame, refImages.length]);
 
@@ -651,7 +651,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
     for (const file of files) {
       const currentLen = refImages.length;
       if (currentLen >= maxForMode) {
-        toast.error(grokMode === "i2v" ? "صورة واحدة فقط في وضع صورة إلى فيديو" : `الحد الأقصى ${maxForMode} صور مرجعية`);
+        toast.error(grokMode === "i2v" ? "Image واحدة فقط في وضع image(s) إلى فيديو" : `الحد الأقصى ${maxForMode} Reference Images`);
         break;
       }
       const preview = URL.createObjectURL(file);
@@ -740,23 +740,23 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           const result = reader.result as string;
           const comma = result.indexOf(",");
           if (comma === -1) {
-            reject(new Error("تعذر قراءة الملف (تنسيق غير صالح)"));
+            reject(new Error("Could not read file (invalid format)"));
             return;
           }
           resolve(result.slice(comma + 1));
         } catch (e) {
-          reject(new Error("تعذر قراءة الملف: " + (e instanceof Error ? e.message : String(e))));
+          reject(new Error("Could not read file: " + (e instanceof Error ? e.message : String(e))));
         }
       };
       reader.onerror = () => {
         const err = reader.error;
-        reject(new Error("فشل قراءة الملف: " + (err?.message || err?.name || "خطأ غير معروف")));
+        reject(new Error("Failed to read file: " + (err?.message || err?.name || "Unknown error")));
       };
-      reader.onabort = () => reject(new Error("تم إلغاء قراءة الملف"));
+      reader.onabort = () => reject(new Error("File read was cancelled"));
       try {
         reader.readAsDataURL(file);
       } catch (e) {
-        reject(new Error("تعذر بدء قراءة الملف: " + (e instanceof Error ? e.message : String(e))));
+        reject(new Error("Could not start reading file: " + (e instanceof Error ? e.message : String(e))));
       }
     });
 
@@ -794,9 +794,9 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
     const { error: uploadError } = await supabase.storage
       .from("temp-uploads")
       .upload(path, file, { contentType, upsert: false });
-    if (uploadError) throw new Error("فشل رفع الملف: " + uploadError.message);
+    if (uploadError) throw new Error("File upload failed: " + uploadError.message);
     const { data: pub } = supabase.storage.from("temp-uploads").getPublicUrl(path);
-    if (!pub?.publicUrl) throw new Error("تعذر الحصول على رابط الملف");
+    if (!pub?.publicUrl) throw new Error("Could not get file URL");
     return pub.publicUrl;
   };
 
@@ -824,79 +824,79 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
   const handleGenerate = async () => {
     if (!tool) return;
     if (isImageOnlyTool && refImages.length === 0) {
-      toast.error("يجب رفع صورة أولاً");
+      toast.error("Please upload an image first");
       return;
     }
     if (isShootsTool && refImages.length === 0 && !prompt.trim()) {
-      toast.error("اكتب وصفاً أو ارفع صورة");
+      toast.error("Write a prompt or upload an image");
       return;
     }
     if (isRemixTool && refImages.length === 0 && !prompt.trim()) {
-      toast.error("ارفع صورة واحدة على الأقل أو اكتب وصفاً");
+      toast.error("Upload at least one image or write a prompt");
       return;
     }
     if (isAvatarAudioModel && (!avatarImage || !avatarAudio)) {
-      toast.error("يجب رفع صورة ومقطع صوتي");
+      toast.error("You must upload an image and an audio clip");
       return;
     }
     if (isAvatarAudioModel && mediaDurationSeconds === null) {
-      toast.error("لم يتم استخراج مدة الملف الصوتي — يرجى إعادة رفعه");
+      toast.error("Audio duration could not be read — please re-upload it");
       return;
     }
     if (isAvatarAudioModel && avatarMaxDurationSeconds && mediaDurationSeconds > avatarMaxDurationSeconds) {
-      toast.error(`مدة الصوت ${mediaDurationSeconds.toFixed(1)}ث وتتجاوز الحد الأقصى لهذا النموذج (${avatarMaxDurationSeconds}ث)`);
+      toast.error(`مدة الصوت ${mediaDurationSeconds.toFixed(1)}ث وexceeds the maximum لهذا النموذج (${avatarMaxDurationSeconds}ث)`);
       return;
     }
     if (isAvatarAnimateModel && (!avatarImage || !avatarVideo)) {
-      toast.error("يجب رفع صورة وفيديو مرجعي");
+      toast.error("You must upload an image and a reference video");
       return;
     }
     if (isAvatarAnimateModel && mediaDurationSeconds === null) {
-      toast.error("لم يتم استخراج مدة الفيديو — يرجى إعادة رفعه");
+      toast.error("Video duration could not be read — please re-upload it");
       return;
     }
     // Grok mode validation
     if (tool.model.startsWith("grok-imagine/") && isVideoTool) {
       if (grokMode === "i2v" && refImages.length !== 1) {
-        toast.error("يجب رفع صورة واحدة في وضع صورة إلى فيديو");
+        toast.error("Upload exactly one image in image-to-video mode");
         return;
       }
       if (grokMode === "reference") {
-        if (refImages.length < 1) { toast.error("يجب إضافة صورة مرجعية واحدة على الأقل"); return; }
-        if (!prompt.trim()) { toast.error("يجب كتابة وصف للفيديو المرجعي"); return; }
-        if (parseInt(videoDuration) > 10) { toast.error("الحد الأقصى للمدة في وضع الفيديو المرجعي هو 10 ثوانٍ"); return; }
+        if (refImages.length < 1) { toast.error("Add at least one reference image"); return; }
+        if (!prompt.trim()) { toast.error("Write a prompt for the reference video"); return; }
+        if (parseInt(videoDuration) > 10) { toast.error("Maximum duration in reference video mode is 10 seconds"); return; }
         const maxTag = (() => { let m = 0; for (const match of prompt.matchAll(/@image(\d+)/g)) { const n = parseInt(match[1]); if (n > m) m = n; } return m; })();
         if (maxTag > refImages.length) { toast.error(`الوصف يشير إلى @image${maxTag} لكن لديك ${refImages.length} صور فقط`); return; }
       }
     }
     // ── Seedance 2.0 / 2.0 Fast — mode-aware validation ──
     if (isSeedance2) {
-      if (!prompt.trim()) { toast.error("اكتب وصفاً للفيديو"); return; }
-      if (seedanceMode === "first" && !seedanceFirstFrame) { toast.error("ارفع إطار البداية"); return; }
+      if (!prompt.trim()) { toast.error("Write a prompt for the video"); return; }
+      if (seedanceMode === "first" && !seedanceFirstFrame) { toast.error("Upload the start frame"); return; }
       if (seedanceMode === "first-last" && (!seedanceFirstFrame || !seedanceLastFrame)) {
-        toast.error("ارفع إطار البداية وإطار النهاية"); return;
+        toast.error("Upload start and end frames"); return;
       }
       if (seedanceMode === "multimodal" && seedanceTotalRefImages === 0 && !seedanceMotionVideo && !seedanceAudioRef) {
-        toast.error("ارفع صورة مرجعية واحدة على الأقل"); return;
+        toast.error("Upload at least one reference image"); return;
       }
     }
     if (!isImageOnlyTool && !isRemixTool && !isAvatarTool && !isSeedance2 && !prompt.trim() && refImages.length === 0 && !firstFrame) {
-      toast.error("اكتب وصفاً أو ارفع صورة");
+      toast.error("Write a prompt or upload an image");
       return;
     }
     if (!user) {
-      toast.error("يجب تسجيل الدخول أولاً");
+      toast.error("You must sign in first");
       navigate("/auth");
       return;
     }
     if (insufficientCredits || credits <= 0) {
-      toast.error(`رصيدك ${credits} كريدت — التكلفة ${estimatedCost} كريدت`);
+      toast.error(`Your balance ${credits} credits — cost ${estimatedCost} credits`);
       navigate("/pricing");
       return;
     }
 
     setLoading(true);
-    setStatus("جاري التحضير...");
+    setStatus("Preparing...");
     setProgress(1);
     setResultUrls([]);
     setResultNaturalRatio(null);
@@ -908,7 +908,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
       let imageUrls: string[] | undefined;
 
       if (hasFrameMode && (firstFrame || lastFrame)) {
-        setStatus("جاري رفع الصور...");
+        setStatus("Uploading images...");
         setProgress(3);
         imageUrls = [];
         if (firstFrame) {
@@ -923,7 +923,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
         }
         setProgress(9);
       } else if (refImages.length > 0) {
-        setStatus("جاري رفع الصور...");
+        setStatus("Uploading images...");
         setProgress(3);
         imageUrls = [];
         for (let i = 0; i < refImages.length; i++) {
@@ -936,7 +936,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
 
       // Avatar file uploads
       if (isAvatarTool && avatarImage) {
-        setStatus("جاري رفع الملفات...");
+        setStatus("Uploading files...");
         setProgress(3);
         console.log("[AVATAR DIAG] image input:", { hasFile: !!avatarImage.file, fileName: avatarImage.file?.name, fileSize: avatarImage.file?.size, fileType: avatarImage.file?.type, sourceUrl: avatarImage.sourceUrl });
 
@@ -948,11 +948,11 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           } else if (avatarImage.sourceUrl) {
             imageUrls = [avatarImage.sourceUrl];
           } else {
-            throw new Error("تعذر قراءة الصورة المحددة");
+            throw new Error("Could not read the selected image");
           }
         } catch (uploadErr) {
           console.error("[AVATAR DIAG] image upload failed:", uploadErr);
-          throw new Error("فشل رفع الصورة: " + (uploadErr instanceof Error ? uploadErr.message : String(uploadErr)));
+          throw new Error("Image upload failed: " + (uploadErr instanceof Error ? uploadErr.message : String(uploadErr)));
         }
 
         setProgress(8);
@@ -969,16 +969,16 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           } else if (avatarAudio.sourceUrl) {
             avatarAudioUrl = avatarAudio.sourceUrl;
           } else {
-            throw new Error("تعذر قراءة الملف الصوتي المحدد");
+            throw new Error("Could not read the selected audio file");
           }
         } catch (uploadErr) {
           console.error("[AVATAR DIAG] audio upload failed:", uploadErr);
-          throw new Error("فشل رفع الصوت: " + (uploadErr instanceof Error ? uploadErr.message : String(uploadErr)));
+          throw new Error("Audio upload failed: " + (uploadErr instanceof Error ? uploadErr.message : String(uploadErr)));
         }
         setProgress(10);
       }
       if (isAvatarAnimateModel && avatarVideo) {
-        setStatus("جاري رفع الفيديو...");
+        setStatus("Uploading video...");
         avatarVideoUrl = await smartUploadFile(avatarVideo.file, "avatar_video");
         setProgress(10);
       }
@@ -990,7 +990,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
       let seedanceRefVideoUrls: string[] = [];
       let seedanceRefAudioUrls: string[] = [];
       if (isSeedance2) {
-        setStatus("جاري رفع الملفات...");
+        setStatus("Uploading files...");
         setProgress(3);
         const uploadAsset = async (a: SeedanceAsset, prefix: string) => smartUploadFile(a.file, prefix);
         if (seedanceMode === "first" && seedanceFirstFrame) {
@@ -1065,7 +1065,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
       const apiType = isFluxKontext ? "flux-kontext" : (tool.isVeoApi ? "veo" : "standard");
 
       // ── Step 3: Start generation (server: auth → entitlement → price → reserve → create task + job record) ──
-      setStatus("جاري التحقق والإنشاء...");
+      setStatus("Verifying and starting...");
       setProgress((prev) => Math.max(prev, 12));
 
       const idempotencyKey = `gen_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -1104,7 +1104,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
       if (!startResult?.success) {
         const err = startResult?.error;
         if (err === "insufficient_credits") {
-          toast.error(`رصيدك ${startResult.balance} كريدت — المطلوب ${startResult.required} كريدت`);
+          toast.error(`Your balance ${startResult.balance} credits — required ${startResult.required} credits`);
           navigate("/pricing");
           return;
         }
@@ -1115,17 +1115,17 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           } else if (details?.reason === "daily_limit_reached") {
             toast.error(`وصلت للحد اليومي (${details.limit} توليدة)`);
           } else if (details?.reason === "duration_exceeded") {
-            toast.error(`المدة تتجاوز الحد الأقصى لخطتك (${details.max_duration}ث)`);
+            toast.error(`Duration exceeds the maximum لخطتك (${details.max_duration}ث)`);
           } else {
-            toast.error("ليس لديك صلاحية لاستخدام هذا النموذج");
+            toast.error("You don't have access to this model");
           }
           return;
         }
         if (err === "provider_error") {
-          toast.error(startResult?.message || "خطأ مؤقت في مزود الخدمة. يرجى المحاولة لاحقاً. لم يتم خصم أي رصيد.");
+          toast.error(startResult?.message || "Temporary provider error. Please try again later. No credits were charged.");
           return;
         }
-        throw new Error(startResult?.message || err || "فشل بدء التوليد");
+        throw new Error(startResult?.message || err || "Failed to start generation");
       }
 
       reservationId = startResult.reservationId;
@@ -1200,9 +1200,9 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
         // onSuccess
         async (urls, completedJob) => {
           setResultUrls(urls);
-          toast.success("تم التوليد بنجاح!");
+          toast.success("Generated successfully!");
           setProgress(100);
-          setStatus("تم!");
+          setStatus("Done!");
 
           const fileUrl = urls[0];
           const { data: completeResult, error: completeError } = await supabase.functions.invoke("complete-generation", {
@@ -1220,7 +1220,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           });
           if (completeError || !completeResult?.success) {
             console.error("Settlement failed:", completeError || completeResult);
-            toast.error("تم التوليد لكن فشل تأكيد الخصم — سيتم المراجعة تلقائياً");
+            toast.error("Generation finished but charge confirmation failed — it will be reconciled automatically");
           } else {
             reservationId = null;
           }
@@ -1230,9 +1230,9 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
         // onFail
         async (errorMsg, failedJob) => {
           // If it's a "background" message from long-running timeout, don't treat as real failure
-          const isBackgroundContinue = errorMsg?.includes("يعمل في الخلفية");
+          const isBackgroundContinue = errorMsg?.includes("running in background");
           if (isBackgroundContinue) {
-            toast.info("النموذج يعمل في الخلفية — تابع النتيجة من قائمة \"قيد التوليد\"", { duration: 6000 });
+            toast.info("النموذج running in background — تابع النتيجة من قائمة \"قيد التوليد\"", { duration: 6000 });
             setStatus("");
             setProgress(0);
             setLoading(false);
@@ -1252,7 +1252,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
               console.error("Failed to release credits:", releaseErr);
             }
           }
-          toast.error(errorMsg || "فشل التوليد");
+          toast.error(errorMsg || "Generation failed");
           setStatus("");
           setProgress(0);
           await refreshCredits();
@@ -1283,7 +1283,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           console.error("Failed to release credits:", releaseErr);
         }
       }
-      const errMsg = err instanceof Error ? err.message : "حدث خطأ غير متوقع";
+      const errMsg = err instanceof Error ? err.message : "An unexpected error occurred";
       console.error("Generation error:", err);
       toast.error(errMsg);
       setStatus("");
@@ -1395,7 +1395,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           <CircularProgress progress={progress} size={110} status={status} />
           {isAvatarTool && (
             <p className="text-[11px] text-muted-foreground text-center max-w-[260px] leading-relaxed mt-1">
-              نماذج الأفتار تستغرق وقتاً أطول (2-10 دقائق). يمكنك المتابعة من قائمة "قيد التوليد" إذا أردت المغادرة.
+              Avatar models take longer (2-10 minutes). You can keep tracking from the "In progress" list if you leave.
             </p>
           )}
         </motion.div>
@@ -1488,8 +1488,8 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
       <motion.div key="placeholder" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2, ease: "easeOut" }}
         className="flex flex-col items-center justify-center gap-3 text-center px-4">
         <Sparkles className="w-9 h-9 text-primary opacity-40" />
-        <h2 className="text-base font-bold text-foreground/70">{isShootsTool ? "شوتس" : tool.title}</h2>
-        <p className="text-xs text-muted-foreground/60">{isShootsTool ? "ارفع صورة لتوليد زاويتين، أو اكتب وصفاً لتوليد 6 صور" : tool.description}</p>
+        <h2 className="text-base font-bold text-foreground/70">{isShootsTool ? "Shoots" : tool.title}</h2>
+        <p className="text-xs text-muted-foreground/60">{isShootsTool ? "Upload an image to generate two angles, or write a prompt to generate 6 images" : tool.description}</p>
         {!isShootsTool && (
           <span className="text-[10px] text-muted-foreground/50 mt-1 bg-secondary/30 px-3 py-1 rounded-full">
             {currentRatio.label} {resolution ? `• ${resolution.toUpperCase()}` : ""}
@@ -1521,13 +1521,13 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
   const isGrokReference = isGrokVideoMode && grokMode === "reference";
 
   // ── Label helpers ──
-  const durationLabel = (d: string) => `${d} ثواني`;
+  const durationLabel = (d: string) => `${d} sec`;
   const qualityLabel = (q: string) => {
-    const map: Record<string, string> = { std: "قياسي (STD)", pro: "احترافي (PRO)", normal: "عادي", fun: "مرح", spicy: "حار 🌶️", fast: "سريع", basic: "أساسي", high: "عالي" };
+    const map: Record<string, string> = { std: "Standard (STD)", pro: "Pro (PRO)", normal: "Normal", fun: "Fun", spicy: "Spicy 🌶️", fast: "Fast", basic: "Basic", high: "High" };
     return map[q] || q.toUpperCase();
   };
   const aspectLabelFn = (a: string) => {
-    const map: Record<string, string> = { "auto": "تلقائي — حسب الصورة", "1:1": "1:1 — مربع", "9:16": "9:16 — عمودي", "16:9": "16:9 — أفقي", "3:4": "3:4 — بورتريه", "4:3": "4:3 — أفقي عريض", "21:9": "21:9 — سينمائي", "2:3": "2:3 — بورتريه عمودي", "3:2": "3:2 — أفقي عريض" };
+    const map: Record<string, string> = { "auto": "Auto — match image", "1:1": "1:1 — Square", "9:16": "9:16 — Vertical", "16:9": "16:9 — Horizontal", "3:4": "3:4 — Portrait", "4:3": "4:3 — Wide", "21:9": "21:9 — Cinematic", "2:3": "2:3 — Tall Portrait", "3:2": "3:2 — Wide Landscape" };
     return map[a] || a;
   };
 
@@ -1663,7 +1663,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           {hasFrameMode && (
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-muted-foreground/70">
-                {frameMode === "first-last" ? "الإطارات" : "الإطار الأول"}
+                {frameMode === "first-last" ? "Frames" : "First Frame"}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <div
@@ -1673,7 +1673,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                 >
                   {firstFrame ? (
                     <div className="relative w-full h-full">
-                      <img src={firstFrame.preview} alt="الإطار الأول" className="w-full h-full object-cover rounded-lg cursor-pointer" onClick={() => {
+                      <img src={firstFrame.preview} alt="First Frame" className="w-full h-full object-cover rounded-lg cursor-pointer" onClick={() => {
                         if (aspectRatio !== "auto") {
                           setCropState({ imageSrc: firstFrame.preview, file: firstFrame.file, type: "first" });
                         } else {
@@ -1682,12 +1682,12 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                       }} />
                       <button onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(firstFrame.preview); setFirstFrame(null); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center z-10"><X className="w-3 h-3 text-destructive-foreground" /></button>
                       <button onClick={(e) => { e.stopPropagation(); firstFrameInputRef.current?.click(); }} className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-background/80 border border-border/30 flex items-center justify-center z-10"><Upload className="w-2.5 h-2.5 text-foreground" /></button>
-                      <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">الإطار الأول</span>
+                      <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">First Frame</span>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center gap-1.5 h-full">
                       <Upload className="w-5 h-5 text-muted-foreground/50" />
-                      <span className="text-[10px] font-semibold text-muted-foreground/60">الإطار الأول</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground/60">First Frame</span>
                     </div>
                   )}
                 </div>
@@ -1699,7 +1699,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                   >
                     {lastFrame ? (
                       <div className="relative w-full h-full">
-                        <img src={lastFrame.preview} alt="الإطار الأخير" className="w-full h-full object-cover rounded-lg cursor-pointer" onClick={() => {
+                        <img src={lastFrame.preview} alt="Last Frame" className="w-full h-full object-cover rounded-lg cursor-pointer" onClick={() => {
                           if (aspectRatio !== "auto") {
                             setCropState({ imageSrc: lastFrame.preview, file: lastFrame.file, type: "last" });
                           } else {
@@ -1708,12 +1708,12 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                         }} />
                         <button onClick={(e) => { e.stopPropagation(); URL.revokeObjectURL(lastFrame.preview); setLastFrame(null); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center z-10"><X className="w-3 h-3 text-destructive-foreground" /></button>
                         <button onClick={(e) => { e.stopPropagation(); lastFrameInputRef.current?.click(); }} className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-background/80 border border-border/30 flex items-center justify-center z-10"><Upload className="w-2.5 h-2.5 text-foreground" /></button>
-                        <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">الإطار الأخير</span>
+                        <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">Last Frame</span>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center gap-1.5 h-full">
                         <Upload className="w-5 h-5 text-muted-foreground/50" />
-                        <span className="text-[10px] font-semibold text-muted-foreground/60">الإطار الأخير</span>
+                        <span className="text-[10px] font-semibold text-muted-foreground/60">Last Frame</span>
                       </div>
                     )}
                   </div>
@@ -1726,7 +1726,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           {!hasFrameMode && !isRemixTool && !isAvatarTool && !isImageOnlyTool && !isShootsTool && !isGrokVideoMode && (caps?.maxImages ?? 0) > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold text-muted-foreground/70">صور مرجعية</label>
+                <label className="text-[11px] font-bold text-muted-foreground/70">Reference Images</label>
                 {refImages.length > 0 && <span className="text-[10px] text-muted-foreground">{refImages.length}/{caps?.maxImages ?? 3}</span>}
               </div>
               <div className="flex flex-wrap gap-2">
@@ -1746,19 +1746,19 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           {/* ── Remix image slots ── */}
           {isRemixTool && !hasFrameMode && (
             <div className="space-y-2">
-              <label className="text-[11px] font-bold text-muted-foreground/70">الصور</label>
+              <label className="text-[11px] font-bold text-muted-foreground/70">Images</label>
               {/* Base image — always slot 0 */}
               <button onClick={() => { setRemixUploadSlot(0); remixSlotInputRef.current?.click(); }}
                 className={`relative w-full rounded-xl border-2 border-dashed transition-all overflow-hidden ${refImages[0] ? "border-primary/40 bg-primary/5" : "border-border/40 bg-secondary/20 hover:border-primary/30"}`}
                 style={{ aspectRatio: "4/3" }}>
                 {refImages[0] ? (
                   <div className="relative w-full h-full">
-                    <img src={refImages[0].preview} alt="الصورة الأساسية" className="w-full h-full object-cover rounded-lg" />
+                    <img src={refImages[0].preview} alt="Base Image" className="w-full h-full object-cover rounded-lg" />
                     <button onClick={(e) => { e.stopPropagation(); removeImage(0); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"><X className="w-3 h-3 text-destructive-foreground" /></button>
-                    <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-primary/90 text-primary-foreground px-2 py-0.5 rounded">الصورة الأساسية</span>
+                    <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-primary/90 text-primary-foreground px-2 py-0.5 rounded">Base Image</span>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center gap-1.5 h-full"><Upload className="w-6 h-6 text-muted-foreground/50" /><span className="text-[10px] font-semibold text-muted-foreground/60">الصورة الأساسية (Base)</span></div>
+                  <div className="flex flex-col items-center justify-center gap-1.5 h-full"><Upload className="w-6 h-6 text-muted-foreground/50" /><span className="text-[10px] font-semibold text-muted-foreground/60">Base Image</span></div>
                 )}
               </button>
               {/* Reference images — slots 1+ */}
@@ -1777,12 +1777,12 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                         style={{ aspectRatio: "4/3" }}>
                         {img ? (
                           <div className="relative w-full h-full">
-                            <img src={img.preview} alt={`صورة مرجعية ${idx + 1}`} className="w-full h-full object-cover rounded-lg" />
+                            <img src={img.preview} alt={`Reference Image ${idx + 1}`} className="w-full h-full object-cover rounded-lg" />
                             <button onClick={(e) => { e.stopPropagation(); removeImage(slotIdx); }} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"><X className="w-3 h-3 text-destructive-foreground" /></button>
                             <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold bg-background/80 text-foreground px-2 py-0.5 rounded">مرجعية {idx + 1}</span>
                           </div>
                         ) : (
-                          <div className="flex flex-col items-center justify-center gap-1.5 h-full"><Plus className="w-5 h-5 text-muted-foreground/50" /><span className="text-[10px] font-semibold text-muted-foreground/60">صورة مرجعية</span></div>
+                          <div className="flex flex-col items-center justify-center gap-1.5 h-full"><Plus className="w-5 h-5 text-muted-foreground/50" /><span className="text-[10px] font-semibold text-muted-foreground/60">Reference Image</span></div>
                         )}
                       </button>
                     );
@@ -1801,7 +1801,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           )}
           {isAvatarTool && selectedTool && (
             <div className="space-y-2">
-              <label className="text-[11px] font-bold text-muted-foreground/70">الملفات</label>
+              <label className="text-[11px] font-bold text-muted-foreground/70">Files</label>
               <div className="flex gap-2 items-stretch">
                 {avatarImage ? (
                   <div className="relative w-20 h-20 rounded-xl border-2 border-primary/40 bg-primary/5 overflow-hidden shrink-0">
@@ -1813,12 +1813,12 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                   <Popover>
                     <PopoverTrigger asChild>
                       <button className="w-20 h-20 rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex flex-col items-center justify-center gap-1 transition-all shrink-0">
-                        <ImageIcon className="w-5 h-5 text-muted-foreground/50" /><span className="text-[9px] font-semibold text-muted-foreground/60">صورة</span>
+                        <ImageIcon className="w-5 h-5 text-muted-foreground/50" /><span className="text-[9px] font-semibold text-muted-foreground/60">Image</span>
                       </button>
                     </PopoverTrigger>
                     <PopoverContent align="start" sideOffset={8} className="w-[160px] p-1 bg-card/95 backdrop-blur-xl border-primary/30 z-[300]" dir="rtl">
-                      <button onClick={() => avatarImageInputRef.current?.click()} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50"><Upload className="w-3.5 h-3.5 text-muted-foreground" /> رفع من الجهاز</button>
-                      <button onClick={() => setImagePickerOpen(true)} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50"><FolderOpen className="w-3.5 h-3.5 text-muted-foreground" /> من المكتبة</button>
+                      <button onClick={() => avatarImageInputRef.current?.click()} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50"><Upload className="w-3.5 h-3.5 text-muted-foreground" /> Upload from device</button>
+                      <button onClick={() => setImagePickerOpen(true)} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50"><FolderOpen className="w-3.5 h-3.5 text-muted-foreground" /> From library</button>
                     </PopoverContent>
                   </Popover>
                 )}
@@ -1841,12 +1841,12 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                     <Popover>
                       <PopoverTrigger asChild>
                         <button className="flex-1 min-h-[80px] rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex flex-col items-center justify-center gap-1 transition-all">
-                          <Music className="w-5 h-5 text-muted-foreground/50" /><span className="text-[9px] font-semibold text-muted-foreground/60">إضافة صوت</span>
+                          <Music className="w-5 h-5 text-muted-foreground/50" /><span className="text-[9px] font-semibold text-muted-foreground/60">Add Audio</span>
                         </button>
                       </PopoverTrigger>
                       <PopoverContent align="start" sideOffset={8} className="w-[160px] p-1 bg-card/95 backdrop-blur-xl border-primary/30 z-[300]" dir="rtl">
-                        <button onClick={() => avatarAudioInputRef.current?.click()} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50"><Upload className="w-3.5 h-3.5 text-muted-foreground" /> رفع من الجهاز</button>
-                        <button onClick={() => setAudioPickerOpen(true)} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50"><FolderOpen className="w-3.5 h-3.5 text-muted-foreground" /> من المكتبة</button>
+                        <button onClick={() => avatarAudioInputRef.current?.click()} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50"><Upload className="w-3.5 h-3.5 text-muted-foreground" /> Upload from device</button>
+                        <button onClick={() => setAudioPickerOpen(true)} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50"><FolderOpen className="w-3.5 h-3.5 text-muted-foreground" /> From library</button>
                       </PopoverContent>
                     </Popover>
                   )
@@ -1873,7 +1873,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           {/* ── Image-only upload (remove-bg, upscale) ── */}
           {isImageOnlyTool && (
             <div className="space-y-2">
-              <label className="text-[11px] font-bold text-muted-foreground/70">الصورة</label>
+              <label className="text-[11px] font-bold text-muted-foreground/70">Image</label>
               {refImages[0] ? (
                 <div className="relative w-24 h-24 rounded-xl border-2 border-primary/40 overflow-hidden">
                   <img src={refImages[0].preview} alt="" className="w-full h-full object-cover" />
@@ -1881,7 +1881,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                 </div>
               ) : (
                 <button onClick={() => fileInputRef.current?.click()} className="w-24 h-24 rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex flex-col items-center justify-center gap-1.5 transition-all">
-                  <Upload className="w-6 h-6 text-muted-foreground/50" /><span className="text-[10px] font-semibold text-muted-foreground/60">رفع صورة</span>
+                  <Upload className="w-6 h-6 text-muted-foreground/50" /><span className="text-[10px] font-semibold text-muted-foreground/60">Upload image</span>
                 </button>
               )}
             </div>
@@ -1890,10 +1890,10 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           {/* ── Shoots image ── */}
           {isShootsTool && (
             <div className="space-y-2">
-              <label className="text-[11px] font-bold text-muted-foreground/70">الصورة</label>
+              <label className="text-[11px] font-bold text-muted-foreground/70">Image</label>
               <button onClick={() => fileInputRef.current?.click()}
                 className={`w-full h-16 rounded-xl border-2 border-dashed flex items-center justify-center gap-2 transition-all ${refImages.length > 0 ? "bg-primary/5 border-primary/40" : "bg-secondary/20 border-border/40 hover:border-primary/30"}`}>
-                <Upload className="w-4 h-4 text-muted-foreground" /><span className="text-xs font-semibold text-foreground">{refImages.length > 0 ? "تغيير الصورة" : "رفع صورة"}</span>
+                <Upload className="w-4 h-4 text-muted-foreground" /><span className="text-xs font-semibold text-foreground">{refImages.length > 0 ? "Change image" : "Upload image"}</span>
               </button>
             </div>
           )}
@@ -1911,7 +1911,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                   }}
                   className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${grokMode === "i2v" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                 >
-                  صورة → فيديو
+                  Image → Video
                 </button>
                 <button
                   onClick={() => setGrokMode("reference")}
@@ -1925,7 +1925,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                 <div className="space-y-2">
                   {refImages.length > 0 ? (
                     <div className="relative rounded-xl overflow-hidden border-2 border-primary/40 bg-primary/5" style={{ aspectRatio: "4/3" }}>
-                      <img src={refImages[0].preview} alt="صورة البداية" className="w-full h-full object-cover cursor-pointer" onClick={() => setFramePreviewUrl(refImages[0].preview)} />
+                      <img src={refImages[0].preview} alt="Start image" className="w-full h-full object-cover cursor-pointer" onClick={() => setFramePreviewUrl(refImages[0].preview)} />
                       <button onClick={() => removeImage(0)} className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center z-10"><X className="w-3 h-3 text-destructive-foreground" /></button>
                       <button onClick={() => grokRefInputRef.current?.click()} className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-background/80 border border-border/30 flex items-center justify-center z-10"><Upload className="w-2.5 h-2.5 text-foreground" /></button>
                     </div>
@@ -1933,23 +1933,23 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                     <button onClick={() => grokRefInputRef.current?.click()}
                       className="w-full rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex flex-col items-center justify-center gap-2 py-8 transition-all">
                       <ImageIcon className="w-7 h-7 text-muted-foreground/50" />
-                      <span className="text-[10px] font-semibold text-muted-foreground/60">رفع صورة لتحويلها إلى فيديو</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground/60">Upload an image to turn into video</span>
                     </button>
                   )}
                 </div>
               ) : (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-[11px] font-bold text-muted-foreground/70">صور مرجعية <span className="text-muted-foreground/50 font-normal">(1-7)</span></label>
+                    <label className="text-[11px] font-bold text-muted-foreground/70">Reference Images <span className="text-muted-foreground/50 font-normal">(1-7)</span></label>
                     <span className="text-[10px] text-muted-foreground">{refImages.length}/7</span>
                   </div>
                   {refImages.length === 0 && (
-                    <p className="text-[9px] text-muted-foreground/60 leading-relaxed">أضف صوراً مرجعية واستخدم <span className="font-mono text-primary/70">@image1</span> داخل الوصف للإشارة إليها.</p>
+                    <p className="text-[9px] text-muted-foreground/60 leading-relaxed">Add reference images and use <span className="font-mono text-primary/70">@image1</span> in the prompt to reference them.</p>
                   )}
                   {refImages.length > 0 && (
                     <>
                       <div className="px-3 py-2 rounded-xl bg-primary/5 border border-primary/20 space-y-1.5">
-                        <p className="text-[10px] font-bold text-primary/80">💡 كيفية الاستخدام:</p>
+                        <p className="text-[10px] font-bold text-primary/80">💡 How to use:</p>
                         <p className="text-[9px] text-muted-foreground/80 leading-[1.8]" dir="ltr">
                           Use <span className="font-mono text-primary">@image1</span>, <span className="font-mono text-primary">@image2</span> inline in your prompt to reference uploaded images.
                         </p>
@@ -1981,7 +1981,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                     <button onClick={() => grokRefInputRef.current?.click()}
                       className="w-full rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex items-center justify-center gap-2 py-3 transition-all">
                       <Plus className="w-4 h-4 text-muted-foreground/50" />
-                      <span className="text-[10px] font-semibold text-muted-foreground/60">إضافة صورة مرجعية</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground/60">Add reference image</span>
                     </button>
                   )}
                 </div>
@@ -1989,7 +1989,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
 
               {refImages.length > 0 && quality === "spicy" && (
                 <div className="px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                  <span className="text-[10px] text-amber-400 font-medium">⚠️ وضع Spicy غير متاح مع الصور المرجعية — سيتم استخدام Normal تلقائياً</span>
+                  <span className="text-[10px] text-amber-400 font-medium">⚠️ Spicy mode is not available with reference images — Normal will be used automatically</span>
                 </div>
               )}
             </div>
@@ -2004,8 +2004,8 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           {showDurationSlider && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold text-muted-foreground/70">المدة</label>
-                <span className="text-xs font-bold text-primary">{videoDuration} ثانية</span>
+                <label className="text-[11px] font-bold text-muted-foreground/70">Duration</label>
+                <span className="text-xs font-bold text-primary">{videoDuration} sec</span>
               </div>
               <input
                 type="range"
@@ -2029,7 +2029,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                 const a = checkAccess(null, q, null);
                 // Spicy not available when Grok has external images
                 const isSpicyLocked = q === "spicy" && isGrokVideo && refImages.length > 0;
-                return { value: q, label: qualityLabel(q), locked: !a.available || isSpicyLocked, lockLabel: isSpicyLocked ? "غير متاح مع الصور" : a.requiredPlanLabel };
+                return { value: q, label: qualityLabel(q), locked: !a.available || isSpicyLocked, lockLabel: isSpicyLocked ? "Not available with images" : a.requiredPlanLabel };
               }), quality, (v) => { setQuality(v); })}
             </div>
           )}
@@ -2050,14 +2050,14 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
               <div className="flex items-center gap-3 text-[10px] text-muted-foreground flex-1 flex-wrap">
                 <span className="font-bold text-foreground">{resolution?.toUpperCase()}</span><span>•</span>
                 <span>{effectiveDurationSeconds}ث</span><span>•</span>
-                <span>{Math.round((price.credits / effectiveDurationSeconds) * 10) / 10} كريدت/ث</span><span>•</span>
-                <span className="font-bold text-primary">{price.credits} كريدت</span>
+                <span>{Math.round((price.credits / effectiveDurationSeconds) * 10) / 10} credits/sec</span><span>•</span>
+                <span className="font-bold text-primary">{price.credits} credits</span>
               </div>
             </div>
           )}
           {mediaDurationExceedsLimit && (
             <div className="px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/30">
-              <span className="text-[10px] text-destructive font-medium">⚠️ المدة {mediaDurationSeconds!.toFixed(1)}ث تتجاوز الحد الأقصى ({avatarMaxDurationSeconds}ث) لهذا النموذج، ولن يبدأ التوليد حتى تختار صوتًا أقصر.</span>
+              <span className="text-[10px] text-destructive font-medium">⚠️ Duration {mediaDurationSeconds!.toFixed(1)}ث exceeds the maximum ({avatarMaxDurationSeconds}ث) for this model. Generation won't start until you pick a shorter audio.</span>
             </div>
           )}
         </>
@@ -2080,8 +2080,8 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
     ));
 
   const generateBtnLabel = insufficientCredits
-    ? "الرصيد غير كافي"
-    : isImageOnlyTool ? (category === "remove-bg" ? "حذف الخلفية" : "رفع الجودة") : "بدء التوليد";
+    ? "Insufficient credits"
+    : isImageOnlyTool ? (category === "remove-bg" ? "Remove BG" : "Upscale") : "Generate";
 
   // ── Preview card (shared between desktop & mobile) ──
   const previewCard = (maxH: string) => (
@@ -2123,7 +2123,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           {resultUrls.map((url, i) => (
             <a key={i} href={url} target="_blank" rel="noopener noreferrer"
               className="text-xs text-primary hover:underline bg-primary/10 px-3 py-1 rounded-full">
-              تحميل {resultUrls.length > 1 ? `${i + 1}` : ""}
+              Download {resultUrls.length > 1 ? `${i + 1}` : ""}
             </a>
           ))}
         </div>
@@ -2156,7 +2156,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
         setAvatarAudio({ file, name: file.name, previewUrl: objectUrl, sourceUrl: objectUrl });
         const duration = await detectAudioDuration(objectUrl);
         if (duration !== null) setMediaDurationSeconds(duration);
-        else { setMediaDurationSeconds(null); toast.error("تعذر قراءة مدة الملف الصوتي"); }
+        else { setMediaDurationSeconds(null); toast.error("Could not read audio duration"); }
         if (avatarAudioInputRef.current) avatarAudioInputRef.current.value = "";
       }} />
       <input ref={avatarVideoInputRef} type="file" accept="video/*" className="hidden" onChange={(e) => {
@@ -2226,7 +2226,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                         ref={desktopPromptRef}
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
-                        placeholder={isShootsTool ? "صف الزوايا المطلوبة..." : isAvatarTool ? "وصف اختياري للأداء..." : isRemixTool ? "صف التعديل المطلوب..." : isGrokI2V ? "صف حركة الفيديو المطلوبة..." : "اكتب وصفاً لما تريد توليده..."}
+                        placeholder={isShootsTool ? "Describe the camera angles you want..." : isAvatarTool ? "Optional performance prompt..." : isRemixTool ? "Describe the edit you want..." : isGrokI2V ? "Describe the video motion you want..." : "Write a prompt for what you want to generate..."}
                         className="min-h-[100px] max-h-[180px] resize-none rounded-xl bg-secondary/30 border-border/30 text-sm placeholder:text-muted-foreground/50"
                         dir="rtl"
                         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading) { e.preventDefault(); handleGenerate(); } }}
@@ -2238,10 +2238,10 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
               <Button onClick={handleGenerate} disabled={isGenerateDisabled} className={`w-full rounded-xl gap-2 h-11 text-sm font-bold shadow-lg ${insufficientCredits ? "bg-destructive/80 hover:bg-destructive/90" : ""}`}>
                 <Sparkles className="w-4 h-4" />
                 <span>{generateBtnLabel}</span>
-                {estimatedCost > 0 && !insufficientCredits && <span className="text-[11px] font-bold opacity-80">{estimatedCost} كريدت</span>}
+                {estimatedCost > 0 && !insufficientCredits && <span className="text-[11px] font-bold opacity-80">{estimatedCost} credits</span>}
               </Button>
               {insufficientCredits && (
-                <p className="text-[10px] text-destructive text-center mt-1">رصيدك {credits} كريدت — التكلفة {estimatedCost} كريدت. يرجى شحن رصيدك.</p>
+                <p className="text-[10px] text-destructive text-center mt-1">Your balance {credits} credits — cost {estimatedCost} credits. Please top up.</p>
               )}
             </div>
           </aside>
@@ -2294,15 +2294,15 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                     <ImageIcon className="w-4 h-4 text-muted-foreground" />
                   </button>
                   <span className="flex-1 text-xs text-muted-foreground text-right" dir="rtl">
-                    {refImages.length > 0 ? `تم اختيار ${refImages.length} صورة` : "اختر صورة للمعالجة"}
+                    {refImages.length > 0 ? `Selected ${refImages.length} image(s)` : "Pick an image to process"}
                   </span>
                 </div>
                 <Button onClick={handleGenerate} disabled={isGenerateDisabled} className={`w-full rounded-xl gap-2 h-11 text-sm font-bold shadow-lg ${insufficientCredits ? "bg-destructive/80 hover:bg-destructive/90" : ""}`}>
                   <Sparkles className="w-4 h-4" /><span>{generateBtnLabel}</span>
-                  {estimatedCost > 0 && !insufficientCredits && <span className="text-[11px] font-bold opacity-80">{estimatedCost} كريدت</span>}
+                  {estimatedCost > 0 && !insufficientCredits && <span className="text-[11px] font-bold opacity-80">{estimatedCost} credits</span>}
                 </Button>
                 {insufficientCredits && (
-                  <p className="text-[10px] text-destructive text-center mt-1">رصيدك {credits} كريدت — التكلفة {estimatedCost} كريدت. يرجى شحن رصيدك.</p>
+                  <p className="text-[10px] text-destructive text-center mt-1">Your balance {credits} credits — cost {estimatedCost} credits. Please top up.</p>
                 )}
               </div>
             ) : (
@@ -2320,7 +2320,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                         refImages.length > 0 ? "bg-primary/10 border-primary/40" : "bg-secondary border-border/50"
                       }`}>
                       <Upload className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-[10px] font-semibold text-foreground">{refImages.length > 0 ? "تغيير" : "صورة"}</span>
+                      <span className="text-[10px] font-semibold text-foreground">{refImages.length > 0 ? "Change" : "Image"}</span>
                     </button>
                   )}
                    <div className="relative flex-1">
@@ -2348,7 +2348,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                           ref={mobilePromptRef}
                           value={prompt}
                           onChange={(e) => setPrompt(e.target.value)}
-                          placeholder={isShootsTool ? "صف الزوايا..." : isAvatarTool ? "وصف اختياري..." : isRemixTool ? "صف التعديل..." : isGrokI2V ? "صف حركة الفيديو..." : "اكتب وصفاً لما تريد توليده..."}
+                          placeholder={isShootsTool ? "Describe angles..." : isAvatarTool ? "Optional prompt..." : isRemixTool ? "Describe the edit..." : isGrokI2V ? "Describe motion..." : "Write a prompt for what you want to generate..."}
                           className="w-full min-h-[40px] max-h-[80px] resize-none rounded-xl bg-secondary/40 border border-border/30 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50"
                           dir="rtl"
                           rows={2}
@@ -2361,10 +2361,10 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                 <Button onClick={handleGenerate} disabled={isGenerateDisabled} className={`w-full rounded-xl gap-2 h-11 text-sm font-bold shadow-lg ${insufficientCredits ? "bg-destructive/80 hover:bg-destructive/90" : ""}`}>
                   <Sparkles className="w-4 h-4" />
                   <span>{generateBtnLabel}</span>
-                  {estimatedCost > 0 && !insufficientCredits && <span className="text-[11px] font-bold opacity-80">{estimatedCost} كريدت</span>}
+                  {estimatedCost > 0 && !insufficientCredits && <span className="text-[11px] font-bold opacity-80">{estimatedCost} credits</span>}
                 </Button>
                 {insufficientCredits && (
-                  <p className="text-[10px] text-destructive text-center mt-1">رصيدك {credits} كريدت — التكلفة {estimatedCost} كريدت. يرجى شحن رصيدك.</p>
+                  <p className="text-[10px] text-destructive text-center mt-1">Your balance {credits} credits — cost {estimatedCost} credits. Please top up.</p>
                 )}
               </div>
             )}

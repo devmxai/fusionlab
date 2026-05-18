@@ -146,17 +146,17 @@ export function SeedancePanel(props: SeedancePanelProps) {
   };
 
   const modeOptions: { value: SeedanceMode; label: string; sub: string }[] = [
-    { value: "text", label: "نص → فيديو", sub: "بدون أي رفع" },
-    { value: "first", label: "إطار البداية", sub: "صورة بداية واحدة" },
-    { value: "first-last", label: "بداية ونهاية", sub: "إطار أول + إطار أخير" },
-    { value: "multimodal", label: "مرجع متعدد", sub: "شخصية / مكان / أسلوب" },
+    { value: "text", label: "text → video", sub: "no upload needed" },
+    { value: "first", label: "Start Frame", sub: "one start image" },
+    { value: "first-last", label: "Start & End", sub: "first frame + last frame" },
+    { value: "multimodal", label: "Multi-Reference", sub: "character / scene / style" },
   ];
 
   const modeHelper: Record<SeedanceMode, string> = {
-    text: "ولّد الفيديو من الوصف فقط — لا حاجة لرفع أي ملف.",
-    first: "ارفع صورة البداية وسيقوم Seedance بتحريكها وفق وصفك.",
-    "first-last": "حدد إطار البداية وإطار النهاية للسيطرة الكاملة على بداية ونهاية الفيديو.",
-    multimodal: "ارفع مراجع للشخصية والمكان والأسلوب — يحافظ Seedance على الهوية والمزاج البصري.",
+    text: "Generate the video from prompt only — no upload required.",
+    first: "Upload the start image and Seedance will animate it from your prompt.",
+    "first-last": "Pick start and end frames for full control of the video's opening and ending.",
+    multimodal: "Upload character, scene and style references — Seedance keeps identity and visual mood consistent.",
   };
 
   return (
@@ -176,7 +176,7 @@ export function SeedancePanel(props: SeedancePanelProps) {
 
       {/* ── Mode selector ── */}
       <div className="space-y-2">
-        <label className="text-[11px] font-bold text-muted-foreground/70">طريقة الإنشاء</label>
+        <label className="text-[11px] font-bold text-muted-foreground/70">Mode</label>
         <div className="grid grid-cols-2 gap-1.5">
           {modeOptions.map((opt) => {
             const active = mode === opt.value;
@@ -206,10 +206,10 @@ export function SeedancePanel(props: SeedancePanelProps) {
       {/* ── Mode: First Frame ── */}
       {mode === "first" && (
         <div className="space-y-2">
-          <label className="text-[11px] font-bold text-muted-foreground/70">إطار البداية</label>
+          <label className="text-[11px] font-bold text-muted-foreground/70">Start Frame</label>
           <FrameSlot
             asset={firstFrame}
-            label="إطار البداية"
+            label="Start Frame"
             onPick={() => firstInputRef.current?.click()}
             onRemove={() => {
               if (firstFrame?.preview?.startsWith("blob:")) URL.revokeObjectURL(firstFrame.preview);
@@ -217,7 +217,7 @@ export function SeedancePanel(props: SeedancePanelProps) {
             }}
           />
           <p className="text-[9px] text-muted-foreground/60 leading-relaxed">
-            استخدم صورة واضحة للموضوع الرئيسي — سيُحرّكها Seedance من هذه النقطة.
+            Use a clear image of the main subject — Seedance will animate it from this point.
           </p>
         </div>
       )}
@@ -225,11 +225,11 @@ export function SeedancePanel(props: SeedancePanelProps) {
       {/* ── Mode: First + Last Frame ── */}
       {mode === "first-last" && (
         <div className="space-y-2">
-          <label className="text-[11px] font-bold text-muted-foreground/70">إطار البداية وإطار النهاية</label>
+          <label className="text-[11px] font-bold text-muted-foreground/70">Start & End Frames</label>
           <div className="grid grid-cols-2 gap-2">
             <FrameSlot
               asset={firstFrame}
-              label="إطار البداية"
+              label="Start Frame"
               onPick={() => firstInputRef.current?.click()}
               onRemove={() => {
                 if (firstFrame?.preview?.startsWith("blob:")) URL.revokeObjectURL(firstFrame.preview);
@@ -247,7 +247,7 @@ export function SeedancePanel(props: SeedancePanelProps) {
             />
           </div>
           <p className="text-[9px] text-muted-foreground/60 leading-relaxed">
-            الأنسب عند الحاجة لتحديد بداية ونهاية المشهد بدقة (مثل الإعلانات والتنقّل بين لقطتين).
+            Best when you need to pin scene start and end precisely (ads, shot-to-shot transitions).
           </p>
         </div>
       )}
@@ -256,8 +256,8 @@ export function SeedancePanel(props: SeedancePanelProps) {
       {mode === "multimodal" && (
         <div className="space-y-3">
           <RefSection
-            title="مراجع الشخصية"
-            helper="صور لنفس الشخص من زوايا مختلفة — تحافظ على ثبات الوجه والهوية."
+            title="Character references"
+            helper="Photos of the same person from different angles — keep face and identity stable."
             list={characterRefs}
             onPick={() => charInputRef.current?.click()}
             onRemove={(i) => removeFromList(characterRefs, onCharacterRefsChange, i)}
@@ -265,8 +265,8 @@ export function SeedancePanel(props: SeedancePanelProps) {
             icon={<ImageIcon className="w-4 h-4" />}
           />
           <RefSection
-            title="مراجع المكان / البيئة"
-            helper="صور للموقع أو الخلفية المطلوبة — تحدد مزاج المشهد ولونه."
+            title="Scene / environment references"
+            helper="Photos of the location or background — they set the scene mood and palette."
             list={locationRefs}
             onPick={() => locInputRef.current?.click()}
             onRemove={(i) => removeFromList(locationRefs, onLocationRefsChange, i)}
@@ -274,8 +274,8 @@ export function SeedancePanel(props: SeedancePanelProps) {
             icon={<ImageIcon className="w-4 h-4" />}
           />
           <RefSection
-            title="مراجع الأسلوب / المنتج (اختياري)"
-            helper="ملابس، منتج، ألوان، إضاءة، أو ستايل بصري عام."
+            title="Style / product references (optional)"
+            helper="Clothing, product, colors, lighting, or general visual style."
             list={styleRefs}
             onPick={() => styleInputRef.current?.click()}
             onRemove={(i) => removeFromList(styleRefs, onStyleRefsChange, i)}
@@ -283,13 +283,13 @@ export function SeedancePanel(props: SeedancePanelProps) {
             icon={<Sparkles className="w-4 h-4" />}
           />
           <div className="flex items-center justify-between text-[9px] text-muted-foreground/70">
-            <span>إجمالي الصور المرجعية</span>
+            <span>Total reference images</span>
             <span className="font-bold text-foreground">{totalRefImages} / {MAX_REF_IMAGES}</span>
           </div>
 
           {/* Motion reference video */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-muted-foreground/70">فيديو مرجعي للحركة (اختياري)</label>
+            <label className="text-[11px] font-bold text-muted-foreground/70">Motion reference video (optional)</label>
             {motionVideo ? (
               <div className="relative rounded-xl border-2 border-primary/40 bg-primary/5 px-3 py-2.5 flex items-center gap-2">
                 <Video className="w-4 h-4 text-primary shrink-0" />
@@ -303,17 +303,17 @@ export function SeedancePanel(props: SeedancePanelProps) {
               <button onClick={() => motionVidInputRef.current?.click()}
                 className="w-full rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex items-center justify-center gap-2 py-3 transition-all">
                 <Video className="w-4 h-4 text-muted-foreground/60" />
-                <span className="text-[10px] font-semibold text-muted-foreground/70">رفع فيديو مرجعي</span>
+                <span className="text-[10px] font-semibold text-muted-foreground/70">Upload reference video</span>
               </button>
             )}
             <p className="text-[9px] text-muted-foreground/60 leading-relaxed">
-              يوجّه حركة الكاميرا والإيقاع — ليس مزامنة شفاه.
+              Guides camera movement and pacing — not lip sync.
             </p>
           </div>
 
           {/* Reference audio */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-muted-foreground/70">صوت مرجعي (اختياري)</label>
+            <label className="text-[11px] font-bold text-muted-foreground/70">Reference audio (optional)</label>
             {audioRef ? (
               <div className="relative rounded-xl border-2 border-primary/40 bg-primary/5 px-3 py-2.5 flex items-center gap-2">
                 <Music className="w-4 h-4 text-primary shrink-0" />
@@ -327,11 +327,11 @@ export function SeedancePanel(props: SeedancePanelProps) {
               <button onClick={() => audioInputRef.current?.click()}
                 className="w-full rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex items-center justify-center gap-2 py-3 transition-all">
                 <Music className="w-4 h-4 text-muted-foreground/60" />
-                <span className="text-[10px] font-semibold text-muted-foreground/70">رفع ملف صوتي</span>
+                <span className="text-[10px] font-semibold text-muted-foreground/70">Upload audio file</span>
               </button>
             )}
             <p className="text-[9px] text-muted-foreground/60 leading-relaxed">
-              للسياق الصوتي فقط — ليس workflow أفتار ناطق.
+              For audio context only — not a talking-avatar workflow.
             </p>
           </div>
         </div>
@@ -339,7 +339,7 @@ export function SeedancePanel(props: SeedancePanelProps) {
 
       {/* ── Generate-audio toggle (available for all modes) ── */}
       <div className="space-y-1.5">
-        <label className="text-[11px] font-bold text-muted-foreground/70">صوت ناتج</label>
+        <label className="text-[11px] font-bold text-muted-foreground/70">Output Audio</label>
         <button
           onClick={() => onGenerateAudioChange(!generateAudio)}
           className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border transition-all ${
@@ -351,7 +351,7 @@ export function SeedancePanel(props: SeedancePanelProps) {
           <div className="flex items-center gap-2">
             {generateAudio ? <Volume2 className="w-4 h-4 text-primary" /> : <VolumeX className="w-4 h-4 text-muted-foreground" />}
             <span className={`text-xs font-bold ${generateAudio ? "text-primary" : "text-foreground"}`}>
-              {generateAudio ? "توليد صوت داخل الفيديو" : "بدون صوت"}
+              {generateAudio ? "Generate audio inside the video" : "No audio"}
             </span>
           </div>
           <div className={`w-9 h-5 rounded-full transition-colors relative ${generateAudio ? "bg-primary" : "bg-secondary"}`}>
@@ -359,18 +359,18 @@ export function SeedancePanel(props: SeedancePanelProps) {
           </div>
         </button>
         <p className="text-[9px] text-muted-foreground/60 leading-relaxed">
-          تفعيل الصوت يزيد التكلفة ~20% — شاهد التقدير بجانب زر التوليد.
+          Enabling audio adds ~20% to the cost — see the estimate next to the Generate button.
         </p>
       </div>
 
       {/* ── Prompt guidance hint ── */}
       <div className="px-3 py-2.5 rounded-xl bg-secondary/30 border border-border/30 space-y-1.5">
-        <p className="text-[10px] font-bold text-foreground">💡 نصيحة لكتابة الوصف</p>
+        <p className="text-[10px] font-bold text-foreground">💡 Prompting tip</p>
         <p className="text-[9px] text-muted-foreground/80 leading-[1.7]">
-          اذكر: الموضوع، الفعل، حركة الكاميرا، البيئة، الإضاءة، الأسلوب، والمزاج.
+          Mention: subject, action, camera move, environment, lighting, style, mood.
         </p>
         <p className="text-[9px] text-muted-foreground/60 leading-[1.7]">
-          مثال: «إعلان سينمائي لمطعم فاخر، نفس المرأة من المراجع، جلسة قرب النافذة، حركة دوللي بطيئة، إضاءة دافئة، إحساس واقعي راقٍ.»
+          Example: "Cinematic ad for a luxury restaurant, same woman as the references, seated by the window, slow dolly move, warm lighting, refined realism."
         </p>
       </div>
     </div>
