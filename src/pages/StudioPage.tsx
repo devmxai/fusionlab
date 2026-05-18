@@ -25,6 +25,7 @@ import ImageMentionPopover from "@/components/studio/ImageMentionPopover";
 import StoryboardPromptEditor, { StoryboardPromptEditorRef } from "@/components/studio/StoryboardPromptEditor";
 import { compileStoryboardPrompt } from "@/lib/storyboard-compiler";
 import SeedancePanel, { type SeedanceMode, type SeedanceAsset, type SeedanceMediaAsset } from "@/components/studio/SeedancePanel";
+import ProviderIcon from "@/components/studio/ProviderIcon";
 
 type AspectRatio = "auto" | "1:1" | "2:3" | "3:2" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
 type Resolution = string;
