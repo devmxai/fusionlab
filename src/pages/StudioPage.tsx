@@ -1656,6 +1656,51 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
             />
           )}
 
+          {/* ── Seedance Storyboard — official "reference_image_urls + @imageN prompt" flow ── */}
+          {isSeedance2 && isStoryboardTab && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold text-muted-foreground/70">
+                  Storyboard Assets <span className="text-muted-foreground/50 font-normal">(1-9)</span>
+                </label>
+                <span className="text-[10px] text-muted-foreground">{refImages.length}/9</span>
+              </div>
+              {refImages.length === 0 ? (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex flex-col items-center justify-center gap-2 py-8 transition-all"
+                >
+                  <ImageIcon className="w-7 h-7 text-muted-foreground/50" />
+                  <span className="text-[10px] font-semibold text-muted-foreground/60">Upload up to 9 reference assets</span>
+                  <span className="text-[9px] text-muted-foreground/50">Then use <span className="font-mono text-primary/70">@image1</span>, <span className="font-mono text-primary/70">@image2</span>… inline in your prompt</span>
+                </button>
+              ) : (
+                <>
+                  <div className="px-3 py-2 rounded-xl bg-primary/5 border border-primary/20 space-y-1.5">
+                    <p className="text-[10px] font-bold text-primary/80">💡 How storyboard works:</p>
+                    <p className="text-[9px] text-muted-foreground/80 leading-[1.8]" dir="ltr">
+                      Reference each asset by tag — e.g. <span className="font-mono text-primary">@image1</span> opens the shot, <span className="font-mono text-primary">@image2</span> appears mid-scene. Seedance keeps identity and visual mood consistent across the timeline.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {refImages.map((img, i) => (
+                      <div key={i} className="relative group">
+                        <div className="w-14 h-14 rounded-lg overflow-hidden border-2 border-border/30 group-hover:border-primary/40 transition-colors">
+                          <img src={img.preview} alt="" className="w-full h-full object-cover cursor-pointer" onClick={() => setFramePreviewUrl(img.preview)} />
+                        </div>
+                        <button onClick={(e) => { e.stopPropagation(); removeImage(i); }} className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-2.5 h-2.5 text-destructive-foreground" /></button>
+                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-mono font-bold text-primary bg-card/90 px-1 rounded border border-primary/20">@image{i + 1}</span>
+                      </div>
+                    ))}
+                    {refImages.length < 9 && (
+                      <button onClick={() => fileInputRef.current?.click()} className="w-14 h-14 rounded-lg border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex items-center justify-center transition-all"><Plus className="w-5 h-5 text-muted-foreground/50" /></button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* ── Frame uploads ── */}
           {hasFrameMode && (
             <div className="space-y-2">
