@@ -906,7 +906,7 @@ const AudioStudioPage = () => {
                   // Store audio URL in sessionStorage and navigate to avatar studio
                   sessionStorage.setItem("avatar-audio-url", audioUrl);
                   sessionStorage.setItem("avatar-audio-name", `صوت_${selectedVoice.label}_${Date.now()}`);
-                  navigate("/studio/avatar");
+                  navigate("/studio?tab=audio-to-video");
                 }}
               >
                 <Video className="w-4 h-4" />
@@ -1222,7 +1222,7 @@ const AudioStudioPage = () => {
                           onClick={() => {
                             sessionStorage.setItem("avatar-audio-url", item.file_url);
                             sessionStorage.setItem("avatar-audio-name", item.prompt?.slice(0, 30) || "مقطع صوتي");
-                            navigate("/studio/avatar");
+                            navigate("/studio?tab=audio-to-video");
                           }}
                           className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
                           title="استخدام في أفتار"

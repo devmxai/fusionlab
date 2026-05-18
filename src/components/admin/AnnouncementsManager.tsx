@@ -28,7 +28,7 @@ const AnnouncementsManager = () => {
     description: "",
     image_url: "",
     cta_text: "جرب الآن",
-    cta_link: "/studio/seedance",
+    cta_link: "/studio?tab=text-to-video",
     is_active: true,
     show_once: true,
   });
@@ -46,7 +46,7 @@ const AnnouncementsManager = () => {
 
   const resetForm = () => {
     setEditId(null);
-    setForm({ title: "", description: "", image_url: "", cta_text: "جرب الآن", cta_link: "/studio/seedance", is_active: true, show_once: true });
+    setForm({ title: "", description: "", image_url: "", cta_text: "جرب الآن", cta_link: "/studio?tab=text-to-video", is_active: true, show_once: true });
   };
 
   const handleSave = async () => {
