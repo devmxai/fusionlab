@@ -56,6 +56,9 @@ export interface SeedancePanelProps {
 
   /** Total reference images used (caps at 9 per official docs). */
   totalRefImages: number;
+
+  /** When true, hide the in-panel Mode selector (the parent tab already dictates the mode). */
+  hideModeSelector?: boolean;
 }
 
 /** Keep the combined reference image count under the official cap (9). */
