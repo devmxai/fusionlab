@@ -1,24 +1,28 @@
 /**
- * ProviderIcon — renders the real brand logo for each model provider.
- * Uses SimpleIcons CDN for well-known brands and inline SVG monograms
- * (with each brand's official color) for providers that aren't on SimpleIcons.
+ * ProviderIcon — renders the real, full-color brand logo for each model provider.
+ * Uses SimpleIcons CDN (brand-colored) for well-known brands and inline
+ * monograms (with each brand's official color) for providers not on SimpleIcons.
  */
 import { useState } from "react";
 
 type IconConfig =
-  | { kind: "simple"; slug: string; bg: string; invert?: boolean }
+  | { kind: "simple"; slug: string; bg: string }
   | { kind: "monogram"; label: string; bg: string; fg: string };
 
+// SimpleIcons returns the official brand color when no color override is set.
+// White circular background ensures every colored logo stays crisp on dark UI.
+const WHITE = "#ffffff";
+
 const PROVIDER_ICONS: Record<string, IconConfig> = {
-  // SimpleIcons-backed (real official logos)
-  "xAI":        { kind: "simple", slug: "x",            bg: "#000000", invert: true },
-  "OpenAI":     { kind: "simple", slug: "openai",       bg: "#000000", invert: true },
-  "Google":     { kind: "simple", slug: "google",       bg: "#ffffff" },
-  "Bytedance":  { kind: "simple", slug: "bytedance",    bg: "#ffffff" },
-  "Alibaba":    { kind: "simple", slug: "alibabacloud", bg: "#FF6A00", invert: true },
-  // Brands not on SimpleIcons — use official brand-color monogram
-  "Kling":      { kind: "monogram", label: "K", bg: "#FF6B00", fg: "#ffffff" }, // Kuaishou orange
-  "Flux":       { kind: "monogram", label: "F", bg: "#1A1A1A", fg: "#FFD400" }, // Black Forest Labs
+  "xAI":        { kind: "simple",   slug: "x",            bg: WHITE },
+  "OpenAI":     { kind: "simple",   slug: "openai",       bg: WHITE },
+  "Google":     { kind: "simple",   slug: "google",       bg: WHITE },
+  "Bytedance":  { kind: "simple",   slug: "bytedance",    bg: WHITE },
+  "Alibaba":    { kind: "simple",   slug: "alibabacloud", bg: WHITE },
+  // Kling AI is built by Kuaishou — Kuaishou's official logo is on SimpleIcons.
+  "Kling":      { kind: "simple",   slug: "kuaishou",     bg: WHITE },
+  // Brands not on SimpleIcons — full-color monogram in the brand's official color.
+  "Flux":       { kind: "monogram", label: "F", bg: "#FFD400", fg: "#000000" }, // Black Forest Labs yellow
   "Recraft":    { kind: "monogram", label: "R", bg: "#FF3D00", fg: "#ffffff" },
   "Topaz":      { kind: "monogram", label: "T", bg: "#FFC107", fg: "#000000" },
   "KIE.AI":     { kind: "monogram", label: "K", bg: "#6E56CF", fg: "#ffffff" },
@@ -48,10 +52,10 @@ export const ProviderIcon = ({ provider, size = 28, className = "" }: Props) => 
     return (
       <span className={`${base} ${className}`} style={style} aria-label={provider}>
         <img
-          src={`https://cdn.simpleicons.org/${cfg.slug}/${cfg.invert ? "ffffff" : "000000"}`}
+          src={`https://cdn.simpleicons.org/${cfg.slug}`}
           alt={provider}
-          width={Math.round(size * 0.6)}
-          height={Math.round(size * 0.6)}
+          width={Math.round(size * 0.62)}
+          height={Math.round(size * 0.62)}
           loading="lazy"
           onError={() => setErrored(true)}
           style={{ objectFit: "contain" }}
