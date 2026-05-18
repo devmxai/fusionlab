@@ -1304,71 +1304,68 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
 
   // ── Model Selector Content (portalized via Popover/Drawer) ──
   const renderModelSelectorContent = () => {
-    const groups: { provider: string; tools: AITool[] }[] = [];
-    categoryTools.forEach((t) => {
-      const existing = groups.find((g) => g.provider === t.provider);
-      if (existing) existing.tools.push(t);
-      else groups.push({ provider: t.provider, tools: [t] });
+    // Provider badges — small circular icon shown to the left of each model name
+    const PROVIDER_BADGE: Record<string, { label: string; className: string }> = {
+      "xAI":        { label: "𝕏", className: "bg-white text-black" },
+      "OpenAI":     { label: "◯", className: "bg-emerald-600 text-white" },
+      "Google":     { label: "G", className: "bg-blue-500 text-white" },
+      "Bytedance":  { label: "B", className: "bg-sky-500 text-white" },
+      "Kling":      { label: "K", className: "bg-violet-500 text-white" },
+      "Flux":       { label: "F", className: "bg-orange-500 text-white" },
+      "Alibaba":    { label: "A", className: "bg-red-500 text-white" },
+      "Recraft":    { label: "R", className: "bg-pink-500 text-white" },
+      "Topaz":      { label: "T", className: "bg-yellow-400 text-black" },
+      "KIE.AI":     { label: "K", className: "bg-slate-500 text-white" },
+      "Infinitalk": { label: "I", className: "bg-teal-500 text-white" },
+    };
+    // Display name overrides (e.g. nicer marketing name)
+    const TITLE_OVERRIDES: Record<string, string> = {
+      "grok-video": "Super Grok",
+    };
+    // Recency rank — higher = newer. Unlisted models fall to the bottom.
+    const RECENCY: Record<string, number> = {
+      // video
+      "seedance-2": 100, "seedance-2-fast": 99, "grok-video": 95,
+      "kling-3": 90, "veo31-quality": 85, "veo31-fast": 84, "veo31-lite": 83,
+      "sora-2": 80, "kling-2-6": 75, "seedance": 70, "kling-2-1-master": 65, "wan-2-6": 60,
+      // images
+      "nano-banana-pro": 100, "nano-banana": 95, "gpt-image-2": 92,
+      "seedream-5-lite": 90, "seedream-4-5": 88, "flux-2-pro": 85,
+      "z-image": 80, "grok-shoots": 78,
+      // edit
+      "nano-banana-edit": 100, "gpt-image-2-edit": 95, "seedream-4-5-edit": 92,
+      "flux-kontext-max": 88, "flux-kontext-pro": 85, "qwen-image-edit": 80,
+    };
+
+    const sorted = [...categoryTools].sort((a, b) => {
+      const ra = RECENCY[a.id] ?? -1;
+      const rb = RECENCY[b.id] ?? -1;
+      return rb - ra;
     });
 
-    if (modelSubPage) {
-      const group = groups.find((g) => g.provider === modelSubPage);
-      if (!group) return null;
-      return (
-        <div className="p-2">
-          <button onClick={() => setModelSubPage(null)}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-right hover:bg-secondary/40 transition-colors mb-1 flex-row-reverse">
-            <ArrowLeft className="w-4 h-4 text-muted-foreground rotate-180" />
-            <span className="text-xs font-bold text-primary flex-1 text-right">{group.provider}</span>
-          </button>
-          <div className="h-px bg-border/30 mx-2 mb-1" />
-          <div className="space-y-0.5">
-            {group.tools.map((t) => (
-              <button key={t.id}
-                onClick={() => { handleSelectModel(t); setModelSubPage(null); setModelSelectorOpen(false); }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right transition-colors ${
-                  selectedTool?.id === t.id ? "bg-primary/10" : "hover:bg-secondary/40"
-                }`}>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-semibold truncate ${selectedTool?.id === t.id ? "text-primary" : "text-foreground"}`}>{t.title}</p>
-                </div>
-                {t.isPro && <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-primary/15 text-primary shrink-0">PRO</span>}
-              </button>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
     return (
-      <div className="p-2 space-y-0.5">
-        {groups.map((group) => {
-          if (group.tools.length === 1) {
-            const t = group.tools[0];
-            return (
-              <button key={t.id}
-                onClick={() => { handleSelectModel(t); setModelSelectorOpen(false); }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right transition-colors ${
-                  selectedTool?.id === t.id ? "bg-primary/10" : "hover:bg-secondary/40"
-                }`}>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-semibold truncate ${selectedTool?.id === t.id ? "text-primary" : "text-foreground"}`}>{t.title}</p>
-                </div>
-                {t.isPro && <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-primary/15 text-primary shrink-0">PRO</span>}
-              </button>
-            );
-          }
-          const hasSelectedInGroup = group.tools.some((t) => selectedTool?.id === t.id);
+      <div className="p-1.5 space-y-0.5" dir="ltr">
+        {sorted.map((t) => {
+          const isSelected = selectedTool?.id === t.id;
+          const badge = PROVIDER_BADGE[t.provider] ?? { label: t.provider[0] ?? "?", className: "bg-secondary text-foreground" };
+          const displayTitle = TITLE_OVERRIDES[t.id] ?? t.title;
           return (
-            <button key={group.provider}
-              onClick={() => setModelSubPage(group.provider)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right transition-colors ${
-                hasSelectedInGroup ? "bg-primary/5" : "hover:bg-secondary/40"
-              }`}>
-              <div className="flex-1 min-w-0">
-                <p className={`text-sm font-bold truncate ${hasSelectedInGroup ? "text-primary" : "text-foreground"}`}>{group.provider}</p>
-              </div>
-              <ChevronDown className="w-4 h-4 text-muted-foreground rotate-90" />
+            <button
+              key={t.id}
+              onClick={() => { handleSelectModel(t); setModelSelectorOpen(false); }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${
+                isSelected ? "bg-primary/10" : "hover:bg-secondary/40"
+              }`}
+            >
+              <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-extrabold ${badge.className}`}>
+                {badge.label}
+              </span>
+              <span className={`flex-1 min-w-0 truncate text-sm font-semibold ${isSelected ? "text-primary" : "text-foreground"}`}>
+                {displayTitle}
+              </span>
+              {t.isPro && (
+                <span className="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded-md bg-primary/15 text-primary">PRO</span>
+              )}
             </button>
           );
         })}
