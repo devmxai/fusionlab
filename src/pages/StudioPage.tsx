@@ -1630,8 +1630,8 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
             </div>
           )}
 
-          {/* ── Seedance 2.0 / 2.0 Fast — guided mode UX ── */}
-          {isSeedance2 && (
+          {/* ── Seedance 2.0 / 2.0 Fast — guided mode UX (hidden in Storyboard tab; replaced by the dedicated storyboard block below) ── */}
+          {isSeedance2 && !isStoryboardTab && (
             <SeedancePanel
               mode={seedanceMode}
               onModeChange={setSeedanceMode}
