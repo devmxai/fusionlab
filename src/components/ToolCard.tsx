@@ -220,12 +220,12 @@ const ToolCard = ({
   }, [imgSrc]);
 
   const handleClick = () => {
-    const studioRoute = categoryStudioMap[tool.category];
-    if (studioRoute) {
-      navigate(`${studioRoute}?model=${encodeURIComponent(tool.id)}`);
-    } else {
-      navigate(`/tool/${tool.id}`);
+    if (tool.category === "صوت") {
+      navigate(`/studio/audio?model=${encodeURIComponent(tool.id)}`);
+      return;
     }
+    const tab = categoryToTab[tool.category] ?? "text-to-video";
+    navigate(`/studio?tab=${tab}&model=${encodeURIComponent(tool.id)}`);
   };
 
   return (
