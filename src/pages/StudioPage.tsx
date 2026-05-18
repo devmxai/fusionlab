@@ -2245,7 +2245,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
             <div className="shrink-0 px-5 pb-5 pt-3 border-t border-border/15 space-y-3">
               {!isImageOnlyTool && (
                 <div className="relative">
-                  {isGrokReference && refImages.length > 0 ? (
+                  {((isGrokReference || (isStoryboardTab && isSeedance2)) && refImages.length > 0) ? (
                     <StoryboardPromptEditor
                       ref={desktopStoryboardRef}
                       value={prompt}
