@@ -73,13 +73,15 @@ interface StudioPageProps {
   categoryProp?: string;
   /** Optional whitelist of tool ids visible in this view */
   toolIdFilter?: string[];
+  /** Active sub-tab id from UnifiedStudioPage (text-to-video, image-to-video, storyboard, …) */
+  subTabId?: string;
   /** When embedded, hide the back-arrow/title header */
   embedded?: boolean;
   /** Custom node rendered at the very top of the aside (and mobile bottom sheet) */
   headerSlot?: React.ReactNode;
 }
 
-const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: StudioPageProps = {}) => {
+const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot }: StudioPageProps = {}) => {
   const { category: categoryParam } = useParams();
   const category = categoryProp ?? categoryParam;
   const [searchParams, setSearchParams] = useSearchParams();
