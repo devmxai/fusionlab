@@ -1381,7 +1381,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
       selectedTool ? "bg-primary/10 border-primary/50" : "bg-secondary/40 border-primary/25 hover:bg-secondary/60 hover:border-primary/40"
     }`}>
       <span className={`text-xs font-bold truncate max-w-[110px] ${selectedTool ? "text-primary" : "text-foreground"}`}>
-        {selectedTool?.title || "اختر النموذج"}
+        {selectedTool?.title || "Select Model"}
       </span>
       <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${modelSelectorOpen ? "rotate-180" : ""}`} />
     </button>
@@ -1451,8 +1451,8 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
         <motion.div key="no-model" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2, ease: "easeOut" }}
           className="flex flex-col items-center justify-center gap-3 text-center px-4">
           <Sparkles className="w-9 h-9 text-primary opacity-40" />
-          <h2 className="text-base font-bold text-foreground/70">اختر النموذج</h2>
-          <p className="text-xs text-muted-foreground/60">اختر النموذج للبدء</p>
+          <h2 className="text-base font-bold text-foreground/70">Select Model</h2>
+          <p className="text-xs text-muted-foreground/60">Select a model to start</p>
         </motion.div>
       );
     }
@@ -1605,7 +1605,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
             <PopoverTrigger asChild>
               <button className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-border/40 bg-secondary/30 hover:bg-secondary/50 transition-all">
                 <span className={`text-sm font-bold truncate ${selectedTool ? "text-primary" : "text-muted-foreground"}`}>
-                  {selectedTool?.title || "اختر النموذج"}
+                  {selectedTool?.title || "Select Model"}
                 </span>
                 <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${modelSelectorOpen ? "rotate-180" : ""}`} />
               </button>
@@ -1620,7 +1620,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
       {!selectedTool ? (
         <div className="flex flex-col items-center py-10 gap-2">
           <Sparkles className="w-6 h-6 text-muted-foreground/30" />
-          <p className="text-xs text-muted-foreground/50">اختر نموذجاً للبدء</p>
+          <p className="text-xs text-muted-foreground/50">Select a model to start</p>
         </div>
       ) : (
         <>
@@ -1796,7 +1796,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           {isAvatarTool && !selectedTool && (
             <div className="rounded-xl border-2 border-dashed border-border/40 bg-secondary/10 p-6 flex flex-col items-center justify-center gap-2 text-center">
               <Sparkles className="w-6 h-6 text-muted-foreground/40" />
-              <p className="text-xs font-semibold text-muted-foreground/70">اختر النموذج أولاً من القائمة أعلاه</p>
+              <p className="text-xs font-semibold text-muted-foreground/70">Select a model first from the list above</p>
             </div>
           )}
           {isAvatarTool && selectedTool && (
