@@ -68,17 +68,17 @@ export const ProviderIcon = ({ provider, size = 28, className = "" }: Props) => 
     );
   }
 
-  if (cfg.kind === "inline") {
-    const inner = Math.round(size * 0.68);
+  if (cfg.kind === "asset") {
+    const inner = Math.round(size * (cfg.pad ?? 0.7));
     return (
-      <span
-        className={`${base} ${className}`}
-        style={style}
-        aria-label={provider}
-      >
-        <span
-          style={{ width: inner, height: inner, display: "inline-block" }}
-          dangerouslySetInnerHTML={{ __html: cfg.svg }}
+      <span className={`${base} ${className}`} style={style} aria-label={provider}>
+        <img
+          src={cfg.src}
+          alt={provider}
+          width={inner}
+          height={inner}
+          loading="lazy"
+          style={{ objectFit: "contain" }}
         />
       </span>
     );
