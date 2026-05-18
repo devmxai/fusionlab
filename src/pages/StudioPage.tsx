@@ -569,6 +569,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
 
   const maxImages = isRemixTool
     ? remixMaxImages
+    : (isStoryboardTab && isSeedance2) ? 9
     : (isImageOnlyTool || isShootsTool) ? 1 : (caps?.maxImages ?? 3);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
