@@ -69,6 +69,22 @@ export const ProviderIcon = ({ provider, size = 28, className = "" }: Props) => 
     );
   }
 
+  if (cfg.kind === "inline") {
+    const inner = Math.round(size * 0.68);
+    return (
+      <span
+        className={`${base} ${className}`}
+        style={style}
+        aria-label={provider}
+      >
+        <span
+          style={{ width: inner, height: inner, display: "inline-block" }}
+          dangerouslySetInnerHTML={{ __html: cfg.svg }}
+        />
+      </span>
+    );
+  }
+
   const label = cfg.kind === "monogram" ? cfg.label : provider[0] ?? "?";
   const fg = cfg.kind === "monogram" ? cfg.fg : "#ffffff";
   return (
