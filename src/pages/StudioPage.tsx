@@ -73,13 +73,15 @@ interface StudioPageProps {
   categoryProp?: string;
   /** Optional whitelist of tool ids visible in this view */
   toolIdFilter?: string[];
+  /** Active sub-tab id from UnifiedStudioPage (text-to-video, image-to-video, storyboard, …) */
+  subTabId?: string;
   /** When embedded, hide the back-arrow/title header */
   embedded?: boolean;
   /** Custom node rendered at the very top of the aside (and mobile bottom sheet) */
   headerSlot?: React.ReactNode;
 }
 
-const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: StudioPageProps = {}) => {
+const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot }: StudioPageProps = {}) => {
   const { category: categoryParam } = useParams();
   const category = categoryProp ?? categoryParam;
   const [searchParams, setSearchParams] = useSearchParams();
@@ -151,7 +153,18 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
 
   // ── Seedance 2.0 / 2.0 Fast: dedicated guided UX ──
-  const [seedanceMode, setSeedanceMode] = useState<SeedanceMode>("text");
+  // The current sub-tab dictates the Seedance mode — no duplicate mode selector inside the panel.
+  const forcedSeedanceMode: SeedanceMode | null =
+    subTabId === "text-to-video" ? "text"
+    : subTabId === "image-to-video" ? "first"
+    : null;
+  const [seedanceMode, setSeedanceMode] = useState<SeedanceMode>(forcedSeedanceMode ?? "text");
+  useEffect(() => {
+    if (forcedSeedanceMode && forcedSeedanceMode !== seedanceMode) {
+      setSeedanceMode(forcedSeedanceMode);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forcedSeedanceMode]);
   const [seedanceFirstFrame, setSeedanceFirstFrame] = useState<SeedanceAsset | null>(null);
   const [seedanceLastFrame, setSeedanceLastFrame] = useState<SeedanceAsset | null>(null);
   const [seedanceCharRefs, setSeedanceCharRefs] = useState<SeedanceAsset[]>([]);
@@ -1637,6 +1650,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
               generateAudio={seedanceGenerateAudio}
               onGenerateAudioChange={setSeedanceGenerateAudio}
               totalRefImages={seedanceTotalRefImages}
+              hideModeSelector={forcedSeedanceMode !== null}
             />
           )}
 
