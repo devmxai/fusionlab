@@ -14,7 +14,8 @@ type IconConfig =
 const WHITE = "#ffffff";
 
 const PROVIDER_ICONS: Record<string, IconConfig> = {
-  "xAI":        { kind: "simple",   slug: "x",            bg: WHITE },
+  // xAI models on this platform are Grok variants — use the real Grok logo, not X.
+  "xAI":        { kind: "simple",   slug: "grok",         bg: WHITE },
   "OpenAI":     { kind: "simple",   slug: "openai",       bg: WHITE },
   "Google":     { kind: "simple",   slug: "google",       bg: WHITE },
   "Bytedance":  { kind: "simple",   slug: "bytedance",    bg: WHITE },
