@@ -74,9 +74,11 @@ interface StudioPageProps {
   toolIdFilter?: string[];
   /** When embedded, hide the back-arrow/title header */
   embedded?: boolean;
+  /** Custom node rendered at the very top of the aside (and mobile bottom sheet) */
+  headerSlot?: React.ReactNode;
 }
 
-const StudioPage = ({ categoryProp, toolIdFilter, embedded }: StudioPageProps = {}) => {
+const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: StudioPageProps = {}) => {
   const { category: categoryParam } = useParams();
   const category = categoryProp ?? categoryParam;
   const [searchParams, setSearchParams] = useSearchParams();
