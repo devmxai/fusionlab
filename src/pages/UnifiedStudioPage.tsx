@@ -123,7 +123,7 @@ const UnifiedStudioPage = () => {
             aria-label="Library"
           >
             <FolderOpen className="w-4 h-4 text-foreground" />
-            <span className="text-[12px] font-bold text-foreground">المكتبة</span>
+            <span className="text-[12px] font-bold text-foreground">Library</span>
           </button>
         </div>
       </header>
