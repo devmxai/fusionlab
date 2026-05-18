@@ -74,9 +74,11 @@ interface StudioPageProps {
   toolIdFilter?: string[];
   /** When embedded, hide the back-arrow/title header */
   embedded?: boolean;
+  /** Custom node rendered at the very top of the aside (and mobile bottom sheet) */
+  headerSlot?: React.ReactNode;
 }
 
-const StudioPage = ({ categoryProp, toolIdFilter, embedded }: StudioPageProps = {}) => {
+const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: StudioPageProps = {}) => {
   const { category: categoryParam } = useParams();
   const category = categoryProp ?? categoryParam;
   const [searchParams, setSearchParams] = useSearchParams();
@@ -2182,8 +2184,11 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded }: StudioPageProps = 
         /* ═══════════ DESKTOP LAYOUT ═══════════ */
         <>
           {/* ── Left Control Panel ── */}
-          <aside className="w-[340px] shrink-0 h-full bg-card/50 backdrop-blur-xl border-l border-border/20 flex flex-col">
-            {!embedded && (
+          <aside className={`${embedded ? "w-[400px]" : "w-[340px]"} shrink-0 h-full bg-card/50 backdrop-blur-xl border-l border-border/20 flex flex-col`}>
+            {headerSlot && (
+              <div className="shrink-0 border-b border-border/15">{headerSlot}</div>
+            )}
+            {!embedded && !headerSlot && (
               <div className="shrink-0 flex items-center justify-between px-5 pt-5 pb-3">
                 <h1 className="text-sm font-bold text-foreground">{categoryTitleMap[category!] || ""}</h1>
                 <button onClick={() => navigate("/")} className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-lg hover:bg-secondary/50 transition-all">
@@ -2191,7 +2196,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded }: StudioPageProps = 
                 </button>
               </div>
             )}
-            <div className="flex-1 overflow-y-auto px-5 pb-4 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto px-5 pb-4 pt-3 scrollbar-hide">
               {renderSettingsContent()}
             </div>
             <div className="shrink-0 px-5 pb-5 pt-3 border-t border-border/15 space-y-3">
