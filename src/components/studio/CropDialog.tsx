@@ -71,7 +71,7 @@ export default function CropDialog({ open, imageSrc, aspectRatio, onConfirm, onC
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onCancel(); }}>
-      <DialogContent className="max-w-lg p-0 overflow-hidden bg-card border-primary/20" dir="rtl">
+      <DialogContent className="max-w-lg p-0 overflow-hidden bg-card border-primary/20" dir="ltr">
         <div className="p-4 pb-2">
           <h3 className="text-sm font-bold text-foreground">Crop image</h3>
           <p className="text-xs text-muted-foreground mt-0.5">Adjust the image to fit the selected video aspect</p>

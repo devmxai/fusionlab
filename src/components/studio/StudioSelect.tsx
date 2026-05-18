@@ -69,7 +69,7 @@ export function StudioSelect({ label, displayValue, selected, items, onSelect }:
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>{triggerBtn}</DrawerTrigger>
         <DrawerContent>
-          <div className="px-4 py-3 pb-8" dir="rtl">
+          <div className="px-4 py-3 pb-8" dir="ltr">
             <p className="text-sm font-bold text-foreground mb-3 text-right">{label}</p>
             {itemsList}
           </div>
@@ -85,7 +85,7 @@ export function StudioSelect({ label, displayValue, selected, items, onSelect }:
         align="end"
         sideOffset={8}
         className="w-auto min-w-[120px] p-0 bg-card/95 backdrop-blur-xl border-primary/30 z-[220]"
-        dir="rtl"
+        dir="ltr"
       >
         {itemsList}
       </PopoverContent>

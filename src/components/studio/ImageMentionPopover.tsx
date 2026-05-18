@@ -114,7 +114,7 @@ export default function ImageMentionPopover({ images, prompt, textareaRef, onIns
         exit={{ opacity: 0, y: 8 }}
         transition={{ duration: 0.15 }}
         className="absolute bottom-full mb-2 right-0 z-[100] w-56 rounded-xl border border-border/40 bg-card shadow-xl overflow-hidden"
-        dir="rtl"
+        dir="ltr"
       >
         <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground border-b border-border/20">
           Pick an image to reference

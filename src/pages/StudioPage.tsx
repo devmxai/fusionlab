@@ -530,7 +530,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
 
   if (isShootsTool) {
     return (
-      <div className="h-screen bg-background flex flex-col items-center justify-center gap-4" dir="rtl">
+      <div className="h-screen bg-background flex flex-col items-center justify-center gap-4" dir="ltr">
         <Sparkles className="w-12 h-12 text-primary opacity-50" />
         <h1 className="text-2xl font-bold text-primary">Coming Soon</h1>
         <p className="text-sm text-muted-foreground">Shoots section is in development — stay tuned</p>
@@ -541,7 +541,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
 
   if (!categoryName || categoryTools.length === 0) {
     return (
-      <div className="h-screen bg-background flex flex-col items-center justify-center gap-3" dir="rtl">
+      <div className="h-screen bg-background flex flex-col items-center justify-center gap-3" dir="ltr">
         <Sparkles className="w-10 h-10 text-primary opacity-40" />
         <p className="text-muted-foreground text-sm">
           {categoryName ? "No models available for this category yet" : "Category not found"}
@@ -1548,7 +1548,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
             <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
           </button>
         </PopoverTrigger>
-        <PopoverContent align="start" sideOffset={8} className="w-[260px] p-1.5 bg-card/95 backdrop-blur-xl border-primary/30 z-[300]" dir="rtl">
+        <PopoverContent align="start" sideOffset={8} className="w-[260px] p-1.5 bg-card/95 backdrop-blur-xl border-primary/30 z-[300]" dir="ltr">
           <div className="space-y-0.5 max-h-[300px] overflow-y-auto">
             {items.map(item => (
               <button key={item.value}
@@ -1610,7 +1610,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                 <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${modelSelectorOpen ? "rotate-180" : ""}`} />
               </button>
             </PopoverTrigger>
-            <PopoverContent align="start" sideOffset={8} className="w-[280px] p-0 bg-card/95 backdrop-blur-xl border-primary/30 z-[300]" dir="rtl">
+            <PopoverContent align="start" sideOffset={8} className="w-[280px] p-0 bg-card/95 backdrop-blur-xl border-primary/30 z-[300]" dir="ltr">
               <div className="max-h-[380px] overflow-y-auto">{renderModelSelectorContent()}</div>
             </PopoverContent>
           </Popover>
@@ -1816,7 +1816,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                         <ImageIcon className="w-5 h-5 text-muted-foreground/50" /><span className="text-[9px] font-semibold text-muted-foreground/60">Image</span>
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent align="start" sideOffset={8} className="w-[160px] p-1 bg-card/95 backdrop-blur-xl border-primary/30 z-[300]" dir="rtl">
+                    <PopoverContent align="start" sideOffset={8} className="w-[160px] p-1 bg-card/95 backdrop-blur-xl border-primary/30 z-[300]" dir="ltr">
                       <button onClick={() => avatarImageInputRef.current?.click()} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50"><Upload className="w-3.5 h-3.5 text-muted-foreground" /> Upload from device</button>
                       <button onClick={() => setImagePickerOpen(true)} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50"><FolderOpen className="w-3.5 h-3.5 text-muted-foreground" /> From library</button>
                     </PopoverContent>
@@ -1844,7 +1844,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                           <Music className="w-5 h-5 text-muted-foreground/50" /><span className="text-[9px] font-semibold text-muted-foreground/60">Add Audio</span>
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent align="start" sideOffset={8} className="w-[160px] p-1 bg-card/95 backdrop-blur-xl border-primary/30 z-[300]" dir="rtl">
+                      <PopoverContent align="start" sideOffset={8} className="w-[160px] p-1 bg-card/95 backdrop-blur-xl border-primary/30 z-[300]" dir="ltr">
                         <button onClick={() => avatarAudioInputRef.current?.click()} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50"><Upload className="w-3.5 h-3.5 text-muted-foreground" /> Upload from device</button>
                         <button onClick={() => setAudioPickerOpen(true)} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-right text-xs font-semibold text-foreground hover:bg-secondary/50"><FolderOpen className="w-3.5 h-3.5 text-muted-foreground" /> From library</button>
                       </PopoverContent>
@@ -2293,7 +2293,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                     }`}>
                     <ImageIcon className="w-4 h-4 text-muted-foreground" />
                   </button>
-                  <span className="flex-1 text-xs text-muted-foreground text-right" dir="rtl">
+                  <span className="flex-1 text-xs text-muted-foreground text-right" dir="ltr">
                     {refImages.length > 0 ? `Selected ${refImages.length} image(s)` : "Pick an image to process"}
                   </span>
                 </div>
@@ -2350,7 +2350,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                           onChange={(e) => setPrompt(e.target.value)}
                           placeholder={isShootsTool ? "Describe angles..." : isAvatarTool ? "Optional prompt..." : isRemixTool ? "Describe the edit..." : isGrokI2V ? "Describe motion..." : "Write a prompt for what you want to generate..."}
                           className="w-full min-h-[40px] max-h-[80px] resize-none rounded-xl bg-secondary/40 border border-border/30 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50"
-                          dir="rtl"
+                          dir="ltr"
                           rows={2}
                           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading) { e.preventDefault(); handleGenerate(); } }}
                         />
@@ -2373,7 +2373,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           {/* ── Settings Sidebar ── */}
           <Sheet open={settingsSheetOpen} onOpenChange={setSettingsSheetOpen}>
             <SheetContent side="right" className="w-[85vw] max-w-[360px] p-0 border-r border-border/20 [&>button]:left-4 [&>button]:right-auto">
-              <div className="px-5 pt-12 pb-8 h-full overflow-y-auto space-y-1 scrollbar-hide" dir="rtl">
+              <div className="px-5 pt-12 pb-8 h-full overflow-y-auto space-y-1 scrollbar-hide" dir="ltr">
                 {renderSettingsContent()}
               </div>
             </SheetContent>
