@@ -85,6 +85,7 @@ export function SeedancePanel(props: SeedancePanelProps) {
     generateAudio,
     onGenerateAudioChange,
     totalRefImages,
+    hideModeSelector = false,
   } = props;
 
   const firstInputRef = useRef<HTMLInputElement>(null);
