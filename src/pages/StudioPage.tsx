@@ -2175,7 +2175,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded }: StudioPageProps = 
   );
 
   return (
-    <div className="h-[100dvh] bg-background flex overflow-hidden" dir="rtl">
+    <div className={`${embedded ? "h-full" : "h-[100dvh]"} bg-background flex overflow-hidden`} dir="rtl">
       {hiddenInputs}
 
       {!isMobile ? (
