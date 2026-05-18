@@ -1091,6 +1091,18 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
         finalPrompt = (compiled as { success: true; compiledPrompt: string }).compiledPrompt;
         console.log("Reference video compiled prompt:", finalPrompt);
       }
+      // Seedance storyboard — same @imageN compilation flow
+      if (isSeedance2 && isStoryboardTab && refImages.length >= 1) {
+        const compiled = compileStoryboardPrompt(prompt, refImages.length);
+        if (!compiled.success) {
+          toast.error((compiled as { success: false; error: string }).error);
+          setLoading(false);
+          setStatus("");
+          setProgress(0);
+          return;
+        }
+        finalPrompt = (compiled as { success: true; compiledPrompt: string }).compiledPrompt;
+      }
 
       const input = buildModelInput(apiModel, finalPrompt, apiAspectRatio, resolution, imageUrls, extraParams);
       const apiType = isFluxKontext ? "flux-kontext" : (tool.isVeoApi ? "veo" : "standard");
