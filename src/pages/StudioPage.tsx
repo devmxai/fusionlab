@@ -153,11 +153,13 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
 
   // ── Seedance 2.0 / 2.0 Fast: dedicated guided UX ──
-  // The current sub-tab dictates the Seedance mode — no duplicate mode selector inside the panel.
+  // The active sub-tab dictates which Seedance API mode to use — no duplicate selector inside the panel.
   const forcedSeedanceMode: SeedanceMode | null =
     subTabId === "text-to-video" ? "text"
     : subTabId === "image-to-video" ? "first"
+    : subTabId === "storyboard" ? "multimodal"
     : null;
+  const isStoryboardTab = subTabId === "storyboard";
   const [seedanceMode, setSeedanceMode] = useState<SeedanceMode>(forcedSeedanceMode ?? "text");
   useEffect(() => {
     if (forcedSeedanceMode && forcedSeedanceMode !== seedanceMode) {
@@ -567,6 +569,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
 
   const maxImages = isRemixTool
     ? remixMaxImages
+    : (isStoryboardTab && isSeedance2) ? 9
     : (isImageOnlyTool || isShootsTool) ? 1 : (caps?.maxImages ?? 3);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -886,12 +889,18 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
     // ── Seedance 2.0 / 2.0 Fast — mode-aware validation ──
     if (isSeedance2) {
       if (!prompt.trim()) { toast.error("Write a prompt for the video"); return; }
-      if (seedanceMode === "first" && !seedanceFirstFrame) { toast.error("Upload the start frame"); return; }
-      if (seedanceMode === "first-last" && (!seedanceFirstFrame || !seedanceLastFrame)) {
-        toast.error("Upload start and end frames"); return;
-      }
-      if (seedanceMode === "multimodal" && seedanceTotalRefImages === 0 && !seedanceMotionVideo && !seedanceAudioRef) {
-        toast.error("Upload at least one reference image"); return;
+      if (isStoryboardTab) {
+        if (refImages.length < 1) { toast.error("Upload at least one storyboard asset"); return; }
+        const maxTag = (() => { let m = 0; for (const match of prompt.matchAll(/@image(\d+)/g)) { const n = parseInt(match[1]); if (n > m) m = n; } return m; })();
+        if (maxTag > refImages.length) { toast.error(`Prompt references @image${maxTag} but you only have ${refImages.length} assets`); return; }
+      } else {
+        if (seedanceMode === "first" && !seedanceFirstFrame) { toast.error("Upload the start frame"); return; }
+        if (seedanceMode === "first-last" && (!seedanceFirstFrame || !seedanceLastFrame)) {
+          toast.error("Upload start and end frames"); return;
+        }
+        if (seedanceMode === "multimodal" && seedanceTotalRefImages === 0 && !seedanceMotionVideo && !seedanceAudioRef) {
+          toast.error("Upload at least one reference image"); return;
+        }
       }
     }
     if (!isImageOnlyTool && !isRemixTool && !isAvatarTool && !isSeedance2 && !prompt.trim() && refImages.length === 0 && !firstFrame) {
@@ -1013,16 +1022,24 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
           if (seedanceFirstFrame) seedanceFirstUrl = await uploadAsset(seedanceFirstFrame, "seedance_first");
           if (seedanceLastFrame) seedanceLastUrl = await uploadAsset(seedanceLastFrame, "seedance_last");
         } else if (seedanceMode === "multimodal") {
-          // Order: characters → locations → styles (kept under 9 by the panel)
-          const allRefs = [...seedanceCharRefs, ...seedanceLocationRefs, ...seedanceStyleRefs].slice(0, 9);
-          for (let i = 0; i < allRefs.length; i++) {
-            seedanceRefImageUrls.push(await uploadAsset(allRefs[i], `seedance_ref_${i}`));
-          }
-          if (seedanceMotionVideo) {
-            seedanceRefVideoUrls = [await smartUploadFile(seedanceMotionVideo.file, "seedance_motion")];
-          }
-          if (seedanceAudioRef) {
-            seedanceRefAudioUrls = [await smartUploadFile(seedanceAudioRef.file, "seedance_audio_ref")];
+          if (isStoryboardTab) {
+            // Storyboard tab — official flow: refImages → reference_image_urls, @imageN tags inside prompt.
+            const allRefs = refImages.slice(0, 9);
+            for (let i = 0; i < allRefs.length; i++) {
+              seedanceRefImageUrls.push(await smartUploadFile(allRefs[i].file, `seedance_story_${i}`));
+            }
+          } else {
+            // Order: characters → locations → styles (kept under 9 by the panel)
+            const allRefs = [...seedanceCharRefs, ...seedanceLocationRefs, ...seedanceStyleRefs].slice(0, 9);
+            for (let i = 0; i < allRefs.length; i++) {
+              seedanceRefImageUrls.push(await uploadAsset(allRefs[i], `seedance_ref_${i}`));
+            }
+            if (seedanceMotionVideo) {
+              seedanceRefVideoUrls = [await smartUploadFile(seedanceMotionVideo.file, "seedance_motion")];
+            }
+            if (seedanceAudioRef) {
+              seedanceRefAudioUrls = [await smartUploadFile(seedanceAudioRef.file, "seedance_audio_ref")];
+            }
           }
         }
         setProgress(10);
@@ -1073,6 +1090,18 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
         }
         finalPrompt = (compiled as { success: true; compiledPrompt: string }).compiledPrompt;
         console.log("Reference video compiled prompt:", finalPrompt);
+      }
+      // Seedance storyboard — same @imageN compilation flow
+      if (isSeedance2 && isStoryboardTab && refImages.length >= 1) {
+        const compiled = compileStoryboardPrompt(prompt, refImages.length);
+        if (!compiled.success) {
+          toast.error((compiled as { success: false; error: string }).error);
+          setLoading(false);
+          setStatus("");
+          setProgress(0);
+          return;
+        }
+        finalPrompt = (compiled as { success: true; compiledPrompt: string }).compiledPrompt;
       }
 
       const input = buildModelInput(apiModel, finalPrompt, apiAspectRatio, resolution, imageUrls, extraParams);
@@ -1628,8 +1657,8 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
             </div>
           )}
 
-          {/* ── Seedance 2.0 / 2.0 Fast — guided mode UX ── */}
-          {isSeedance2 && (
+          {/* ── Seedance 2.0 / 2.0 Fast — guided mode UX (hidden in Storyboard tab; replaced by the dedicated storyboard block below) ── */}
+          {isSeedance2 && !isStoryboardTab && (
             <SeedancePanel
               mode={seedanceMode}
               onModeChange={setSeedanceMode}
@@ -1652,6 +1681,51 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
               totalRefImages={seedanceTotalRefImages}
               hideModeSelector={forcedSeedanceMode !== null}
             />
+          )}
+
+          {/* ── Seedance Storyboard — official "reference_image_urls + @imageN prompt" flow ── */}
+          {isSeedance2 && isStoryboardTab && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold text-muted-foreground/70">
+                  Storyboard Assets <span className="text-muted-foreground/50 font-normal">(1-9)</span>
+                </label>
+                <span className="text-[10px] text-muted-foreground">{refImages.length}/9</span>
+              </div>
+              {refImages.length === 0 ? (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full rounded-xl border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex flex-col items-center justify-center gap-2 py-8 transition-all"
+                >
+                  <ImageIcon className="w-7 h-7 text-muted-foreground/50" />
+                  <span className="text-[10px] font-semibold text-muted-foreground/60">Upload up to 9 reference assets</span>
+                  <span className="text-[9px] text-muted-foreground/50">Then use <span className="font-mono text-primary/70">@image1</span>, <span className="font-mono text-primary/70">@image2</span>… inline in your prompt</span>
+                </button>
+              ) : (
+                <>
+                  <div className="px-3 py-2 rounded-xl bg-primary/5 border border-primary/20 space-y-1.5">
+                    <p className="text-[10px] font-bold text-primary/80">💡 How storyboard works:</p>
+                    <p className="text-[9px] text-muted-foreground/80 leading-[1.8]" dir="ltr">
+                      Reference each asset by tag — e.g. <span className="font-mono text-primary">@image1</span> opens the shot, <span className="font-mono text-primary">@image2</span> appears mid-scene. Seedance keeps identity and visual mood consistent across the timeline.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {refImages.map((img, i) => (
+                      <div key={i} className="relative group">
+                        <div className="w-14 h-14 rounded-lg overflow-hidden border-2 border-border/30 group-hover:border-primary/40 transition-colors">
+                          <img src={img.preview} alt="" className="w-full h-full object-cover cursor-pointer" onClick={() => setFramePreviewUrl(img.preview)} />
+                        </div>
+                        <button onClick={(e) => { e.stopPropagation(); removeImage(i); }} className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-2.5 h-2.5 text-destructive-foreground" /></button>
+                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-mono font-bold text-primary bg-card/90 px-1 rounded border border-primary/20">@image{i + 1}</span>
+                      </div>
+                    ))}
+                    {refImages.length < 9 && (
+                      <button onClick={() => fileInputRef.current?.click()} className="w-14 h-14 rounded-lg border-2 border-dashed border-border/40 bg-secondary/20 hover:border-primary/30 flex items-center justify-center transition-all"><Plus className="w-5 h-5 text-muted-foreground/50" /></button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           )}
 
           {/* ── Frame uploads ── */}
@@ -2197,7 +2271,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
             <div className="shrink-0 px-5 pb-5 pt-3 border-t border-border/15 space-y-3">
               {!isImageOnlyTool && (
                 <div className="relative">
-                  {isGrokReference && refImages.length > 0 ? (
+                  {((isGrokReference || (isStoryboardTab && isSeedance2)) && refImages.length > 0) ? (
                     <StoryboardPromptEditor
                       ref={desktopStoryboardRef}
                       value={prompt}
@@ -2319,7 +2393,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
                     </button>
                   )}
                    <div className="relative flex-1">
-                    {isGrokReference && refImages.length > 0 ? (
+                    {((isGrokReference || (isStoryboardTab && isSeedance2)) && refImages.length > 0) ? (
                       <StoryboardPromptEditor
                         ref={mobileStoryboardRef}
                         value={prompt}
