@@ -1796,7 +1796,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
           {isAvatarTool && !selectedTool && (
             <div className="rounded-xl border-2 border-dashed border-border/40 bg-secondary/10 p-6 flex flex-col items-center justify-center gap-2 text-center">
               <Sparkles className="w-6 h-6 text-muted-foreground/40" />
-              <p className="text-xs font-semibold text-muted-foreground/70">اختر النموذج أولاً من القائمة أعلاه</p>
+              <p className="text-xs font-semibold text-muted-foreground/70">Select a model first from the list above</p>
             </div>
           )}
           {isAvatarTool && selectedTool && (
