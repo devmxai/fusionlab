@@ -67,7 +67,6 @@ export const studioGroups: StudioGroup[] = [
         toolIds: [
           "seedance-2",
           "seedance-2-fast",
-          "seedance",
           "grok-video",
         ],
       },
