@@ -1,50 +1,105 @@
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { studioTabs, getTabById, defaultTabId } from "@/data/studio-tabs";
+import {
+  studioGroups,
+  findSubTab,
+  defaultSubTabId,
+} from "@/data/studio-tabs";
 import StudioPage from "./StudioPage";
 import { useAuth } from "@/contexts/AuthContext";
 import CreditRingAvatar from "@/components/CreditRingAvatar";
-import GenerationQueueSidebar from "@/components/GenerationQueueSidebar";
 import ProfileSidebar from "@/components/ProfileSidebar";
-import { Coins } from "lucide-react";
-import { useState } from "react";
+import { Coins, FolderOpen } from "lucide-react";
 
 const UnifiedStudioPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, credits } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
-  const [queueOpen, setQueueOpen] = useState(false);
 
-  const tabId = searchParams.get("tab") || defaultTabId;
-  const activeTab = useMemo(() => getTabById(tabId), [tabId]);
+  const subTabId = searchParams.get("tab") || defaultSubTabId;
+  const { group: activeGroup, sub: activeSub } = useMemo(
+    () => findSubTab(subTabId),
+    [subTabId]
+  );
 
   // Normalize URL if tab id is invalid
   useEffect(() => {
-    if (!studioTabs.some((t) => t.id === tabId)) {
+    const exists = studioGroups.some((g) => g.subtabs.some((s) => s.id === subTabId));
+    if (!exists) {
       const next = new URLSearchParams(searchParams);
-      next.set("tab", defaultTabId);
+      next.set("tab", defaultSubTabId);
       setSearchParams(next, { replace: true });
     }
-  }, [tabId, searchParams, setSearchParams]);
+  }, [subTabId, searchParams, setSearchParams]);
 
-  const setTab = (id: string) => {
+  const setSubTab = (id: string) => {
     const next = new URLSearchParams(searchParams);
     next.set("tab", id);
-    // Clear model when switching tab so StudioPage picks default
     next.delete("model");
     setSearchParams(next, { replace: false });
   };
 
+  const switchGroup = (groupId: string) => {
+    const group = studioGroups.find((g) => g.id === groupId);
+    if (!group) return;
+    setSubTab(group.subtabs[0].id);
+  };
+
   const creditsDisplay = credits.toLocaleString("en");
+
+  // The tabs UI to inject inside the studio aside
+  const headerSlot = (
+    <div className="px-4 pt-4 pb-3 space-y-3" dir="ltr">
+      {/* Top-level: Video / Image */}
+      <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-secondary/50">
+        {studioGroups.map((g) => {
+          const active = g.id === activeGroup.id;
+          return (
+            <button
+              key={g.id}
+              onClick={() => switchGroup(g.id)}
+              className={`h-8 rounded-lg text-[12px] font-bold transition-colors ${
+                active
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {g.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Sub-tabs */}
+      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
+        {activeGroup.subtabs.map((s) => {
+          const active = s.id === activeSub.id;
+          return (
+            <button
+              key={s.id}
+              onClick={() => setSubTab(s.id)}
+              className={`shrink-0 px-3 h-8 rounded-full text-[11px] font-semibold whitespace-nowrap transition-colors border ${
+                active
+                  ? "bg-foreground text-background border-foreground"
+                  : "bg-transparent text-muted-foreground border-border/40 hover:text-foreground hover:border-border"
+              }`}
+            >
+              {s.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   return (
     <div className="h-[100dvh] w-full bg-background flex flex-col overflow-hidden" dir="rtl">
-      {/* ─── Top Header with Tabs ─── */}
+      {/* ─── Minimal Top Header ─── */}
       <header className="shrink-0 bg-nav-bg/95 backdrop-blur-xl border-b border-border/40">
-        <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 gap-3">
-          {/* Right: Profile + Credits (RTL first) */}
-          <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-2.5">
+          {/* Right: Profile + Credits */}
+          <div className="flex items-center gap-2">
             {user ? (
               <CreditRingAvatar onClick={() => setProfileOpen(true)} />
             ) : (
@@ -61,47 +116,26 @@ const UnifiedStudioPage = () => {
             </div>
           </div>
 
-          {/* Center: Tabs */}
-          <nav
-            className="flex-1 flex items-center justify-center gap-1 overflow-x-auto scrollbar-hide"
-            dir="ltr"
+          {/* Left: Library */}
+          <button
+            onClick={() => navigate("/library")}
+            className="h-9 px-3.5 rounded-full bg-secondary/60 hover:bg-secondary border border-border/40 flex items-center gap-2 transition-colors"
+            aria-label="Library"
           >
-            {studioTabs.map((tab) => {
-              const active = tab.id === activeTab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setTab(tab.id)}
-                  className={`shrink-0 px-3.5 h-9 rounded-full text-[12px] font-semibold transition-colors whitespace-nowrap ${
-                    active
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Left: Queue */}
-          <div className="shrink-0">
-            <GenerationQueueSidebar
-              open={queueOpen}
-              onOpen={() => setQueueOpen(true)}
-              onClose={() => setQueueOpen(false)}
-            />
-          </div>
+            <FolderOpen className="w-4 h-4 text-foreground" />
+            <span className="text-[12px] font-bold text-foreground">المكتبة</span>
+          </button>
         </div>
       </header>
 
-      {/* ─── Embedded Studio (key forces remount on tab change) ─── */}
+      {/* ─── Embedded Studio ─── */}
       <div className="flex-1 min-h-0">
         <StudioPage
-          key={activeTab.id}
-          categoryProp={activeTab.category}
-          toolIdFilter={activeTab.toolIds}
+          key={activeSub.id}
+          categoryProp={activeSub.category}
+          toolIdFilter={activeSub.toolIds}
           embedded
+          headerSlot={headerSlot}
         />
       </div>
 
