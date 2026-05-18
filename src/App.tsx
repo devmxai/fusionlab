@@ -1,13 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { GenerationQueueProvider } from "@/contexts/GenerationQueueContext";
-import Index from "./pages/Index.tsx";
 import ToolPage from "./pages/ToolPage.tsx";
 import StudioPage from "./pages/StudioPage.tsx";
+import UnifiedStudioPage from "./pages/UnifiedStudioPage.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
 import PricingPage from "./pages/PricingPage.tsx";
@@ -18,6 +18,28 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
+// Map legacy category slugs to unified studio tab ids
+const categoryToTab: Record<string, string> = {
+  video: "text-to-video",
+  avatar: "audio-to-video",
+  transfer: "video-to-video",
+  images: "text-to-image",
+  remix: "edit",
+  shoots: "shoots",
+  "remove-bg": "remove-bg",
+  upscale: "upscale",
+};
+
+const LegacyStudioRedirect = () => {
+  const path = window.location.pathname;
+  const search = window.location.search;
+  const match = path.match(/^\/studio\/([^/]+)/);
+  const category = match?.[1];
+  const tab = (category && categoryToTab[category]) || "text-to-video";
+  const sep = search ? `${search}&` : "?";
+  return <Navigate to={`/studio${sep}tab=${tab}`} replace />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -27,14 +49,16 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<Navigate to="/studio?tab=text-to-video" replace />} />
+              <Route path="/studio" element={<UnifiedStudioPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/library" element={<LibraryPage />} />
               <Route path="/studio/audio" element={<AudioStudioPage />} />
-              <Route path="/studio/:category" element={<StudioPage />} />
+              {/* Legacy per-category routes redirect into the unified studio */}
+              <Route path="/studio/:category" element={<LegacyStudioRedirect />} />
               <Route path="/tool/:toolId" element={<ToolPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

@@ -1,63 +1,93 @@
+# خطة إعادة تصميم الواجهة الرئيسية
 
-السبب الجذري الحالي (من الكود والبيانات الفعلية) هو مشكلتان متداخلتان:
+## الهدف
+استبدال الواجهة الرئيسية الحالية (التي تعرض بطاقات الأدوات حسب الفئة) بواجهة Studio موحّدة على غرار Higgs Field، مع تبويبات علوية تقسّم النماذج حسب نوع المدخل/المخرج، وإزالة اللون البنفسجي بالكامل لصالح ثيم داكن مع عناصر بيضاء.
 
-1) بعض سجلات `generation_jobs` أصبحت غير متسقة: الحالة `running` رغم وجود `completed_at` و `result_url`، وهذا يجعل عنصر Zimage يدخل/يخرج من "قيد التوليد" بشكل متذبذب (flicker) ويصبح أحيانًا غير قابل للفتح.  
-2) `ImageViewer` يحتفظ بحالة الزوم/التحريك بين فتح وآخر، لذلك عند فتح نتيجة جديدة من سايدبار "قيد التوليد" قد تظهر الصورة مزاحة للأعلى/خارج الوسط بدل أن تكون Overlay متمركزة.
+## التخطيط البصري
 
-### خطة الإصلاح الجذري
+```text
+┌─────────────────────────────────────────────────────────┐
+│  Logo                        Tabs                   User│  ← Header
+├──────────────────┬──────────────────────────────────────┤
+│                  │                                      │
+│   لوحة الإدخال    │         منطقة المعاينة/الإخراج        │
+│   (Studio Panel) │         (Placeholder / Result)       │
+│   ~40% عرض       │         ~60% عرض                     │
+│                  │                                      │
+│   - رفع ملفات     │         - معاينة النتيجة             │
+│   - اختيار النموذج│         - شبكة الصور/الفيديو          │
+│   - إعدادات       │                                      │
+│   - زر التوليد    │                                      │
+│                  │                                      │
+└──────────────────┴──────────────────────────────────────┘
+```
 
-#### 1) تثبيت منطق حالة المهام في `use-generation-queue.ts`
-- إضافة **طبقة تطبيع موحدة للحالة** (`effectiveStatus`) قبل العرض وقبل polling:
-  - إذا `result_url` موجودة أو `completed_at` موجود + لا يوجد خطأ ⇒ تُعامل كسجل `succeeded`.
-  - إذا `error_message` موجود + `completed_at` موجود ⇒ تُعامل `failed`/`timed_out`.
-  - فقط السجلات النشطة الحقيقيّة (`pending/running` بدون أي مؤشرات إنهاء) تُعتبر Active.
-- منع أي **رجوع للخلف** من Terminal إلى Active في merge realtime نهائيًا (حتى لو `updated_at` أحدث).
-- تعديل auto-resume polling ليشتغل فقط على active الحقيقي، وليس على السجلات المكتملة المتسخة.
-- إضافة **self-heal خفيف**: عند اكتشاف سجل Active متسخ، يتم تحديثه مرة واحدة في قاعدة البيانات للحالة الصحيحة.
+## التبويبات (Tabs) وتوزيع النماذج
 
-#### 2) تثبيت Smart Inbox في `GenerationQueueSidebar.tsx`
-- بناء القائمة والـ badge على `effectiveStatus` بدل `status` الخام.
-- منع ظهور/اختفاء العنصر المتكرر عبر اشتقاق واضح:
-  - Active الحقيقي يظهر.
-  - Unseen terminal يظهر.
-  - Seen يختفي فورًا.
-- تحويل "عرض" من مجرد نص إلى زر واضح قابل للنقر دائمًا عندما العنصر جاهز.
-- عند الضغط على عنصر ناجح:
-  - يغلق السايدبار فورًا.
-  - يفتح الـ preview مباشرة.
-  - يُعلَّم العنصر seen فورًا (ويخرج من inbox ويظل في المكتبة).
+- **Text → Image**: z-image, nano-banana-2, nano-banana-pro, seedream 4.5/5-lite, flux-2 pro, grok-imagine, gpt-image-2
+- **Text → Video**: grok-imagine video, veo3 family, kling 3.0/2.6, seedance 2, sora-2, wan 2.6, bytedance v1-pro
+- **Image → Video**: grok-imagine i2v, veo3 (first-last), kling 3.0 (first-last), seedance 1.5 pro/2 (frames)
+- **Audio → Video** (Avatar): kling/ai-avatar-standard, kling/ai-avatar-pro, infinitalk/from-audio
+- **Video → Video** (Transfer/Animate): wan/2-2-animate-move, wan/2-2-animate-replace, kling 3.0 motion-control, kling 2.6 motion-control
+- **Edit / Remix**: nano-banana-edit, flux-kontext pro/max, qwen image-edit, gpt-image-1.5 edit, seedream 4.5 edit
+- **Utilities**: remove-bg, upscale (Recraft/Topaz)
 
-#### 3) إصلاح التمركز النهائي للمعاينة في `ImageViewer.tsx`
-- إضافة reset تلقائي لـ `scale/position` عند:
-  - `open === true`
-  - تغيّر `src`
-  - تغيّر `type`
-- فرض Overlay أعلى كل شيء (`fixed inset-0` + `createPortal(document.body)` + z-index أعلى).
-- الحفاظ على animation bounce للدخول/الخروج بدون تأخير.
-- إبقاء واجهة المعاينة نظيفة (Download + Close) مع تشغيل الفيديو الطبيعي.
+## التغييرات على المسارات
 
-#### 4) توحيد التجربة مع المكتبة
-- التأكد أن سلوك المعاينة من "قيد التوليد" يطابق المكتبة بصريًا:
-  - نفس الإحساس: وسط الشاشة، خلفية blur، إغلاق سريع.
-- إن لزم، إعادة استخدام `ImageViewer` أيضًا داخل المكتبة لاحقًا لتقليل اختلاف السلوك بين المكوّنين (اختياري بعد تثبيت الخلل الحالي).
+- `/` بعد تسجيل الدخول → يحوّل مباشرة إلى `/studio` (الـStudio الموحّد)
+- إزالة الصفحة الرئيسية القديمة (Index) من مسار افتراضي مسجَّل الدخول مع إبقاء Landing للزائر
+- `/studio?tab=text-to-video&model=...` يحدد التبويب والنموذج عبر query params
+- المسارات القديمة (`/studio/video`, `/studio/avatar`, …) تُعاد توجيهها إلى `/studio?tab=...`
 
-#### 5) تحقق شامل قبل الإغلاق
-- سيناريو Zimage end-to-end:
-  - Pending/Running ثابت بدون تبديل نجاح/فشل.
-  - عند الاكتمال يظهر عنصر جاهز مرة واحدة.
-  - عند الضغط: يغلق السايدبار فورًا + تظهر المعاينة وسط الشاشة.
-  - بعد الإغلاق: ينخفض badge فورًا ويختفي العنصر من inbox.
-- التحقق على Desktop + Mobile لنفس التدفق.
+## تغييرات الثيم
 
----
+- في `src/index.css` و`tailwind.config.ts`:
+  - `--primary` يتحول من بنفسجي إلى أبيض (`0 0% 100%`) مع `--primary-foreground` أسود
+  - `--accent` يصبح رمادي محايد
+  - حذف/تبسيط `--gradient-primary` ليصبح رمادي داكن→أسود بدل البنفسجي
+  - حذف توهجات `hsl(var(--primary)/...)` البنفسجية أو إبدالها برمادية
+  - الخلفية تبقى داكنة (≈`220 13% 6%`)
+- مكوّن `CreditRingAvatar`: تغيير حلقة الكريدت من بنفسجي إلى أبيض
+- جميع أزرار CTA: خلفية بيضاء، نص أسود، حالة hover رمادي فاتح
+- بطاقات النماذج المختارة: حدّ أبيض رفيع بدل توهج بنفسجي
 
-### تفاصيل تقنية (مختصرة)
-- الملفات المستهدفة:
-  - `src/hooks/use-generation-queue.ts` (الأولوية القصوى)
-  - `src/components/GenerationQueueSidebar.tsx`
-  - `src/components/ImageViewer.tsx`
-- لا تحتاج هذه المعالجة إلى تغيير بنية الجداول؛ فقط إصلاح منطق الحالة + self-heal للسجلات المتسخة.
-- هذا يعالج جذريًا:
-  - flicker النجاح/الفشل
-  - عدم قابلية النقر
-  - ظهور المعاينة خارج المركز
+## مكوّنات جديدة
+
+1. `src/pages/UnifiedStudioPage.tsx` — الصفحة الموحّدة الجديدة
+   - Header علوي يحتوي Tabs (Radix Tabs)
+   - Layout مقسّم: لوحة يسار (input panel) + منطقة يمين (preview)
+   - state لـ activeTab + selectedModel، مزامنة مع query params
+2. `src/components/studio/StudioTabsBar.tsx` — شريط التبويبات العلوي
+3. `src/components/studio/ModelGrid.tsx` — قائمة/شبكة اختيار النموذج داخل التبويب الواحد
+4. `src/components/studio/UnifiedInputPanel.tsx` — يستضيف نموذج الإدخال المناسب لكل تبويب (يعيد استخدام منطق `StudioPage` الحالي حسب النموذج المختار)
+5. `src/data/studio-tabs.ts` — تعريف التبويبات وتوزيع النماذج عليها
+
+## الحفاظ على المنطق الحالي
+
+- لا تغيير في:
+  - Edge Functions (`start-generation`, `kie-ai`, …)
+  - قاعدة البيانات أو الكريدت أو الاشتراكات
+  - منطق التسعير `pricing-engine.ts` و`model-capabilities.ts`
+  - منطق الـqueue (`use-generation-queue`) والـsidebar
+- إعادة استخدام كل دوال الإرسال (`handleGenerate`, الرفع للـStorage, polling) من `StudioPage` الحالية عبر hooks مشتركة، مع نقل الأجزاء القابلة لإعادة الاستخدام إلى hook منفصل `useStudioGeneration` إن لزم.
+
+## ما لن يتغيّر في هذه الجولة
+
+- صفحات: Library, Profile, Pricing, Admin, Auth — تبقى كما هي وظيفيًا (مع تبديل الألوان البنفسجية فقط).
+- BottomNav: يبقى ولكن يتم تبسيطه ليؤشّر إلى Studio / Library / Profile فقط.
+
+## خطوات التنفيذ
+
+1. تحديث ثيم `index.css` + `tailwind.config.ts` (إزالة البنفسجي).
+2. إنشاء `src/data/studio-tabs.ts` بتوزيع النماذج.
+3. إنشاء `UnifiedStudioPage` + المكوّنات الفرعية بتصميم Higgs-Field-like (شريط tabs علوي، لوحة يسار، placeholder يمين).
+4. تحديث `App.tsx`:
+   - `/` للمستخدم المسجّل → `Navigate to /studio`
+   - `/studio` → `UnifiedStudioPage`
+   - إعادة توجيه `/studio/video`, `/studio/avatar`, … إلى `/studio?tab=...`
+5. تبسيط `HomeHeader` / `BottomNav` (إخفاء روابط الفئات القديمة).
+6. اختبار توليد سريع لكل تبويب للتأكد من عدم كسر منطق `start-generation`.
+
+## أسئلة قبل التنفيذ
+
+سأطلب توضيحًا واحدًا فقط قبل البدء — لأن القرار يغير حجم العمل بشكل كبير.

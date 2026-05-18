@@ -67,8 +67,18 @@ const ratioConfig: Record<string, { label: string; cssAspect: string; placeholde
   "21:9": { label: "21:9",  cssAspect: "21/9", placeholderMaxW: "min(96vw, 820px)" },
 };
 
-const StudioPage = () => {
-  const { category } = useParams();
+interface StudioPageProps {
+  /** Override the category (used when embedded in UnifiedStudioPage) */
+  categoryProp?: string;
+  /** Optional whitelist of tool ids visible in this view */
+  toolIdFilter?: string[];
+  /** When embedded, hide the back-arrow/title header */
+  embedded?: boolean;
+}
+
+const StudioPage = ({ categoryProp, toolIdFilter, embedded }: StudioPageProps = {}) => {
+  const { category: categoryParam } = useParams();
+  const category = categoryProp ?? categoryParam;
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -85,10 +95,13 @@ const StudioPage = () => {
   const { pollJob, fetchJobs } = useQueue();
   const categoryName = category ? categorySlugMap[category] : undefined;
 
-  const categoryTools = useMemo(
-    () => tools.filter((t) => t.category === categoryName),
-    [categoryName]
-  );
+  const categoryTools = useMemo(() => {
+    const inCategory = tools.filter((t) => t.category === categoryName);
+    if (!toolIdFilter || toolIdFilter.length === 0) return inCategory;
+    return toolIdFilter
+      .map((id) => inCategory.find((t) => t.id === id))
+      .filter((t): t is AITool => !!t);
+  }, [categoryName, toolIdFilter]);
 
   // ── State ──
   const [selectedTool, setSelectedTool] = useState<AITool | null>(null);
@@ -2162,7 +2175,7 @@ const StudioPage = () => {
   );
 
   return (
-    <div className="h-[100dvh] bg-background flex overflow-hidden" dir="rtl">
+    <div className={`${embedded ? "h-full" : "h-[100dvh]"} bg-background flex overflow-hidden`} dir="rtl">
       {hiddenInputs}
 
       {!isMobile ? (
@@ -2170,12 +2183,14 @@ const StudioPage = () => {
         <>
           {/* ── Left Control Panel ── */}
           <aside className="w-[340px] shrink-0 h-full bg-card/50 backdrop-blur-xl border-l border-border/20 flex flex-col">
-            <div className="shrink-0 flex items-center justify-between px-5 pt-5 pb-3">
-              <h1 className="text-sm font-bold text-foreground">{categoryTitleMap[category!] || ""}</h1>
-              <button onClick={() => navigate("/")} className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-lg hover:bg-secondary/50 transition-all">
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-            </div>
+            {!embedded && (
+              <div className="shrink-0 flex items-center justify-between px-5 pt-5 pb-3">
+                <h1 className="text-sm font-bold text-foreground">{categoryTitleMap[category!] || ""}</h1>
+                <button onClick={() => navigate("/")} className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-lg hover:bg-secondary/50 transition-all">
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+              </div>
+            )}
             <div className="flex-1 overflow-y-auto px-5 pb-4 scrollbar-hide">
               {renderSettingsContent()}
             </div>
@@ -2235,17 +2250,27 @@ const StudioPage = () => {
         /* ═══════════ MOBILE LAYOUT ═══════════ */
         <div className="flex-1 flex flex-col">
           {/* ── Top Bar ── */}
-          <header ref={headerRef} className="shrink-0 flex items-center justify-between px-4 py-3 bg-card/80 backdrop-blur-xl border-b border-border/20 z-50">
-            <button onClick={() => setSettingsSheetOpen(true)}
-              className="w-9 h-9 flex items-center justify-center rounded-xl bg-secondary/50 hover:bg-secondary/80 transition-all">
-              <SlidersHorizontal className="w-4 h-4 text-foreground" />
-            </button>
-            <span className="text-sm font-bold text-foreground">{categoryTitleMap[category!] || ""}</span>
-            <button onClick={() => navigate("/")}
-              className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-secondary/50 transition-all text-muted-foreground">
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-          </header>
+          {!embedded && (
+            <header ref={headerRef} className="shrink-0 flex items-center justify-between px-4 py-3 bg-card/80 backdrop-blur-xl border-b border-border/20 z-50">
+              <button onClick={() => setSettingsSheetOpen(true)}
+                className="w-9 h-9 flex items-center justify-center rounded-xl bg-secondary/50 hover:bg-secondary/80 transition-all">
+                <SlidersHorizontal className="w-4 h-4 text-foreground" />
+              </button>
+              <span className="text-sm font-bold text-foreground">{categoryTitleMap[category!] || ""}</span>
+              <button onClick={() => navigate("/")}
+                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-secondary/50 transition-all text-muted-foreground">
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            </header>
+          )}
+          {embedded && (
+            <header className="shrink-0 flex items-center justify-end px-4 py-2 bg-card/80 backdrop-blur-xl border-b border-border/20 z-50">
+              <button onClick={() => setSettingsSheetOpen(true)}
+                className="w-9 h-9 flex items-center justify-center rounded-xl bg-secondary/50 hover:bg-secondary/80 transition-all">
+                <SlidersHorizontal className="w-4 h-4 text-foreground" />
+              </button>
+            </header>
+          )}
 
           {/* ── Center Preview ── */}
           <div className="flex-1 flex flex-col items-center justify-center px-4 min-h-0">
