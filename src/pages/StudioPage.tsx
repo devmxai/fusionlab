@@ -153,11 +153,13 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
 
   // ── Seedance 2.0 / 2.0 Fast: dedicated guided UX ──
-  // The current sub-tab dictates the Seedance mode — no duplicate mode selector inside the panel.
+  // The active sub-tab dictates which Seedance API mode to use — no duplicate selector inside the panel.
   const forcedSeedanceMode: SeedanceMode | null =
     subTabId === "text-to-video" ? "text"
     : subTabId === "image-to-video" ? "first"
+    : subTabId === "storyboard" ? "multimodal"
     : null;
+  const isStoryboardTab = subTabId === "storyboard";
   const [seedanceMode, setSeedanceMode] = useState<SeedanceMode>(forcedSeedanceMode ?? "text");
   useEffect(() => {
     if (forcedSeedanceMode && forcedSeedanceMode !== seedanceMode) {
