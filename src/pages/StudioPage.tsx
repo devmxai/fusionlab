@@ -889,12 +889,18 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
     // ── Seedance 2.0 / 2.0 Fast — mode-aware validation ──
     if (isSeedance2) {
       if (!prompt.trim()) { toast.error("Write a prompt for the video"); return; }
-      if (seedanceMode === "first" && !seedanceFirstFrame) { toast.error("Upload the start frame"); return; }
-      if (seedanceMode === "first-last" && (!seedanceFirstFrame || !seedanceLastFrame)) {
-        toast.error("Upload start and end frames"); return;
-      }
-      if (seedanceMode === "multimodal" && seedanceTotalRefImages === 0 && !seedanceMotionVideo && !seedanceAudioRef) {
-        toast.error("Upload at least one reference image"); return;
+      if (isStoryboardTab) {
+        if (refImages.length < 1) { toast.error("Upload at least one storyboard asset"); return; }
+        const maxTag = (() => { let m = 0; for (const match of prompt.matchAll(/@image(\d+)/g)) { const n = parseInt(match[1]); if (n > m) m = n; } return m; })();
+        if (maxTag > refImages.length) { toast.error(`Prompt references @image${maxTag} but you only have ${refImages.length} assets`); return; }
+      } else {
+        if (seedanceMode === "first" && !seedanceFirstFrame) { toast.error("Upload the start frame"); return; }
+        if (seedanceMode === "first-last" && (!seedanceFirstFrame || !seedanceLastFrame)) {
+          toast.error("Upload start and end frames"); return;
+        }
+        if (seedanceMode === "multimodal" && seedanceTotalRefImages === 0 && !seedanceMotionVideo && !seedanceAudioRef) {
+          toast.error("Upload at least one reference image"); return;
+        }
       }
     }
     if (!isImageOnlyTool && !isRemixTool && !isAvatarTool && !isSeedance2 && !prompt.trim() && refImages.length === 0 && !firstFrame) {
