@@ -1605,7 +1605,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
             <PopoverTrigger asChild>
               <button className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-border/40 bg-secondary/30 hover:bg-secondary/50 transition-all">
                 <span className={`text-sm font-bold truncate ${selectedTool ? "text-primary" : "text-muted-foreground"}`}>
-                  {selectedTool?.title || "اختر النموذج"}
+                  {selectedTool?.title || "Select Model"}
                 </span>
                 <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${modelSelectorOpen ? "rotate-180" : ""}`} />
               </button>
