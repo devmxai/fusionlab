@@ -134,6 +134,7 @@ const UnifiedStudioPage = () => {
           key={activeSub.id}
           categoryProp={activeSub.category}
           toolIdFilter={activeSub.toolIds}
+          subTabId={activeSub.id}
           embedded
           headerSlot={headerSlot}
         />
