@@ -120,16 +120,17 @@ interface ToolCardProps {
   highPriority?: boolean;
 }
 
-const categoryStudioMap: Record<string, string> = {
-  "صور": "/studio/images",
-  "فيديو": "/studio/video",
-  "سيدانس": "/studio/seedance",
-  "ريمكس": "/studio/remix",
-  "صوت": "/studio/audio",
-  "افتار": "/studio/avatar",
-  "ترانسفير": "/studio/transfer",
-  "حذف الخلفية": "/studio/remove-bg",
-  "رفع الجودة": "/studio/upscale",
+// Map legacy Arabic category names to the new unified studio sub-tab ids.
+const categoryToTab: Record<string, string> = {
+  "صور": "text-to-image",
+  "فيديو": "text-to-video",
+  "سيدانس": "text-to-video",
+  "ريمكس": "image-to-image",
+  "افتار": "audio-to-video",
+  "ترانسفير": "video-to-video",
+  "حذف الخلفية": "remove-bg",
+  "رفع الجودة": "upscale",
+  "شوتس": "shoots",
 };
 
 const appendParam = (url: string, key: string, value: string) => {
@@ -219,12 +220,12 @@ const ToolCard = ({
   }, [imgSrc]);
 
   const handleClick = () => {
-    const studioRoute = categoryStudioMap[tool.category];
-    if (studioRoute) {
-      navigate(`${studioRoute}?model=${encodeURIComponent(tool.id)}`);
-    } else {
-      navigate(`/tool/${tool.id}`);
+    if (tool.category === "صوت") {
+      navigate(`/studio/audio?model=${encodeURIComponent(tool.id)}`);
+      return;
     }
+    const tab = categoryToTab[tool.category] ?? "text-to-video";
+    navigate(`/studio?tab=${tab}&model=${encodeURIComponent(tool.id)}`);
   };
 
   return (

@@ -5,8 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { GenerationQueueProvider } from "@/contexts/GenerationQueueContext";
-import ToolPage from "./pages/ToolPage.tsx";
-import StudioPage from "./pages/StudioPage.tsx";
 import UnifiedStudioPage from "./pages/UnifiedStudioPage.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
@@ -18,13 +16,13 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
-// Map legacy category slugs to unified studio tab ids
+// Backward-compat: old DB links like /studio/video → unified tab URL.
 const categoryToTab: Record<string, string> = {
   video: "text-to-video",
   avatar: "audio-to-video",
   transfer: "video-to-video",
   images: "text-to-image",
-  remix: "edit",
+  remix: "image-to-image",
   shoots: "shoots",
   "remove-bg": "remove-bg",
   upscale: "upscale",
@@ -35,6 +33,7 @@ const LegacyStudioRedirect = () => {
   const search = window.location.search;
   const match = path.match(/^\/studio\/([^/]+)/);
   const category = match?.[1];
+  if (category === "audio") return <Navigate to={`/studio/audio${search}`} replace />;
   const tab = (category && categoryToTab[category]) || "text-to-video";
   const sep = search ? `${search}&` : "?";
   return <Navigate to={`/studio${sep}tab=${tab}`} replace />;
@@ -57,9 +56,9 @@ const App = () => (
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/library" element={<LibraryPage />} />
               <Route path="/studio/audio" element={<AudioStudioPage />} />
-              {/* Legacy per-category routes redirect into the unified studio */}
+              {/* Backward-compat redirects for old DB links / bookmarks */}
               <Route path="/studio/:category" element={<LegacyStudioRedirect />} />
-              <Route path="/tool/:toolId" element={<ToolPage />} />
+              <Route path="/tool/:toolId" element={<Navigate to="/studio?tab=text-to-video" replace />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
@@ -71,3 +70,4 @@ const App = () => (
 );
 
 export default App;
+
