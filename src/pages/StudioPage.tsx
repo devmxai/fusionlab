@@ -1022,16 +1022,24 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
           if (seedanceFirstFrame) seedanceFirstUrl = await uploadAsset(seedanceFirstFrame, "seedance_first");
           if (seedanceLastFrame) seedanceLastUrl = await uploadAsset(seedanceLastFrame, "seedance_last");
         } else if (seedanceMode === "multimodal") {
-          // Order: characters → locations → styles (kept under 9 by the panel)
-          const allRefs = [...seedanceCharRefs, ...seedanceLocationRefs, ...seedanceStyleRefs].slice(0, 9);
-          for (let i = 0; i < allRefs.length; i++) {
-            seedanceRefImageUrls.push(await uploadAsset(allRefs[i], `seedance_ref_${i}`));
-          }
-          if (seedanceMotionVideo) {
-            seedanceRefVideoUrls = [await smartUploadFile(seedanceMotionVideo.file, "seedance_motion")];
-          }
-          if (seedanceAudioRef) {
-            seedanceRefAudioUrls = [await smartUploadFile(seedanceAudioRef.file, "seedance_audio_ref")];
+          if (isStoryboardTab) {
+            // Storyboard tab — official flow: refImages → reference_image_urls, @imageN tags inside prompt.
+            const allRefs = refImages.slice(0, 9);
+            for (let i = 0; i < allRefs.length; i++) {
+              seedanceRefImageUrls.push(await smartUploadFile(allRefs[i].file, `seedance_story_${i}`));
+            }
+          } else {
+            // Order: characters → locations → styles (kept under 9 by the panel)
+            const allRefs = [...seedanceCharRefs, ...seedanceLocationRefs, ...seedanceStyleRefs].slice(0, 9);
+            for (let i = 0; i < allRefs.length; i++) {
+              seedanceRefImageUrls.push(await uploadAsset(allRefs[i], `seedance_ref_${i}`));
+            }
+            if (seedanceMotionVideo) {
+              seedanceRefVideoUrls = [await smartUploadFile(seedanceMotionVideo.file, "seedance_motion")];
+            }
+            if (seedanceAudioRef) {
+              seedanceRefAudioUrls = [await smartUploadFile(seedanceAudioRef.file, "seedance_audio_ref")];
+            }
           }
         }
         setProgress(10);
