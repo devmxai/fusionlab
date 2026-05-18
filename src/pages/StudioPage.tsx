@@ -25,6 +25,7 @@ import ImageMentionPopover from "@/components/studio/ImageMentionPopover";
 import StoryboardPromptEditor, { StoryboardPromptEditorRef } from "@/components/studio/StoryboardPromptEditor";
 import { compileStoryboardPrompt } from "@/lib/storyboard-compiler";
 import SeedancePanel, { type SeedanceMode, type SeedanceAsset, type SeedanceMediaAsset } from "@/components/studio/SeedancePanel";
+import ProviderIcon from "@/components/studio/ProviderIcon";
 
 type AspectRatio = "auto" | "1:1" | "2:3" | "3:2" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
 type Resolution = string;
@@ -1304,20 +1305,6 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
 
   // ── Model Selector Content (portalized via Popover/Drawer) ──
   const renderModelSelectorContent = () => {
-    // Provider badges — small circular icon shown to the left of each model name
-    const PROVIDER_BADGE: Record<string, { label: string; className: string }> = {
-      "xAI":        { label: "𝕏", className: "bg-white text-black" },
-      "OpenAI":     { label: "◯", className: "bg-emerald-600 text-white" },
-      "Google":     { label: "G", className: "bg-blue-500 text-white" },
-      "Bytedance":  { label: "B", className: "bg-sky-500 text-white" },
-      "Kling":      { label: "K", className: "bg-violet-500 text-white" },
-      "Flux":       { label: "F", className: "bg-orange-500 text-white" },
-      "Alibaba":    { label: "A", className: "bg-red-500 text-white" },
-      "Recraft":    { label: "R", className: "bg-pink-500 text-white" },
-      "Topaz":      { label: "T", className: "bg-yellow-400 text-black" },
-      "KIE.AI":     { label: "K", className: "bg-slate-500 text-white" },
-      "Infinitalk": { label: "I", className: "bg-teal-500 text-white" },
-    };
     // Display name overrides (e.g. nicer marketing name)
     const TITLE_OVERRIDES: Record<string, string> = {
       "grok-video": "Super Grok",
@@ -1347,7 +1334,6 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
       <div className="p-1.5 space-y-0.5" dir="ltr">
         {sorted.map((t) => {
           const isSelected = selectedTool?.id === t.id;
-          const badge = PROVIDER_BADGE[t.provider] ?? { label: t.provider[0] ?? "?", className: "bg-secondary text-foreground" };
           const displayTitle = TITLE_OVERRIDES[t.id] ?? t.title;
           return (
             <button
@@ -1357,9 +1343,7 @@ const StudioPage = ({ categoryProp, toolIdFilter, embedded, headerSlot }: Studio
                 isSelected ? "bg-primary/10" : "hover:bg-secondary/40"
               }`}
             >
-              <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-extrabold ${badge.className}`}>
-                {badge.label}
-              </span>
+              <ProviderIcon provider={t.provider} size={28} />
               <span className={`flex-1 min-w-0 truncate text-sm font-semibold ${isSelected ? "text-primary" : "text-foreground"}`}>
                 {displayTitle}
               </span>
