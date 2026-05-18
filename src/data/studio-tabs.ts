@@ -61,6 +61,17 @@ export const studioGroups: StudioGroup[] = [
         ],
       },
       {
+        id: "storyboard",
+        label: "storyboard",
+        category: "video",
+        toolIds: [
+          "seedance-2",
+          "seedance-2-fast",
+          "seedance",
+          "grok-video",
+        ],
+      },
+      {
         id: "audio-to-video",
         label: "audio to video",
         category: "avatar",
