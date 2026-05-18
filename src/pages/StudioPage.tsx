@@ -44,12 +44,12 @@ const categorySlugMap: Record<string, string> = {
 };
 
 const categoryTitleMap: Record<string, string> = {
-  images: "استديو Images",
-  video: "استديو الفيديو",
-  remix: "استديو الريمكس",
-  audio: "استديو الصوت",
-  avatar: "استديو الأفتار",
-  transfer: "استديو الترانسفير",
+  images: "Image Studio",
+  video: "Video Studio",
+  remix: "Remix Studio",
+  audio: "Audio Studio",
+  avatar: "Avatar Studio",
+  transfer: "Transfer Studio",
   "remove-bg": "Remove BG",
   upscale: "Upscale",
   shoots: "Shoots",
