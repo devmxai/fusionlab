@@ -2466,7 +2466,6 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
               </div>
             </SheetContent>
           </Sheet>
-          </Sheet>
         </div>
       )}
 
