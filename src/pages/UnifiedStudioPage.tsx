@@ -16,6 +16,7 @@ const UnifiedStudioPage = () => {
   const navigate = useNavigate();
   const { user, credits } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
 
   const subTabId = searchParams.get("tab") || defaultSubTabId;
   const { group: activeGroup, sub: activeSub } = useMemo(
