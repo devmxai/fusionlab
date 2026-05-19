@@ -79,9 +79,12 @@ interface StudioPageProps {
   embedded?: boolean;
   /** Custom node rendered at the very top of the aside (and mobile bottom sheet) */
   headerSlot?: React.ReactNode;
+  /** Controlled mobile settings sheet (so state survives remounts on tab change) */
+  settingsSheetOpen?: boolean;
+  onSettingsSheetOpenChange?: (open: boolean) => void;
 }
 
-const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot }: StudioPageProps = {}) => {
+const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot, settingsSheetOpen: settingsSheetOpenProp, onSettingsSheetOpenChange }: StudioPageProps = {}) => {
   const { category: categoryParam } = useParams();
   const category = categoryProp ?? categoryParam;
   const [searchParams, setSearchParams] = useSearchParams();
@@ -150,7 +153,12 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [cropState, setCropState] = useState<{ imageSrc: string; file: File; type: "first" | "last" | "ref"; refIndex?: number } | null>(null);
   const [framePreviewUrl, setFramePreviewUrl] = useState<string | null>(null);
-  const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
+  const [settingsSheetOpenLocal, setSettingsSheetOpenLocal] = useState(false);
+  const settingsSheetOpen = settingsSheetOpenProp ?? settingsSheetOpenLocal;
+  const setSettingsSheetOpen = (open: boolean) => {
+    if (onSettingsSheetOpenChange) onSettingsSheetOpenChange(open);
+    else setSettingsSheetOpenLocal(open);
+  };
 
   // ── Seedance 2.0 / 2.0 Fast: dedicated guided UX ──
   // The active sub-tab dictates which Seedance API mode to use — no duplicate selector inside the panel.
@@ -2441,12 +2449,19 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
 
           {/* ── Settings Sidebar ── */}
           <Sheet open={settingsSheetOpen} onOpenChange={setSettingsSheetOpen}>
-            <SheetContent side="right" className="w-[88vw] max-w-[380px] p-0 border-r border-border/20 [&>button]:left-4 [&>button]:right-auto flex flex-col">
+            <SheetContent side="right" className="w-[88vw] max-w-[380px] p-0 border-r border-border/20 [&>button]:hidden flex flex-col">
+              <div className="shrink-0 flex items-center justify-end px-3 pt-3 pb-2 border-b border-border/15">
+                <button
+                  onClick={() => setSettingsSheetOpen(false)}
+                  className="h-8 px-4 rounded-full bg-foreground text-background text-[12px] font-bold hover:opacity-90 transition-opacity"
+                >
+                  Done
+                </button>
+              </div>
               {headerSlot && (
-                <div className="shrink-0 pt-10 border-b border-border/15">{headerSlot}</div>
+                <div className="shrink-0 border-b border-border/15">{headerSlot}</div>
               )}
               <div className="flex-1 px-5 pb-8 pt-3 overflow-y-auto space-y-1 scrollbar-hide" dir="ltr">
-                {!headerSlot && <div className="h-8" />}
                 {renderSettingsContent()}
               </div>
             </SheetContent>
