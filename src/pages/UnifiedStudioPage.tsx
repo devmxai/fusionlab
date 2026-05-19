@@ -138,6 +138,8 @@ const UnifiedStudioPage = () => {
           subTabId={activeSub.id}
           embedded
           headerSlot={headerSlot}
+          settingsSheetOpen={settingsSheetOpen}
+          onSettingsSheetOpenChange={setSettingsSheetOpen}
         />
       </div>
 
