@@ -79,9 +79,12 @@ interface StudioPageProps {
   embedded?: boolean;
   /** Custom node rendered at the very top of the aside (and mobile bottom sheet) */
   headerSlot?: React.ReactNode;
+  /** Controlled mobile settings sheet (so state survives remounts on tab change) */
+  settingsSheetOpen?: boolean;
+  onSettingsSheetOpenChange?: (open: boolean) => void;
 }
 
-const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot }: StudioPageProps = {}) => {
+const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot, settingsSheetOpen: settingsSheetOpenProp, onSettingsSheetOpenChange }: StudioPageProps = {}) => {
   const { category: categoryParam } = useParams();
   const category = categoryProp ?? categoryParam;
   const [searchParams, setSearchParams] = useSearchParams();
