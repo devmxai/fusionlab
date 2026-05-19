@@ -132,7 +132,6 @@ const UnifiedStudioPage = () => {
       {/* ─── Embedded Studio ─── */}
       <div className="flex-1 min-h-0">
         <StudioPage
-          key={activeSub.id}
           categoryProp={activeSub.category}
           toolIdFilter={activeSub.toolIds}
           subTabId={activeSub.id}
