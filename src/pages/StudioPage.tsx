@@ -2441,8 +2441,12 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
 
           {/* ── Settings Sidebar ── */}
           <Sheet open={settingsSheetOpen} onOpenChange={setSettingsSheetOpen}>
-            <SheetContent side="right" className="w-[85vw] max-w-[360px] p-0 border-r border-border/20 [&>button]:left-4 [&>button]:right-auto">
-              <div className="px-5 pt-12 pb-8 h-full overflow-y-auto space-y-1 scrollbar-hide" dir="ltr">
+            <SheetContent side="right" className="w-[88vw] max-w-[380px] p-0 border-r border-border/20 [&>button]:left-4 [&>button]:right-auto flex flex-col">
+              {headerSlot && (
+                <div className="shrink-0 pt-10 border-b border-border/15">{headerSlot}</div>
+              )}
+              <div className="flex-1 px-5 pb-8 pt-3 overflow-y-auto space-y-1 scrollbar-hide" dir="ltr">
+                {!headerSlot && <div className="h-8" />}
                 {renderSettingsContent()}
               </div>
             </SheetContent>
