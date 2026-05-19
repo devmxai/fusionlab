@@ -153,7 +153,12 @@ const StudioPage = ({ categoryProp, toolIdFilter, subTabId, embedded, headerSlot
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [cropState, setCropState] = useState<{ imageSrc: string; file: File; type: "first" | "last" | "ref"; refIndex?: number } | null>(null);
   const [framePreviewUrl, setFramePreviewUrl] = useState<string | null>(null);
-  const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
+  const [settingsSheetOpenLocal, setSettingsSheetOpenLocal] = useState(false);
+  const settingsSheetOpen = settingsSheetOpenProp ?? settingsSheetOpenLocal;
+  const setSettingsSheetOpen = (open: boolean) => {
+    if (onSettingsSheetOpenChange) onSettingsSheetOpenChange(open);
+    else setSettingsSheetOpenLocal(open);
+  };
 
   // ── Seedance 2.0 / 2.0 Fast: dedicated guided UX ──
   // The active sub-tab dictates which Seedance API mode to use — no duplicate selector inside the panel.
